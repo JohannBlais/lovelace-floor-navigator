@@ -478,7 +478,7 @@ Exemple :
     "@rollup/plugin-typescript": "^11.1.0",
     "@rollup/plugin-node-resolve": "^15.2.0",
     "@rollup/plugin-commonjs": "^25.0.0",
-    "@rollup/plugin-terser": "^0.4.0",
+    "@rollup/plugin-terser": "^1.0.0",
     "rollup": "^4.0.0",
     "tslib": "^2.6.0",
     "dotenv": "^16.0.0"
