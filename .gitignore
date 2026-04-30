@@ -141,3 +141,24 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# ──────────────────────────────────────────────
+# Project-specific additions for floor-navigator
+# ──────────────────────────────────────────────
+
+# IDE & editor settings (commit shared configs, ignore personal ones)
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Source maps if generated outside dist/
+*.map
+
+# Rollup cache (in case we add @rollup/plugin-cache later)
+.rollup.cache/
