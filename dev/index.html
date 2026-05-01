@@ -1,11 +1,113 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Floor Navigator — Dev Sandbox</title>
+    <!--
+      How to serve this page:
+
+      Run a static server FROM THE REPO ROOT, then open /dev/index.html.
+      The relative path `../dist/floor-navigator.js` only resolves when
+      the parent directory is reachable from the server.
+
+        npx serve .                  # then open http://localhost:3000/dev/
+        python -m http.server 8000   # then open http://localhost:8000/dev/
+
+      Build the bundle first (or run watch in another terminal):
+
+        npm run build
+        npm run watch   # rebuilds on save
+    -->
+    <style>
+      :root {
+        color-scheme: dark;
+        --primary-text-color: #fff;
+        --secondary-text-color: #aaa;
+        --card-background-color: #1e1e1e;
+        --ha-card-border-radius: 12px;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: #0e0e0e;
+        color: var(--primary-text-color);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      }
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+      header h1 {
+        margin: 0 0 4px 0;
+        font-size: 22px;
+      }
+      header p {
+        margin: 0 0 20px 0;
+        color: var(--secondary-text-color);
+        font-size: 14px;
+      }
+      ha-card {
+        display: block;
+        background: var(--card-background-color);
+        border-radius: var(--ha-card-border-radius);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+      }
+      .legend {
+        margin-top: 16px;
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 8px;
+        font-size: 13px;
+        color: var(--secondary-text-color);
+        line-height: 1.6;
+      }
+      .legend kbd {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 1px 6px;
+        border-radius: 3px;
+        font-family: monospace;
+      }
+    </style>
   </head>
   <body>
-    <!-- Sandbox de dev local. Sera étoffé à l'étape 3 avec un mock hass et la card montée. -->
+    <div class="container">
+      <header>
+        <h1>Floor Navigator — Dev Sandbox</h1>
+        <p>Étape 3 : empilement des floors + navigation wheel/swipe + crossfade.</p>
+      </header>
+
+      <floor-navigator-card id="card"></floor-navigator-card>
+
+      <div class="legend">
+        <kbd>Scroll</kbd> vers le bas → floor suivant (L0 → L1 → L2)<br />
+        <kbd>Scroll</kbd> vers le haut → floor précédent<br />
+        Sur mobile, swipe vertical (50px minimum, vélocité &gt; 0.3 px/ms).<br />
+        Aux extrémités, l'animation de rebond (150ms) signale la butée.
+      </div>
+    </div>
+
+    <script type="module" src="../dist/floor-navigator.js"></script>
+    <script type="module">
+      const card = document.getElementById('card');
+      card.setConfig({
+        type: 'custom:floor-navigator-card',
+        viewbox: '0 0 1920 1080',
+        settings: {
+          transition: 'crossfade',
+          transition_duration: 400,
+          edge_behavior: 'bounce',
+          navigation_mode: 'both',
+          start_floor: 'L0',
+        },
+        floors: [
+          { id: 'L0', name: 'Rez-de-chaussée', background: 'test-floors/L0.svg' },
+          { id: 'L1', name: 'Étage 1', background: 'test-floors/L1.svg' },
+          { id: 'L2', name: 'Bureau et combles', background: 'test-floors/L2.svg' },
+        ],
+      });
+    </script>
   </body>
 </html>

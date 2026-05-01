@@ -60,7 +60,7 @@ export class FnFloor extends LitElement {
     svg {
       display: block;
       width: 100%;
-      height: auto;
+      height: 100%;
       max-width: 100%;
     }
     .error {

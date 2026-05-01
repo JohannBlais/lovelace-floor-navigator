@@ -1,7 +1,7 @@
 import { LitElement, css, html } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 
-import './components/fn-floor.js';
+import './components/fn-navigation-controller.js';
 import type { CardConfig } from './types/config.js';
 
 @customElement('floor-navigator-card')
@@ -36,14 +36,18 @@ export class FloorNavigatorCard extends LitElement {
     if (!this._config) {
       return html`<div class="placeholder">Floor Navigator: no config loaded.</div>`;
     }
-    // Step 2: render only the FIRST floor. Multi-floor stack lands at step 3.
-    const firstFloor = this._config.floors[0];
+    const settings = this._config.settings ?? {};
     return html`
       <ha-card>
-        <fn-floor
+        <fn-navigation-controller
+          .floors=${this._config.floors}
           .viewbox=${this._config.viewbox}
-          .background=${firstFloor.background}
-        ></fn-floor>
+          .transition=${settings.transition ?? 'crossfade'}
+          .transitionDuration=${settings.transition_duration ?? 400}
+          .edgeBehavior=${settings.edge_behavior ?? 'bounce'}
+          .navigationMode=${settings.navigation_mode ?? 'both'}
+          .startFloor=${settings.start_floor}
+        ></fn-navigation-controller>
       </ha-card>
     `;
   }
