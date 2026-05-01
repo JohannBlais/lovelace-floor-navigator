@@ -1,6 +1,7 @@
 import { LitElement, css, html } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 
+import './components/fn-floor.js';
 import type { CardConfig } from './types/config.js';
 
 @customElement('floor-navigator-card')
@@ -33,29 +34,38 @@ export class FloorNavigatorCard extends LitElement {
 
   protected override render() {
     if (!this._config) {
-      return html`<div>Floor Navigator: no config loaded.</div>`;
+      return html`<div class="placeholder">Floor Navigator: no config loaded.</div>`;
     }
-    return html`<div class="debug"><pre>${JSON.stringify(this._config, null, 2)}</pre></div>`;
+    // Step 2: render only the FIRST floor. Multi-floor stack lands at step 3.
+    const firstFloor = this._config.floors[0];
+    return html`
+      <ha-card>
+        <fn-floor
+          .viewbox=${this._config.viewbox}
+          .background=${firstFloor.background}
+        ></fn-floor>
+      </ha-card>
+    `;
   }
 
   static override styles = css`
     :host {
       display: block;
+    }
+    ha-card {
+      overflow: hidden;
+    }
+    .placeholder {
       padding: 12px;
-    }
-    .debug {
-      background: var(--card-background-color, #1a1a1a);
-      color: var(--primary-text-color, #fff);
-      border-radius: var(--ha-card-border-radius, 8px);
-      padding: 8px;
-      overflow-x: auto;
-    }
-    pre {
-      margin: 0;
+      color: var(--secondary-text-color, #888);
       font-family: monospace;
       font-size: 12px;
-      white-space: pre-wrap;
-      word-break: break-all;
     }
   `;
+}
+
+declare global {
+  interface HTMLElementTagNameMap {
+    'floor-navigator-card': FloorNavigatorCard;
+  }
 }
