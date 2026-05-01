@@ -2,6 +2,7 @@ import { LitElement, css, html } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 
 import './components/fn-navigation-controller.js';
+import { cardVariables } from './styles/card-styles.js';
 import type { CardConfig } from './types/config.js';
 
 @customElement('floor-navigator-card')
@@ -47,25 +48,29 @@ export class FloorNavigatorCard extends LitElement {
           .edgeBehavior=${settings.edge_behavior ?? 'bounce'}
           .navigationMode=${settings.navigation_mode ?? 'both'}
           .startFloor=${settings.start_floor}
+          .showFloorIndicator=${settings.show_floor_indicator ?? true}
         ></fn-navigation-controller>
       </ha-card>
     `;
   }
 
-  static override styles = css`
-    :host {
-      display: block;
-    }
-    ha-card {
-      overflow: hidden;
-    }
-    .placeholder {
-      padding: 12px;
-      color: var(--secondary-text-color, #888);
-      font-family: monospace;
-      font-size: 12px;
-    }
-  `;
+  static override styles = [
+    cardVariables,
+    css`
+      :host {
+        display: block;
+      }
+      ha-card {
+        overflow: hidden;
+      }
+      .placeholder {
+        padding: 12px;
+        color: var(--secondary-text-color, #888);
+        font-family: monospace;
+        font-size: 12px;
+      }
+    `,
+  ];
 }
 
 declare global {

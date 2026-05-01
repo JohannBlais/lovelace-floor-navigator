@@ -55,6 +55,36 @@
         border-radius: var(--ha-card-border-radius);
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
       }
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 16px;
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 8px;
+        font-size: 13px;
+      }
+      .controls label {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        color: var(--secondary-text-color);
+      }
+      .controls select,
+      .controls input[type='checkbox'] {
+        background: #2a2a2a;
+        color: var(--primary-text-color);
+        border: 1px solid #444;
+        border-radius: 4px;
+        padding: 4px 8px;
+        font: inherit;
+      }
+      .controls .checkbox {
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+      }
       .legend {
         margin-top: 16px;
         padding: 12px;
@@ -76,38 +106,84 @@
     <div class="container">
       <header>
         <h1>Floor Navigator — Dev Sandbox</h1>
-        <p>Étape 3 : empilement des floors + navigation wheel/swipe + crossfade.</p>
+        <p>Étape 4 : indicator + transitions slide / slide-scale + CSS variables.</p>
       </header>
+
+      <div class="controls">
+        <label>
+          Transition
+          <select id="transition-select">
+            <option value="crossfade">crossfade (défaut)</option>
+            <option value="slide">slide</option>
+            <option value="slide-scale">slide-scale</option>
+          </select>
+        </label>
+        <label>
+          Edge behavior
+          <select id="edge-select">
+            <option value="bounce">bounce (défaut)</option>
+            <option value="none">none</option>
+            <option value="loop">loop</option>
+          </select>
+        </label>
+        <label>
+          Durée (ms)
+          <select id="duration-select">
+            <option value="200">200</option>
+            <option value="400" selected>400</option>
+            <option value="800">800</option>
+            <option value="1500">1500</option>
+          </select>
+        </label>
+        <label class="checkbox">
+          <input type="checkbox" id="indicator-toggle" checked />
+          show_floor_indicator
+        </label>
+      </div>
 
       <floor-navigator-card id="card"></floor-navigator-card>
 
       <div class="legend">
         <kbd>Scroll</kbd> vers le bas → floor suivant (L0 → L1 → L2)<br />
         <kbd>Scroll</kbd> vers le haut → floor précédent<br />
-        Sur mobile, swipe vertical (50px minimum, vélocité &gt; 0.3 px/ms).<br />
-        Aux extrémités, l'animation de rebond (150ms) signale la butée.
+        Sur mobile, swipe vertical (50px min, vélocité &gt; 0.3 px/ms).<br />
+        Modifie les contrôles ci-dessus pour reconfigurer la card en live (setConfig est rappelé).
       </div>
     </div>
 
     <script type="module" src="../dist/floor-navigator.js"></script>
     <script type="module">
       const card = document.getElementById('card');
-      card.setConfig({
-        type: 'custom:floor-navigator-card',
-        viewbox: '0 0 1920 1080',
-        settings: {
-          transition: 'crossfade',
-          transition_duration: 400,
-          edge_behavior: 'bounce',
-          navigation_mode: 'both',
-          start_floor: 'L0',
-        },
-        floors: [
-          { id: 'L0', name: 'Rez-de-chaussée', background: 'test-floors/L0.svg' },
-          { id: 'L1', name: 'Étage 1', background: 'test-floors/L1.svg' },
-          { id: 'L2', name: 'Bureau et combles', background: 'test-floors/L2.svg' },
-        ],
+      const transitionSelect = document.getElementById('transition-select');
+      const edgeSelect = document.getElementById('edge-select');
+      const durationSelect = document.getElementById('duration-select');
+      const indicatorToggle = document.getElementById('indicator-toggle');
+
+      function applyConfig() {
+        card.setConfig({
+          type: 'custom:floor-navigator-card',
+          viewbox: '0 0 1920 1080',
+          settings: {
+            transition: transitionSelect.value,
+            transition_duration: Number(durationSelect.value),
+            edge_behavior: edgeSelect.value,
+            navigation_mode: 'both',
+            start_floor: 'L0',
+            show_floor_indicator: indicatorToggle.checked,
+          },
+          floors: [
+            { id: 'L0', name: 'Rez-de-chaussée', background: 'test-floors/L0.svg' },
+            { id: 'L1', name: 'Étage 1', background: 'test-floors/L1.svg' },
+            { id: 'L2', name: 'Bureau et combles', background: 'test-floors/L2.svg' },
+          ],
+        });
+      }
+
+      [transitionSelect, edgeSelect, durationSelect, indicatorToggle].forEach((el) => {
+        el.addEventListener('change', applyConfig);
       });
+
+      applyConfig();
     </script>
   </body>
 </html>

@@ -1,6 +1,7 @@
-import { LitElement, css, html, type PropertyValues } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 
+import './fn-floor-indicator.js';
 import './fn-floor-stack.js';
 import type { BounceDirection } from './fn-floor-stack.js';
 import type {
@@ -37,6 +38,7 @@ export class FnNavigationController extends LitElement {
   @property({ type: String, attribute: false }) edgeBehavior: EdgeBehavior = 'bounce';
   @property({ type: String, attribute: false }) navigationMode: NavigationMode = 'both';
   @property({ type: String, attribute: false }) startFloor?: string;
+  @property({ type: Boolean, attribute: false }) showFloorIndicator = true;
 
   @state() private _currentIndex = 0;
   @state() private _bounceDirection: BounceDirection = null;
@@ -160,6 +162,7 @@ export class FnNavigationController extends LitElement {
   }
 
   protected override render() {
+    const currentFloor = this.floors[this._currentIndex];
     return html`
       <fn-floor-stack
         .floors=${this.floors}
@@ -169,12 +172,16 @@ export class FnNavigationController extends LitElement {
         .transitionDuration=${this.transitionDuration}
         .bounceDirection=${this._bounceDirection}
       ></fn-floor-stack>
+      ${this.showFloorIndicator && currentFloor
+        ? html`<fn-floor-indicator .floor=${currentFloor}></fn-floor-indicator>`
+        : nothing}
     `;
   }
 
   static override styles = css`
     :host {
       display: block;
+      position: relative; /* Anchor for the absolutely-positioned indicator. */
       /* Capture all gestures: prevents page scroll/pinch hijacking our swipes. */
       touch-action: none;
       user-select: none;

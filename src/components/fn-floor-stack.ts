@@ -79,11 +79,12 @@ export class FnFloorStack extends LitElement {
     .floor-wrapper {
       position: absolute;
       inset: 0;
-      transition:
-        opacity var(--fn-transition-duration, 400ms) ease-in-out;
     }
 
     /* --- Crossfade transition --- */
+    .fn-transition-crossfade {
+      transition: opacity var(--fn-transition-duration, 400ms) ease-in-out;
+    }
     .fn-transition-crossfade.fn-floor-active {
       opacity: 1;
       z-index: 2;
@@ -91,6 +92,49 @@ export class FnFloorStack extends LitElement {
     .fn-transition-crossfade.fn-floor-prev,
     .fn-transition-crossfade.fn-floor-next {
       opacity: 0;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* --- Slide transition: vertical translateY --- */
+    .fn-transition-slide {
+      transition: transform var(--fn-transition-duration, 400ms) ease-in-out;
+    }
+    .fn-transition-slide.fn-floor-active {
+      transform: translateY(0);
+      z-index: 2;
+    }
+    .fn-transition-slide.fn-floor-prev {
+      transform: translateY(-100%);
+      z-index: 1;
+      pointer-events: none;
+    }
+    .fn-transition-slide.fn-floor-next {
+      transform: translateY(100%);
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* --- Slide-scale transition: slide + slight zoom-out + dim on inactive --- */
+    .fn-transition-slide-scale {
+      transition:
+        transform var(--fn-transition-duration, 400ms) ease-in-out,
+        opacity var(--fn-transition-duration, 400ms) ease-in-out;
+    }
+    .fn-transition-slide-scale.fn-floor-active {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+      z-index: 2;
+    }
+    .fn-transition-slide-scale.fn-floor-prev {
+      transform: translateY(-100%) scale(0.92);
+      opacity: 0.4;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .fn-transition-slide-scale.fn-floor-next {
+      transform: translateY(100%) scale(0.92);
+      opacity: 0.4;
       z-index: 1;
       pointer-events: none;
     }
