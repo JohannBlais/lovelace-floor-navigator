@@ -1,4 +1,6 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
+
 import typescript from '@rollup/plugin-typescript';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
@@ -11,6 +13,7 @@ const haLocalDir = process.env.HA_LOCAL_DIR;
 const outputDir = (isWatch && haLocalDir) ? haLocalDir : 'dist';
 
 const isProd = !isWatch;
+
 
 export default {
   input: 'src/floor-navigator-card.ts',
