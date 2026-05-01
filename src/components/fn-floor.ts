@@ -1,13 +1,14 @@
 import { LitElement, css, html } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 
+import { renderOverlayLayer } from './fn-overlay-layer.js';
+import type { Floor, Overlay } from '../types/config.js';
+import type { HomeAssistant } from '../types/ha.js';
+
 /**
- * Renders a single floor: an SVG with the configured viewBox and a background
- * image covering it. Overlays will be added in step 5.
- *
- * The SVG uses `preserveAspectRatio="xMidYMid meet"` so the floor keeps its
- * aspect ratio (derived from the viewBox) and is centered if the host element
- * is sized differently.
+ * Renders a single floor: an SVG with the configured viewBox, a background
+ * image covering it, and one `<g class="fn-overlay-layer">` per overlay
+ * (filtered to the elements that live on this floor).
  *
  * GOTCHA — DO NOT split the SVG body into nested html`` templates. lit-html
  * parses each template as HTML in isolation; nested templates inside <svg>
@@ -16,14 +17,24 @@ import { customElement, property } from 'lit/decorators.js';
  * Keep the whole <svg>...</svg> in a single html`` template, or use the
  * `svg` tagged template if you genuinely need to split. setConfig guarantees
  * `background` is non-empty so we can render <image> unconditionally.
+ *
+ * Overlay groups are produced by `renderOverlayLayer()` which uses the `svg`
+ * tag, so their content (including `<foreignObject>`) is correctly
+ * SVG-namespaced and renders inside the parent <svg>.
  */
 @customElement('fn-floor')
 export class FnFloor extends LitElement {
   /** SVG viewBox string, e.g. "0 0 1920 1080". */
   @property({ type: String }) viewbox = '';
 
-  /** Path/URL of the background image (PNG, JPG, SVG). */
-  @property({ type: String }) background = '';
+  /** The floor object — used for the SPEC §4.2 group id `fn-floor-{id}`. */
+  @property({ attribute: false }) floor!: Floor;
+
+  /** Overlays the user has configured (already filtered by visibility). */
+  @property({ attribute: false }) overlays: Overlay[] = [];
+
+  /** HA hass object, forwarded to each `<fn-element-icon>`. */
+  @property({ attribute: false }) hass?: HomeAssistant;
 
   /** Parses the viewBox string into [minX, minY, width, height]. */
   private get viewBoxRect(): { width: number; height: number } | null {
@@ -39,6 +50,8 @@ export class FnFloor extends LitElement {
     if (!rect) {
       return html`<div class="error">Invalid viewBox: "${this.viewbox}"</div>`;
     }
+    const floorId = this.floor?.id ?? '';
+    const bgId = floorId ? `fn-floor-${floorId}-bg` : undefined;
     return html`
       <svg
         viewBox=${this.viewbox}
@@ -46,13 +59,15 @@ export class FnFloor extends LitElement {
         xmlns="http://www.w3.org/2000/svg"
       >
         <image
-          href=${this.background}
+          id=${bgId ?? ''}
+          href=${this.floor?.background ?? ''}
           x="0"
           y="0"
           width=${rect.width}
           height=${rect.height}
           preserveAspectRatio="xMidYMid meet"
         />
+        ${this.overlays.map((overlay) => renderOverlayLayer(overlay, floorId, this.hass))}
       </svg>
     `;
   }

@@ -8,8 +8,10 @@ import type {
   EdgeBehavior,
   Floor,
   NavigationMode,
+  Overlay,
   TransitionMode,
 } from '../types/config.js';
+import type { HomeAssistant } from '../types/ha.js';
 
 const NAV_THROTTLE_MS = 400;
 const SWIPE_THRESHOLD_PX = 50;
@@ -39,6 +41,8 @@ export class FnNavigationController extends LitElement {
   @property({ type: String, attribute: false }) navigationMode: NavigationMode = 'both';
   @property({ type: String, attribute: false }) startFloor?: string;
   @property({ type: Boolean, attribute: false }) showFloorIndicator = true;
+  @property({ attribute: false }) overlays: Overlay[] = [];
+  @property({ attribute: false }) hass?: HomeAssistant;
 
   @state() private _currentIndex = 0;
   @state() private _bounceDirection: BounceDirection = null;
@@ -171,6 +175,8 @@ export class FnNavigationController extends LitElement {
         .transition=${this.transition}
         .transitionDuration=${this.transitionDuration}
         .bounceDirection=${this._bounceDirection}
+        .overlays=${this.overlays}
+        .hass=${this.hass}
       ></fn-floor-stack>
       ${this.showFloorIndicator && currentFloor
         ? html`<fn-floor-indicator .floor=${currentFloor}></fn-floor-indicator>`

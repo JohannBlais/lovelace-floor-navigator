@@ -1,13 +1,23 @@
 import { LitElement, css, html } from 'lit';
-import { customElement, state } from 'lit/decorators.js';
+import { customElement, property, state } from 'lit/decorators.js';
 
 import './components/fn-navigation-controller.js';
 import { cardVariables } from './styles/card-styles.js';
-import type { CardConfig } from './types/config.js';
+import type { CardConfig, Overlay, OverlayElement } from './types/config.js';
+import type { HomeAssistant } from './types/ha.js';
 
 @customElement('floor-navigator-card')
 export class FloorNavigatorCard extends LitElement {
+  /** HA hass object — set by Lovelace at every state tick. */
+  @property({ attribute: false }) public hass?: HomeAssistant;
+
   @state() private _config?: CardConfig;
+  /**
+   * Set of overlay ids currently visible. Initialized from each overlay's
+   * `default_visible` (SPEC §4.5 mécanisme A — local state, non-persisted).
+   * Will be mutated by `<fn-overlay-buttons>` at step 7.
+   */
+  @state() private _visibleOverlayIds: Set<string> = new Set();
 
   public setConfig(config: CardConfig): void {
     if (!config || typeof config !== 'object') {
@@ -19,14 +29,29 @@ export class FloorNavigatorCard extends LitElement {
     if (!Array.isArray(config.floors) || config.floors.length === 0) {
       throw new Error('Invalid configuration: at least one floor is required in `floors`');
     }
+    const floorIds = new Set<string>();
     for (const floor of config.floors) {
       if (!floor || typeof floor !== 'object' || !floor.id || !floor.name || !floor.background) {
         throw new Error(
           `Invalid floor: \`id\`, \`name\` and \`background\` are required (got ${JSON.stringify(floor)})`,
         );
       }
+      floorIds.add(floor.id);
     }
+
+    if (config.overlays !== undefined) {
+      if (!Array.isArray(config.overlays)) {
+        throw new Error('Invalid configuration: `overlays` must be an array');
+      }
+      for (const overlay of config.overlays) {
+        validateOverlay(overlay, floorIds);
+      }
+    }
+
     this._config = config;
+    this._visibleOverlayIds = new Set(
+      (config.overlays ?? []).filter((o) => o.default_visible).map((o) => o.id),
+    );
   }
 
   public getCardSize(): number {
@@ -38,6 +63,9 @@ export class FloorNavigatorCard extends LitElement {
       return html`<div class="placeholder">Floor Navigator: no config loaded.</div>`;
     }
     const settings = this._config.settings ?? {};
+    const overlays = (this._config.overlays ?? []).filter((o) =>
+      this._visibleOverlayIds.has(o.id),
+    );
     return html`
       <ha-card>
         <fn-navigation-controller
@@ -49,6 +77,8 @@ export class FloorNavigatorCard extends LitElement {
           .navigationMode=${settings.navigation_mode ?? 'both'}
           .startFloor=${settings.start_floor}
           .showFloorIndicator=${settings.show_floor_indicator ?? true}
+          .overlays=${overlays}
+          .hass=${this.hass}
         ></fn-navigation-controller>
       </ha-card>
     `;
@@ -71,6 +101,56 @@ export class FloorNavigatorCard extends LitElement {
       }
     `,
   ];
+}
+
+function validateOverlay(overlay: Overlay, floorIds: Set<string>): void {
+  if (!overlay || typeof overlay !== 'object' || !overlay.id || !overlay.name) {
+    throw new Error(
+      `Invalid overlay: \`id\` and \`name\` are required (got ${JSON.stringify(overlay)})`,
+    );
+  }
+  if (!Array.isArray(overlay.elements)) {
+    throw new Error(`Invalid overlay \`${overlay.id}\`: \`elements\` must be an array`);
+  }
+  for (const el of overlay.elements) {
+    validateElement(el, overlay.id, floorIds);
+  }
+}
+
+function validateElement(
+  el: OverlayElement,
+  overlayId: string,
+  floorIds: Set<string>,
+): void {
+  if (!el || typeof el !== 'object') {
+    throw new Error(`Invalid element in overlay \`${overlayId}\`: not an object`);
+  }
+  if (!el.floor || !floorIds.has(el.floor)) {
+    throw new Error(
+      `Invalid element in overlay \`${overlayId}\`: \`floor\` must reference a declared floor id (got "${el.floor}")`,
+    );
+  }
+  if (!el.entity || typeof el.entity !== 'string') {
+    throw new Error(`Invalid element in overlay \`${overlayId}\`: \`entity\` is required`);
+  }
+  if (
+    !el.position ||
+    typeof el.position !== 'object' ||
+    typeof el.position.x !== 'number' ||
+    typeof el.position.y !== 'number'
+  ) {
+    throw new Error(
+      `Invalid element \`${el.entity}\` in overlay \`${overlayId}\`: \`position\` must be { x: number, y: number }`,
+    );
+  }
+  // Cast to unknown when reading `type`: the static union excludes any
+  // other value, but at runtime YAML can still pass us garbage.
+  const elType: unknown = (el as { type: unknown }).type;
+  if (elType !== 'icon' && elType !== 'text') {
+    throw new Error(
+      `Invalid element \`${el.entity}\` in overlay \`${overlayId}\`: \`type\` must be "icon" or "text" (got "${String(elType)}")`,
+    );
+  }
 }
 
 declare global {

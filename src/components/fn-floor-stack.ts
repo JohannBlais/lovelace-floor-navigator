@@ -4,7 +4,8 @@ import { classMap } from 'lit/directives/class-map.js';
 import { styleMap } from 'lit/directives/style-map.js';
 
 import './fn-floor.js';
-import type { Floor, TransitionMode } from '../types/config.js';
+import type { Floor, Overlay, TransitionMode } from '../types/config.js';
+import type { HomeAssistant } from '../types/ha.js';
 
 /**
  * Stacks all floors in the same coordinate space (CSS strategy 3 from SPEC §4.3).
@@ -27,6 +28,8 @@ export class FnFloorStack extends LitElement {
   @property({ type: String }) transition: TransitionMode = 'crossfade';
   @property({ type: Number, attribute: false }) transitionDuration = 400;
   @property({ attribute: false }) bounceDirection: BounceDirection = null;
+  @property({ attribute: false }) overlays: Overlay[] = [];
+  @property({ attribute: false }) hass?: HomeAssistant;
 
   private get _aspectRatio(): string {
     const parts = this.viewbox.trim().split(/\s+/).map(Number);
@@ -57,8 +60,13 @@ export class FnFloorStack extends LitElement {
             classes[`fn-bouncing-${this.bounceDirection}`] = true;
           }
           return html`
-            <div class=${classMap(classes)} data-floor-id=${floor.id}>
-              <fn-floor .viewbox=${this.viewbox} .background=${floor.background}></fn-floor>
+            <div class=${classMap(classes)} data-floor-id=${floor.id} id="fn-floor-${floor.id}">
+              <fn-floor
+                .viewbox=${this.viewbox}
+                .floor=${floor}
+                .overlays=${this.overlays}
+                .hass=${this.hass}
+              ></fn-floor>
             </div>
           `;
         })}

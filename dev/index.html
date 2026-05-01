@@ -72,7 +72,8 @@
         color: var(--secondary-text-color);
       }
       .controls select,
-      .controls input[type='checkbox'] {
+      .controls input[type='checkbox'],
+      .controls button {
         background: #2a2a2a;
         color: var(--primary-text-color);
         border: 1px solid #444;
@@ -84,6 +85,12 @@
         flex-direction: row;
         align-items: center;
         gap: 8px;
+      }
+      .controls button {
+        cursor: pointer;
+      }
+      .controls button:hover {
+        background: #3a3a3a;
       }
       .legend {
         margin-top: 16px;
@@ -106,7 +113,7 @@
     <div class="container">
       <header>
         <h1>Floor Navigator — Dev Sandbox</h1>
-        <p>Étape 4 : indicator + transitions slide / slide-scale + CSS variables.</p>
+        <p>Étape 5 : overlays statiques (icônes) + couleurs dérivées de l'état des entités.</p>
       </header>
 
       <div class="controls">
@@ -139,25 +146,32 @@
           <input type="checkbox" id="indicator-toggle" checked />
           show_floor_indicator
         </label>
+        <label>
+          Toggle entité
+          <button id="toggle-salon" type="button">light.salon</button>
+        </label>
       </div>
 
       <floor-navigator-card id="card"></floor-navigator-card>
 
       <div class="legend">
-        <kbd>Scroll</kbd> vers le bas → floor suivant (L0 → L1 → L2)<br />
-        <kbd>Scroll</kbd> vers le haut → floor précédent<br />
-        Sur mobile, swipe vertical (50px min, vélocité &gt; 0.3 px/ms).<br />
-        Modifie les contrôles ci-dessus pour reconfigurer la card en live (setConfig est rappelé).
+        <kbd>Scroll</kbd> vertical → bascule entre L0/L1/L2.<br />
+        Sur L0 : 4 icônes lights (salon ON, cuisine ON, entrée OFF, terrasse OFF).<br />
+        Sur L1 : 1 icône light (chambre_alice unavailable).<br />
+        Le bouton "Toggle light.salon" bascule l'état dans le mock hass — les icônes se recolorent en live (réactivité par-element).
       </div>
     </div>
 
     <script type="module" src="../dist/floor-navigator.js"></script>
     <script type="module">
+      import { mockHass } from './mock-hass.js';
+
       const card = document.getElementById('card');
       const transitionSelect = document.getElementById('transition-select');
       const edgeSelect = document.getElementById('edge-select');
       const durationSelect = document.getElementById('duration-select');
       const indicatorToggle = document.getElementById('indicator-toggle');
+      const toggleSalonBtn = document.getElementById('toggle-salon');
 
       function applyConfig() {
         card.setConfig({
@@ -176,12 +190,44 @@
             { id: 'L1', name: 'Étage 1', background: 'test-floors/L1.svg' },
             { id: 'L2', name: 'Bureau et combles', background: 'test-floors/L2.svg' },
           ],
+          overlays: [
+            {
+              id: 'lights',
+              name: 'Éclairage',
+              icon: 'mdi:lightbulb',
+              default_visible: true,
+              elements: [
+                { floor: 'L0', entity: 'light.salon', position: { x: 600, y: 450 }, type: 'icon' },
+                { floor: 'L0', entity: 'light.cuisine', position: { x: 1200, y: 380 }, type: 'icon' },
+                { floor: 'L0', entity: 'light.entree', position: { x: 300, y: 500 }, type: 'icon' },
+                { floor: 'L0', entity: 'light.terrasse', position: { x: 1700, y: 700 }, type: 'icon' },
+                { floor: 'L1', entity: 'light.chambre_alice', position: { x: 800, y: 300 }, type: 'icon' },
+              ],
+            },
+          ],
         });
+        card.hass = mockHass;
       }
 
       [transitionSelect, edgeSelect, durationSelect, indicatorToggle].forEach((el) => {
         el.addEventListener('change', applyConfig);
       });
+
+      // Toggle the salon light state — verifies per-element reactive updates.
+      toggleSalonBtn.addEventListener('click', () => {
+        const old = mockHass.states['light.salon'];
+        const next = old.state === 'on' ? 'off' : 'on';
+        // HA reuses state objects when nothing changed, so we MUST allocate
+        // a new object for the changed entity. shouldUpdate uses identity.
+        mockHass.states = {
+          ...mockHass.states,
+          'light.salon': { ...old, state: next, last_changed: new Date().toISOString() },
+        };
+        // Re-set hass on the card to trigger a property update.
+        card.hass = { ...mockHass };
+        toggleSalonBtn.textContent = `light.salon (${next})`;
+      });
+      toggleSalonBtn.textContent = `light.salon (${mockHass.states['light.salon'].state})`;
 
       applyConfig();
     </script>
