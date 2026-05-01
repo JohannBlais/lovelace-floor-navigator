@@ -45,10 +45,10 @@ export class FnElementIcon extends LitElement {
     const icon = this.element.icon ?? resolveIcon(this.element.entity);
     const color = resolveColorVar(this.element.entity, state);
     // Inside foreignObject CSS lengths are interpreted in user (viewBox)
-    // units, so a 48-unit element gets a 26.4-unit glyph. Proportional to
+    // units, so a 48-unit element gets a ~31-unit glyph. Proportional to
     // the user-configured `size`.
     const size = this.element.size ?? 48;
-    const iconSizePx = size * 0.55;
+    const iconSizePx = size * 0.65;
 
     return html`
       <div
