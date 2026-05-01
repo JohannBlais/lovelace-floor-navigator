@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing } from 'lit';
+import { LitElement, css, html } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 
 /**
@@ -8,6 +8,14 @@ import { customElement, property } from 'lit/decorators.js';
  * The SVG uses `preserveAspectRatio="xMidYMid meet"` so the floor keeps its
  * aspect ratio (derived from the viewBox) and is centered if the host element
  * is sized differently.
+ *
+ * GOTCHA — DO NOT split the SVG body into nested html`` templates. lit-html
+ * parses each template as HTML in isolation; nested templates inside <svg>
+ * are parsed without an SVG ancestor and the HTML parser auto-corrects
+ * <image> into <img> (which has no `href` attribute → image never loads).
+ * Keep the whole <svg>...</svg> in a single html`` template, or use the
+ * `svg` tagged template if you genuinely need to split. setConfig guarantees
+ * `background` is non-empty so we can render <image> unconditionally.
  */
 @customElement('fn-floor')
 export class FnFloor extends LitElement {
@@ -37,16 +45,14 @@ export class FnFloor extends LitElement {
         preserveAspectRatio="xMidYMid meet"
         xmlns="http://www.w3.org/2000/svg"
       >
-        ${this.background
-          ? html`<image
-              href=${this.background}
-              x="0"
-              y="0"
-              width=${rect.width}
-              height=${rect.height}
-              preserveAspectRatio="xMidYMid meet"
-            />`
-          : nothing}
+        <image
+          href=${this.background}
+          x="0"
+          y="0"
+          width=${rect.width}
+          height=${rect.height}
+          preserveAspectRatio="xMidYMid meet"
+        />
       </svg>
     `;
   }
