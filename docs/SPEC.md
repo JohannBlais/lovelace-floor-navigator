@@ -4,8 +4,8 @@
 
 **Auteur** : Johann Blais
 **Date de spec** : 2026-05-01
-**Révision spec** : 1.1 (workflow dev aligné sur conventions HACS standards)
-**Statut** : Spec figée pour v0.1.0, prête pour scaffolding
+**Révision spec** : 1.2 (corrections post-bootstrap : tag custom element, chargement dotenv)
+**Statut** : Spec figée pour v0.1.0, étapes 0 et 1 livrées, prête pour étape 2
 
 ---
 
@@ -20,6 +20,16 @@
 7. [Roadmap](#7-roadmap)
 8. [Premières étapes pour Claude Code](#8-premières-étapes-pour-claude-code)
 9. [Annexes](#9-annexes)
+
+---
+
+## Changelog de la spec
+
+- **v1.2 (2026-05-01)** : corrections post-bootstrap :
+  - Le tag YAML est `custom:floor-navigator-card` (pas `custom:floor-navigator`). HA résout `custom:<X>` en cherchant un custom element nommé exactement `<X>`. Notre tag étant `floor-navigator-card`, le type YAML doit matcher. Tous les exemples ont été mis à jour. Convention HACS standard (`mushroom-light-card`, `mini-graph-card`, etc.).
+  - La config Rollup utilise désormais `dotenv.config({ path: '.env.local' })` explicite. Le raccourci `import 'dotenv/config'` charge `.env` par défaut, pas `.env.local`. La convention `.env.local` est un pattern Vite/Next.js, pas dotenv vanilla.
+- **v1.1 (2026-05-01)** : workflow dev aligné sur conventions HACS standards (`HA_LOCAL_DIR` via dotenv, Samba share, watch direct dans HA).
+- **v1.0 (2026-05-01)** : spec initiale figée après design session.
 
 ---
 
@@ -57,11 +67,13 @@ Voir section 7 pour la liste exhaustive. En une phrase : **navigation verticale 
 |---------|--------|
 | Nom du repo GitHub | `lovelace-floor-navigator` |
 | Owner GitHub | `JohannBlais` |
-| Nom de la card en YAML | `custom:floor-navigator` |
-| Custom element tag | `<floor-navigator-card>` |
+| **Custom element tag** | **`floor-navigator-card`** |
+| **Nom de la card en YAML** | **`custom:floor-navigator-card`** |
 | Nom de la classe TS | `FloorNavigatorCard` |
 | Nom du package npm | `lovelace-floor-navigator` |
 | Nom marketing HACS | "Floor Navigator" |
+
+**Important** : le custom element tag (`floor-navigator-card`) et le type YAML (`custom:floor-navigator-card`) doivent matcher exactement. HA résout `type: custom:<X>` en cherchant un custom element défini avec `customElements.define('<X>', ...)`. La convention HACS standard est de suffixer en `-card` (cf. `mushroom-light-card`, `mini-graph-card`, `button-card`, `bubble-card`).
 
 ### Licence
 
@@ -100,7 +112,7 @@ Card
 ### 3.2 Schéma YAML complet
 
 ```yaml
-type: custom:floor-navigator
+type: custom:floor-navigator-card
 
 # Système de coordonnées global (standard SVG)
 viewbox: "0 0 1920 1080"
@@ -230,7 +242,7 @@ overlays:
 
 | Champ | Type | Obligatoire | Défaut | Description |
 |-------|------|-------------|--------|-------------|
-| `type` | string | ✅ | — | Toujours `"custom:floor-navigator"` |
+| `type` | string | ✅ | — | Toujours `"custom:floor-navigator-card"` |
 | `viewbox` | string | ✅ | — | Format SVG viewBox standard, ex: `"0 0 1920 1080"` |
 | `settings` | object | ❌ | voir 3.3.2 | Configuration globale |
 | `floors` | array | ✅ | — | Liste ordonnée des floors (min 1) |
@@ -478,7 +490,7 @@ Exemple :
     "@rollup/plugin-typescript": "^11.1.0",
     "@rollup/plugin-node-resolve": "^15.2.0",
     "@rollup/plugin-commonjs": "^25.0.0",
-    "@rollup/plugin-terser": "^1.0.0",
+    "@rollup/plugin-terser": "^0.4.0",
     "rollup": "^4.0.0",
     "tslib": "^2.6.0",
     "dotenv": "^16.0.0"
@@ -517,7 +529,9 @@ Exemple :
 `rollup.config.js` (single bundle, output configurable selon mode dev/prod) :
 
 ```javascript
-import 'dotenv/config';
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
+
 import typescript from '@rollup/plugin-typescript';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
@@ -546,6 +560,8 @@ export default {
   ].filter(Boolean),
 };
 ```
+
+**Important — chargement de `.env.local`** : on utilise explicitement `dotenv.config({ path: '.env.local' })` plutôt que le raccourci `import 'dotenv/config'`. Ce raccourci charge `.env` par défaut (comportement standard de la lib dotenv) et **ne charge PAS** `.env.local`. La convention `.env.local` qui override `.env` est spécifique à Vite/Next.js, pas à dotenv vanilla. Pour un projet Rollup pur, il faut être explicite.
 
 ### 5.4 Structure du repo
 
@@ -719,7 +735,7 @@ Le query string `?v=DEV` dans la déclaration de ressource ne change pas, donc H
 ### v0.1.0 — Scope figé (cf. spec ci-dessus)
 
 **Fonctionnalités cœur** :
-- ✅ Card Lovelace `custom:floor-navigator`
+- ✅ Card Lovelace `custom:floor-navigator-card`
 - ✅ Multi-niveaux (1 à N floors)
 - ✅ Background PNG/JPG/SVG par floor
 - ✅ Système de coordonnées viewBox SVG
@@ -781,13 +797,13 @@ Le query string `?v=DEV` dans la déclaration de ressource ne change pas, donc H
 
 Voici les étapes ordonnées à passer à Claude Code, dans l'ordre. Chaque étape produit un livrable testable avant de passer à la suivante.
 
-### Étape 0 — Bootstrap du projet
+### Étape 0 — Bootstrap du projet ✅ LIVRÉE (2026-05-01)
 
 > "Crée la structure de repo `lovelace-floor-navigator` selon la section 5.4 de SPEC.md. Init avec `package.json`, `tsconfig.json`, `rollup.config.js` (avec lecture de `HA_LOCAL_DIR` via dotenv comme spécifié en 5.3), `.gitignore` (incluant `node_modules/`, `dist/`, `.env.local`), `.env.local.example` avec un commentaire d'exemple, `LICENSE` (MIT), `hacs.json`, `README.md` minimal. Génère un `dev/index.html` vide pour l'instant. Ne code aucun composant Lit encore."
 
 **Livrable** : un repo qui peut faire `npm install`, `npm run build` (qui produira un bundle vide mais valide), et `npm run watch` (qui watche pour rien).
 
-### Étape 1 — Composant racine + types
+### Étape 1 — Composant racine + types ✅ LIVRÉE (2026-05-01)
 
 > "Implémente `src/types/config.ts` avec toutes les interfaces TypeScript dérivées de la section 3 de SPEC.md (CardConfig, Floor, Overlay, Element, etc.). Implémente `src/floor-navigator-card.ts` comme un LitElement minimal qui :
 > - Enregistre le custom element `floor-navigator-card`
@@ -879,6 +895,8 @@ Voici les étapes ordonnées à passer à Claude Code, dans l'ordre. Chaque éta
 
 > "
 > - Configure GitHub Actions (`build.yml` et `release.yml`)
+> - Ajoute `customCards.push(...)` pour que la card apparaisse dans le sélecteur visuel HA "Add card" avec sa description
+> - Ajoute un `console.info` au chargement pour signaler la version (pattern HACS standard)
 > - Ajoute des screenshots dans `docs/screenshots/`
 > - Étoffe le `README.md` avec section installation (manuelle + via custom repo HACS), config minimale, exemple complet
 > - Ajoute 3 exemples dans `docs/examples/`
@@ -947,8 +965,16 @@ Hors-spec mais utile pour le bootstrap :
 - Le poste de dev principal est "Fatboy" (Bureau L2). Le mapping `Z:` sera défini là-dessus.
 - Le repo HA principal `JohannBlais/homeassistant-config` est privé et utilise un Git Pull add-on. Le repo `lovelace-floor-navigator` sera distinct, public ou privé au choix selon la stratégie de publication choisie (publish polished → privé d'abord puis ouvert à v0.3.0).
 
+### 9.7 Pièges rencontrés au bootstrap (mémoire institutionnelle)
+
+Pour les utilisateurs futurs qui forkeraient ou contribueraient, les 2 pièges majeurs rencontrés lors du bootstrap initial :
+
+1. **`import 'dotenv/config'` ne charge pas `.env.local`**. Le raccourci charge `.env` par défaut. La convention `.env.local` est spécifique à Vite/Next.js. Solution : `dotenv.config({ path: '.env.local' })` explicite. Cf. section 5.3.
+
+2. **`type: custom:floor-navigator` produit l'erreur "Custom element doesn't exist"**. HA résout `custom:<X>` en cherchant un custom element nommé `<X>`. Notre tag étant `floor-navigator-card`, le YAML doit être `type: custom:floor-navigator-card`. La convention HACS standard est de suffixer en `-card`. Cf. section 2.
+
 ---
 
-**Fin de la spec v0.1.0.**
+**Fin de la spec v0.1.0 (révision 1.2).**
 
-Toute modification de ce document après bootstrap doit être traitée comme un changement d'API : justifiée, datée, et documentée dans le changelog du repo.
+Toute modification de ce document après bootstrap doit être traitée comme un changement d'API : justifiée, datée, et documentée dans le changelog en haut de ce document.
