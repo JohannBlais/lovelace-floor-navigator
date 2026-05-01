@@ -34,5 +34,13 @@ export const cardVariables = css`
     --fn-floor-indicator-color: white;
     --fn-overlay-button-bg: rgba(0, 0, 0, 0.5);
     --fn-overlay-button-active-bg: rgba(255, 193, 7, 0.8);
+
+    /* ─── Icon element pastille ─── */
+    /* Color of the glyph centered in the colored disc (default white for
+       max contrast against any state color). */
+    --fn-color-icon-foreground: #fff;
+    /* Translucent ring around each pastille — the visual "halo" that lifts
+       the icon off busy photographic backgrounds. */
+    --fn-pastille-halo: rgba(255, 255, 255, 0.85);
   }
 `;

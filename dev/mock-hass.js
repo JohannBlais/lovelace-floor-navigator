@@ -58,30 +58,19 @@ if (!customElements.get('ha-icon')) {
       this._update();
     }
     _update() {
-      const icon = this.getAttribute('icon') || '';
-      const label = icon.replace(/^mdi:/, '');
-      this.textContent = label;
+      const icon = (this.getAttribute('icon') || '').replace(/^mdi:/, '');
+      // Just the first 4 letters of the icon name as a glyph proxy. The
+      // pastille (parent of ha-icon in fn-element-icon) provides the colored
+      // disc; this stub only stands in for the actual MDI glyph.
+      this.textContent = icon.slice(0, 4);
       Object.assign(this.style, {
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: '100%',
-        height: '100%',
+        display: 'block',
         fontSize: '10px',
         fontFamily: 'monospace',
-        background: 'currentColor',
-        color: 'inherit',
-        borderRadius: '4px',
-        padding: '2px',
-        boxSizing: 'border-box',
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
+        textAlign: 'center',
+        lineHeight: '1',
+        color: 'inherit', // inherits --fn-color-icon-foreground = white
       });
-      // Fade the text against the colored chip background by mixing in white.
-      // We use mix-blend-mode rather than inverting color so we don't fight
-      // the user's --fn-color-… custom properties.
-      this.style.mixBlendMode = 'difference';
     }
   }
   customElements.define('ha-icon', HaIconStub);

@@ -62,6 +62,7 @@ function renderIconElement(
       width=${size}
       height=${size}
       data-entity=${element.entity}
+      overflow="visible"
     >
       <fn-element-icon
         .element=${element}
