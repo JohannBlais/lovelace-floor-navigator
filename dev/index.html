@@ -156,9 +156,11 @@
 
       <div class="legend">
         <kbd>Scroll</kbd> vertical → bascule entre L0/L1/L2.<br />
-        Sur L0 : 4 icônes lights (salon ON, cuisine ON, entrée OFF, terrasse OFF).<br />
-        Sur L1 : 1 icône light (chambre_alice unavailable).<br />
-        Le bouton "Toggle light.salon" bascule l'état dans le mock hass — les icônes se recolorent en live (réactivité par-element).
+        Sur L0 : <strong>salon</strong> (tap = toggle), <strong>cuisine</strong> (tap = more-info, défaut),
+        <strong>entrée</strong> (tap = call-service light.turn_on),
+        <strong>terrasse</strong> (tap_action: none → pas cliquable).<br />
+        Sur L1 : <strong>chambre_alice</strong> (unavailable, tap = more-info).<br />
+        Cliquer sur salon doit le toggler en live (mock-hass mute son état + notifie le card).
       </div>
     </div>
 
@@ -197,11 +199,47 @@
               icon: 'mdi:lightbulb',
               default_visible: true,
               elements: [
-                { floor: 'L0', entity: 'light.salon', position: { x: 600, y: 450 }, type: 'icon' },
-                { floor: 'L0', entity: 'light.cuisine', position: { x: 1200, y: 380 }, type: 'icon' },
-                { floor: 'L0', entity: 'light.entree', position: { x: 300, y: 500 }, type: 'icon' },
-                { floor: 'L0', entity: 'light.terrasse', position: { x: 1700, y: 700 }, type: 'icon' },
-                { floor: 'L1', entity: 'light.chambre_alice', position: { x: 800, y: 300 }, type: 'icon' },
+                // tap = toggle (forme courte, SPEC §3.3.8)
+                {
+                  floor: 'L0',
+                  entity: 'light.salon',
+                  position: { x: 600, y: 450 },
+                  type: 'icon',
+                  tap_action: 'toggle',
+                },
+                // pas de tap_action → handleAction default = more-info
+                {
+                  floor: 'L0',
+                  entity: 'light.cuisine',
+                  position: { x: 1200, y: 380 },
+                  type: 'icon',
+                },
+                // tap = call-service (forme longue, allume sans condition)
+                {
+                  floor: 'L0',
+                  entity: 'light.entree',
+                  position: { x: 300, y: 500 },
+                  type: 'icon',
+                  tap_action: {
+                    action: 'call-service',
+                    service: 'light.turn_on',
+                    service_data: { entity_id: 'light.entree' },
+                  },
+                },
+                // tap = none → pas de cursor pointer, click ignoré
+                {
+                  floor: 'L0',
+                  entity: 'light.terrasse',
+                  position: { x: 1700, y: 700 },
+                  type: 'icon',
+                  tap_action: 'none',
+                },
+                {
+                  floor: 'L1',
+                  entity: 'light.chambre_alice',
+                  position: { x: 800, y: 300 },
+                  type: 'icon',
+                },
               ],
             },
           ],
@@ -213,21 +251,31 @@
         el.addEventListener('change', applyConfig);
       });
 
-      // Toggle the salon light state — verifies per-element reactive updates.
-      toggleSalonBtn.addEventListener('click', () => {
-        const old = mockHass.states['light.salon'];
-        const next = old.state === 'on' ? 'off' : 'on';
-        // HA reuses state objects when nothing changed, so we MUST allocate
-        // a new object for the changed entity. shouldUpdate uses identity.
-        mockHass.states = {
-          ...mockHass.states,
-          'light.salon': { ...old, state: next, last_changed: new Date().toISOString() },
-        };
-        // Re-set hass on the card to trigger a property update.
+      // Push a fresh hass reference to the card after every state mutation.
+      // mockHass.callService allocates new state objects internally, so the
+      // identity check in fn-element-icon.shouldUpdate fires and only the
+      // affected element re-renders.
+      function pushHass() {
         card.hass = { ...mockHass };
-        toggleSalonBtn.textContent = `light.salon (${next})`;
+      }
+      mockHass.subscribe(pushHass);
+
+      // Backup button — does the same thing as clicking the salon icon.
+      // Useful to verify state mutation independently of click handling.
+      function updateToggleBtnLabel() {
+        const s = mockHass.states['light.salon'].state;
+        toggleSalonBtn.textContent = `light.salon (${s})`;
+      }
+      toggleSalonBtn.addEventListener('click', () => {
+        const cur = mockHass.states['light.salon'].state;
+        mockHass.callService(
+          'light',
+          cur === 'on' ? 'turn_off' : 'turn_on',
+          { entity_id: 'light.salon' },
+        );
       });
-      toggleSalonBtn.textContent = `light.salon (${mockHass.states['light.salon'].state})`;
+      mockHass.subscribe(updateToggleBtnLabel);
+      updateToggleBtnLabel();
 
       applyConfig();
     </script>

@@ -1,9 +1,11 @@
 import { LitElement, css, html, type PropertyValues } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
+import { classMap } from 'lit/directives/class-map.js';
+import { handleAction, hasAction, type ActionConfig } from 'custom-card-helpers';
 
 import { resolveColorVar } from '../utils/color-resolver.js';
 import { resolveIcon } from '../utils/icon-resolver.js';
-import type { IconElement } from '../types/config.js';
+import type { IconElement, TapAction } from '../types/config.js';
 import type { HomeAssistant } from '../types/ha.js';
 
 /**
@@ -11,20 +13,32 @@ import type { HomeAssistant } from '../types/ha.js';
  * by `fn-overlay-layer`, so HTML rendering is reliable while position lives
  * in viewBox coordinates.
  *
- * Visual = a circular "pastille" filled with the state color (light-on amber,
- * binary_sensor-on blue, etc.), surrounded by a translucent white halo, and
- * a centered white glyph. The halo + filled disc is the standard pattern
- * for visibility on photographic floor-plan backgrounds (Mushroom / iOS).
+ * Visual = circular pastille (state color) + white halo + centered glyph.
  *
  * Reactive granularity (SPEC §4.4 approche B) : `shouldUpdate` short-circuits
- * re-renders to entities whose state actually changed. HA can push a fresh
- * `hass` object every state tick — only the elements whose tracked entity
- * moved will re-render.
+ * re-renders to entities whose state actually changed.
+ *
+ * Tap actions (SPEC §3.3.8) : delegated to `handleAction` from
+ * custom-card-helpers, which covers toggle / more-info / navigate /
+ * call-service / url / none. The lib defaults to "more-info" when no
+ * tap_action is configured. We normalize the YAML short form
+ * (`tap_action: toggle`) into the object form (`{ action: 'toggle' }`) the
+ * lib expects.
  */
 @customElement('fn-element-icon')
 export class FnElementIcon extends LitElement {
   @property({ attribute: false }) hass?: HomeAssistant;
   @property({ attribute: false }) element!: IconElement;
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this.addEventListener('click', this._onClick);
+  }
+
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this.removeEventListener('click', this._onClick);
+  }
 
   protected override shouldUpdate(changed: PropertyValues<this>): boolean {
     if (changed.has('element')) return true;
@@ -33,11 +47,46 @@ export class FnElementIcon extends LitElement {
       const oldStateObj = oldHass?.states?.[this.element.entity];
       const newStateObj = this.hass?.states?.[this.element.entity];
       // Same reference = nothing changed for this entity. HA reuses state
-      // objects when a state hasn't changed, so identity check is reliable.
+      // objects when nothing changed, so identity check is reliable.
       return oldStateObj !== newStateObj;
     }
     return false;
   }
+
+  /**
+   * Coerces the SPEC §3.3.8 short form (`tap_action: 'toggle'`) into the
+   * object form (`{ action: 'toggle' }`) expected by `handleAction`.
+   * Returns `undefined` when no tap_action was set — `handleAction` will
+   * fall back to its built-in `{ action: 'more-info' }` default in that case.
+   */
+  private _normalizedTapAction(): ActionConfig | undefined {
+    const ta: TapAction | undefined = this.element.tap_action;
+    if (ta === undefined) return undefined;
+    if (typeof ta === 'string') return { action: ta } as ActionConfig;
+    return ta as unknown as ActionConfig;
+  }
+
+  /** True when the element should respond to taps (i.e. action ≠ 'none'). */
+  private _isInteractive(): boolean {
+    // Default (no tap_action) is more-info → interactive.
+    if (this.element.tap_action === undefined) return true;
+    return hasAction(this._normalizedTapAction());
+  }
+
+  private _onClick = (e: Event): void => {
+    if (!this.hass) return;
+    if (!this._isInteractive()) return;
+    // Stop propagation defensively. fn-navigation-controller doesn't listen
+    // for click today, but a hold/dbl-click implementation tomorrow might
+    // — keep tap events scoped to the element they hit.
+    e.stopPropagation();
+    handleAction(
+      this,
+      this.hass,
+      { entity: this.element.entity, tap_action: this._normalizedTapAction() },
+      'tap',
+    );
+  };
 
   protected override render() {
     const stateObj = this.hass?.states?.[this.element.entity];
@@ -49,10 +98,11 @@ export class FnElementIcon extends LitElement {
     // the user-configured `size`.
     const size = this.element.size ?? 48;
     const iconSizePx = size * 0.65;
+    const interactive = this._isInteractive();
 
     return html`
       <div
-        class="pastille"
+        class=${classMap({ pastille: true, interactive })}
         data-entity=${this.element.entity}
         data-state=${state ?? 'unavailable'}
         style="background: ${color};"
@@ -89,6 +139,14 @@ export class FnElementIcon extends LitElement {
       transition:
         background 200ms ease,
         transform 100ms ease;
+    }
+    .pastille.interactive {
+      cursor: pointer;
+    }
+    /* Tactile-feel feedback when pressed. Independent of the floor-level
+       bounce animation since it targets a deeper element. */
+    .pastille.interactive:active {
+      transform: scale(0.92);
     }
     /* Bulletproof centering : we don't rely on flexbox / text baseline
        alignment because <ha-icon>'s default :host display can carry a
