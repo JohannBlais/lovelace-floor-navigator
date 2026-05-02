@@ -67,22 +67,22 @@ export class FnElementIcon extends LitElement {
 
   static override styles = css`
     :host {
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: block;
+      position: relative;
       width: 100%;
       height: 100%;
       pointer-events: auto;
       /* Halo + drop-shadow extend outside the pastille; allow them through. */
       overflow: visible;
+      /* Reset text-flow inherited from the surrounding <foreignObject> body
+         so it can't push the absolutely-positioned glyph by a baseline. */
+      line-height: 0;
+      font-size: 0;
     }
     .pastille {
-      width: 100%;
-      height: 100%;
+      position: absolute;
+      inset: 0;
       border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       box-shadow:
         0 0 0 2px var(--fn-pastille-halo, rgba(255, 255, 255, 0.85)),
         0 2px 6px rgba(0, 0, 0, 0.45);
@@ -90,10 +90,23 @@ export class FnElementIcon extends LitElement {
         background 200ms ease,
         transform 100ms ease;
     }
+    /* Bulletproof centering : we don't rely on flexbox / text baseline
+       alignment because <ha-icon>'s default :host display can carry a
+       sub-pixel vertical-align offset. Absolute + translate(-50%, -50%)
+       depends only on the element's own width / height, which we pin
+       explicitly to --mdc-icon-size. */
     ha-icon {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: var(--mdc-icon-size, 24px);
+      height: var(--mdc-icon-size, 24px);
+      transform: translate(-50%, -50%);
       color: var(--fn-color-icon-foreground, #fff);
-      filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.3));
       display: block;
+      margin: 0;
+      padding: 0;
+      line-height: 0;
     }
   `;
 }
