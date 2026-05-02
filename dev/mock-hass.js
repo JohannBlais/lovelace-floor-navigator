@@ -36,8 +36,21 @@ function initialStates() {
     'light.cuisine': makeState('light.cuisine', 'on'),
     'light.entree': makeState('light.entree', 'off'),
     'light.terrasse': makeState('light.terrasse', 'off'),
+    'sensor.salon_temperature': makeState('sensor.salon_temperature', '21.4', {
+      unit_of_measurement: '°C',
+      device_class: 'temperature',
+    }),
+    'sensor.cuisine_temperature': makeState('sensor.cuisine_temperature', '20.86', {
+      unit_of_measurement: '°C',
+      device_class: 'temperature',
+    }),
     // L1 — Étage 1
     'light.chambre_alice': makeState('light.chambre_alice', 'unavailable'),
+    'sensor.chambre_alice_temperature': makeState(
+      'sensor.chambre_alice_temperature',
+      '19.7',
+      { unit_of_measurement: '°C', device_class: 'temperature' },
+    ),
   };
 }
 

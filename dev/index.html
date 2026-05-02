@@ -147,6 +147,14 @@
           show_floor_indicator
         </label>
         <label>
+          overlay_buttons_position
+          <select id="buttons-position-select">
+            <option value="bottom" selected>bottom (défaut)</option>
+            <option value="top">top</option>
+            <option value="none">none</option>
+          </select>
+        </label>
+        <label>
           Toggle entité
           <button id="toggle-salon" type="button">light.salon</button>
         </label>
@@ -156,11 +164,12 @@
 
       <div class="legend">
         <kbd>Scroll</kbd> vertical → bascule entre L0/L1/L2.<br />
-        Sur L0 : <strong>salon</strong> (tap = toggle), <strong>cuisine</strong> (tap = more-info, défaut),
-        <strong>entrée</strong> (tap = call-service light.turn_on),
-        <strong>terrasse</strong> (tap_action: none → pas cliquable).<br />
-        Sur L1 : <strong>chambre_alice</strong> (unavailable, tap = more-info).<br />
-        Cliquer sur salon doit le toggler en live (mock-hass mute son état + notifie le card).
+        Boutons d'overlay (en bas par défaut) : "Éclairage" (visible) et "Températures"
+        (caché). Click pour toggle l'un et l'autre.<br />
+        Lights : <strong>salon</strong> (toggle), <strong>cuisine</strong> (more-info),
+        <strong>entrée</strong> (call-service), <strong>terrasse</strong> (none).<br />
+        Températures : valeurs `°C` rendues en SVG &lt;text&gt; avec outline noir
+        — visibles sur n'importe quel fond.
       </div>
     </div>
 
@@ -173,6 +182,7 @@
       const edgeSelect = document.getElementById('edge-select');
       const durationSelect = document.getElementById('duration-select');
       const indicatorToggle = document.getElementById('indicator-toggle');
+      const buttonsPositionSelect = document.getElementById('buttons-position-select');
       const toggleSalonBtn = document.getElementById('toggle-salon');
 
       function applyConfig() {
@@ -186,6 +196,7 @@
             navigation_mode: 'both',
             start_floor: 'L0',
             show_floor_indicator: indicatorToggle.checked,
+            overlay_buttons_position: buttonsPositionSelect.value,
           },
           floors: [
             { id: 'L0', name: 'Rez-de-chaussée', background: 'test-floors/L0.svg' },
@@ -242,12 +253,53 @@
                 },
               ],
             },
+            {
+              id: 'temperature',
+              name: 'Températures',
+              icon: 'mdi:thermometer',
+              default_visible: false,
+              elements: [
+                {
+                  floor: 'L0',
+                  entity: 'sensor.salon_temperature',
+                  position: { x: 700, y: 540 },
+                  type: 'text',
+                  unit: '°C',
+                  precision: 1,
+                  font_size: 36,
+                },
+                {
+                  floor: 'L0',
+                  entity: 'sensor.cuisine_temperature',
+                  position: { x: 1300, y: 470 },
+                  type: 'text',
+                  // pas de unit explicite → fallback sur attribute.unit_of_measurement
+                  precision: 1,
+                  font_size: 36,
+                },
+                {
+                  floor: 'L1',
+                  entity: 'sensor.chambre_alice_temperature',
+                  position: { x: 900, y: 380 },
+                  type: 'text',
+                  unit: '°C',
+                  precision: 1,
+                  font_size: 36,
+                },
+              ],
+            },
           ],
         });
         card.hass = mockHass;
       }
 
-      [transitionSelect, edgeSelect, durationSelect, indicatorToggle].forEach((el) => {
+      [
+        transitionSelect,
+        edgeSelect,
+        durationSelect,
+        indicatorToggle,
+        buttonsPositionSelect,
+      ].forEach((el) => {
         el.addEventListener('change', applyConfig);
       });
 

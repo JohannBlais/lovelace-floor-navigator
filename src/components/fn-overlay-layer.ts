@@ -1,6 +1,7 @@
 import { svg, type SVGTemplateResult } from 'lit';
 
 import './fn-element-icon.js';
+import { renderTextElement } from './fn-element-text.js';
 import type { Overlay, OverlayElement, IconElement } from '../types/config.js';
 import type { HomeAssistant } from '../types/ha.js';
 
@@ -42,7 +43,9 @@ function renderElement(
   if (element.type === 'icon') {
     return renderIconElement(element, hass);
   }
-  // text element : step 7
+  if (element.type === 'text') {
+    return renderTextElement(element, hass);
+  }
   return null;
 }
 

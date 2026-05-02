@@ -90,6 +90,22 @@ export class FnFloor extends LitElement {
       font-family: monospace;
       font-size: 12px;
     }
+    /* Text overlay elements (SPEC §3.3.7 + §3.4.1).
+       Stroke painted first then fill on top, giving the value a high-contrast
+       outline against any background. stroke-width is set per-element in
+       renderTextElement so it scales with font-size. */
+    svg .fn-element-text {
+      fill: var(--fn-color-text, #fff);
+      stroke: rgba(0, 0, 0, 0.7);
+      paint-order: stroke fill;
+      stroke-linejoin: round;
+      font-family: var(--paper-font-body1_-_font-family, sans-serif);
+      font-weight: 600;
+      text-anchor: middle;
+      dominant-baseline: central;
+      pointer-events: none;
+      user-select: none;
+    }
   `;
 }
 

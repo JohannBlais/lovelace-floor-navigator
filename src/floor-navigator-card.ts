@@ -58,14 +58,23 @@ export class FloorNavigatorCard extends LitElement {
     return 8;
   }
 
+  private _onOverlayToggle = (e: CustomEvent<{ id: string }>): void => {
+    const id = e.detail?.id;
+    if (!id) return;
+    // Allocate a new Set so Lit detects the @state change.
+    const next = new Set(this._visibleOverlayIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    this._visibleOverlayIds = next;
+  };
+
   protected override render() {
     if (!this._config) {
       return html`<div class="placeholder">Floor Navigator: no config loaded.</div>`;
     }
     const settings = this._config.settings ?? {};
-    const overlays = (this._config.overlays ?? []).filter((o) =>
-      this._visibleOverlayIds.has(o.id),
-    );
+    const allOverlays = this._config.overlays ?? [];
+    const visibleOverlays = allOverlays.filter((o) => this._visibleOverlayIds.has(o.id));
     return html`
       <ha-card>
         <fn-navigation-controller
@@ -77,8 +86,12 @@ export class FloorNavigatorCard extends LitElement {
           .navigationMode=${settings.navigation_mode ?? 'both'}
           .startFloor=${settings.start_floor}
           .showFloorIndicator=${settings.show_floor_indicator ?? true}
-          .overlays=${overlays}
+          .overlayButtonsPosition=${settings.overlay_buttons_position ?? 'bottom'}
+          .overlays=${visibleOverlays}
+          .allOverlays=${allOverlays}
+          .visibleOverlayIds=${this._visibleOverlayIds}
           .hass=${this.hass}
+          @overlay-toggle=${this._onOverlayToggle}
         ></fn-navigation-controller>
       </ha-card>
     `;

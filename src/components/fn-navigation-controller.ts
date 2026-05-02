@@ -3,12 +3,14 @@ import { customElement, property, state } from 'lit/decorators.js';
 
 import './fn-floor-indicator.js';
 import './fn-floor-stack.js';
+import './fn-overlay-buttons.js';
 import type { BounceDirection } from './fn-floor-stack.js';
 import type {
   EdgeBehavior,
   Floor,
   NavigationMode,
   Overlay,
+  OverlayButtonsPosition,
   TransitionMode,
 } from '../types/config.js';
 import type { HomeAssistant } from '../types/ha.js';
@@ -41,7 +43,14 @@ export class FnNavigationController extends LitElement {
   @property({ type: String, attribute: false }) navigationMode: NavigationMode = 'both';
   @property({ type: String, attribute: false }) startFloor?: string;
   @property({ type: Boolean, attribute: false }) showFloorIndicator = true;
+  /** Visible overlays only — passed down to `<fn-floor-stack>` for rendering. */
   @property({ attribute: false }) overlays: Overlay[] = [];
+  /** All declared overlays (incl. hidden) — passed to `<fn-overlay-buttons>`. */
+  @property({ attribute: false }) allOverlays: Overlay[] = [];
+  /** Set of overlay ids currently visible — for the active button styling. */
+  @property({ attribute: false }) visibleOverlayIds: Set<string> = new Set();
+  /** Position of the overlay buttons bar. SPEC §3.3.2 default = bottom. */
+  @property({ type: String, attribute: false }) overlayButtonsPosition: OverlayButtonsPosition = 'bottom';
   @property({ attribute: false }) hass?: HomeAssistant;
 
   @state() private _currentIndex = 0;
@@ -167,30 +176,51 @@ export class FnNavigationController extends LitElement {
 
   protected override render() {
     const currentFloor = this.floors[this._currentIndex];
+    const showButtons =
+      (this.overlayButtonsPosition === 'top' || this.overlayButtonsPosition === 'bottom') &&
+      this.allOverlays.length > 0;
+    const buttons = showButtons
+      ? html`
+          <fn-overlay-buttons
+            .overlays=${this.allOverlays}
+            .visibleOverlayIds=${this.visibleOverlayIds}
+          ></fn-overlay-buttons>
+        `
+      : nothing;
     return html`
-      <fn-floor-stack
-        .floors=${this.floors}
-        .viewbox=${this.viewbox}
-        .currentIndex=${this._currentIndex}
-        .transition=${this.transition}
-        .transitionDuration=${this.transitionDuration}
-        .bounceDirection=${this._bounceDirection}
-        .overlays=${this.overlays}
-        .hass=${this.hass}
-      ></fn-floor-stack>
-      ${this.showFloorIndicator && currentFloor
-        ? html`<fn-floor-indicator .floor=${currentFloor}></fn-floor-indicator>`
-        : nothing}
+      ${this.overlayButtonsPosition === 'top' ? buttons : nothing}
+      <div class="floor-area">
+        <fn-floor-stack
+          .floors=${this.floors}
+          .viewbox=${this.viewbox}
+          .currentIndex=${this._currentIndex}
+          .transition=${this.transition}
+          .transitionDuration=${this.transitionDuration}
+          .bounceDirection=${this._bounceDirection}
+          .overlays=${this.overlays}
+          .hass=${this.hass}
+        ></fn-floor-stack>
+        ${this.showFloorIndicator && currentFloor
+          ? html`<fn-floor-indicator .floor=${currentFloor}></fn-floor-indicator>`
+          : nothing}
+      </div>
+      ${this.overlayButtonsPosition === 'bottom' ? buttons : nothing}
     `;
   }
 
   static override styles = css`
     :host {
       display: block;
-      position: relative; /* Anchor for the absolutely-positioned indicator. */
-      /* Capture all gestures: prevents page scroll/pinch hijacking our swipes. */
+      /* Capture all gestures: prevents page scroll/pinch hijacking our swipes.
+         Buttons inside still receive clicks (touch-action only blocks
+         browser-handled gestures, not click synthesis). */
       touch-action: none;
       user-select: none;
+    }
+    .floor-area {
+      /* Anchor for the absolutely-positioned <fn-floor-indicator> so it
+         stays inside the floor area, never overlapping the buttons bar. */
+      position: relative;
     }
   `;
 }
