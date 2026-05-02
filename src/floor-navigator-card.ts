@@ -6,6 +6,42 @@ import { cardVariables } from './styles/card-styles.js';
 import type { CardConfig, Overlay, OverlayElement } from './types/config.js';
 import type { HomeAssistant } from './types/ha.js';
 
+// Bump in lockstep with package.json on every release. Surfaced via
+// console.info on bundle load so we can verify in HA's DevTools that
+// Lovelace is serving the version we expect (cache busting check).
+const CARD_VERSION = '0.1.0';
+
+declare global {
+  interface Window {
+    customCards?: Array<{
+      type: string;
+      name: string;
+      description?: string;
+      preview?: boolean;
+      documentationURL?: string;
+    }>;
+  }
+}
+
+console.info(
+  `%c FLOOR-NAVIGATOR-CARD %c v${CARD_VERSION} `,
+  'color: #fff; background: #4a90e2; font-weight: 700; padding: 2px 6px; border-radius: 3px 0 0 3px;',
+  'color: #4a90e2; background: #fff; font-weight: 700; padding: 2px 6px; border-radius: 0 3px 3px 0; border: 1px solid #4a90e2;',
+);
+
+// Register with HACS card picker. Guard against double-registration on
+// hot reload (the bundle may be evaluated twice in dev mode).
+window.customCards = window.customCards ?? [];
+if (!window.customCards.some((c) => c.type === 'floor-navigator-card')) {
+  window.customCards.push({
+    type: 'floor-navigator-card',
+    name: 'Floor Navigator',
+    description: 'Multi-level interactive floor plans with entity overlays.',
+    preview: false,
+    documentationURL: 'https://github.com/JohannBlais/lovelace-floor-navigator',
+  });
+}
+
 @customElement('floor-navigator-card')
 export class FloorNavigatorCard extends LitElement {
   /** HA hass object — set by Lovelace at every state tick. */

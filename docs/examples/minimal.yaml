@@ -1,0 +1,10 @@
+# Minimal Floor Navigator config — one floor, no overlays.
+# Use this as a starting point to confirm the card loads correctly with
+# your floor plan image before adding entities.
+
+type: custom:floor-navigator-card
+viewbox: "0 0 1920 1080"
+floors:
+  - id: L0
+    name: Rez-de-chaussée
+    background: /local/floor-plans/L0.png

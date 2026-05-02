@@ -1,0 +1,36 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags-ignore: ['v*']
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check
+        run: npm run lint
+
+      - name: Build production bundle
+        run: npm run build
+
+      - name: Check bundle size (target < 50 KB per SPEC §9.3)
+        run: |
+          SIZE=$(stat -c%s dist/floor-navigator.js)
+          echo "Bundle size: $SIZE bytes ($(awk "BEGIN { printf \"%.1f\", $SIZE / 1024 }") KB)"
+          if [ "$SIZE" -gt 51200 ]; then
+            echo "::error::Bundle exceeds 50 KB target ($SIZE bytes > 51200)"
+            exit 1
+          fi

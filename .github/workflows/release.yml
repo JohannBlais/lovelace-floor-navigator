@@ -1,0 +1,61 @@
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production bundle
+        run: npm run build
+
+      - name: Verify bundle size
+        run: |
+          SIZE=$(stat -c%s dist/floor-navigator.js)
+          echo "Bundle size: $SIZE bytes ($(awk "BEGIN { printf \"%.1f\", $SIZE / 1024 }") KB)"
+
+      - name: Create GitHub release with bundle attached
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/floor-navigator.js
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          body: |
+            ## Floor Navigator ${{ github.ref_name }}
+
+            Lovelace card for Home Assistant — multi-level floor plans with
+            wheel/swipe navigation and configurable entity overlays.
+
+            ### Installation
+
+            **Via HACS (custom repository)** : add this repo URL as a
+            "Lovelace" custom repository, then install "Floor Navigator".
+
+            **Manual** : download `floor-navigator.js` from the assets below,
+            place it in `<config>/www/floor-navigator/floor-navigator.js`,
+            and declare the resource in Lovelace :
+
+            ```yaml
+            url: /local/floor-navigator/floor-navigator.js
+            type: module
+            ```
+
+            See the [README](https://github.com/${{ github.repository }}#configuration)
+            for the YAML config schema and examples.
+
+            ### Auto-generated changelog

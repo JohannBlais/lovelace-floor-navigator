@@ -1,0 +1,133 @@
+# Full house example — 3 floors with multiple overlays demonstrating every
+# v0.1.0 feature: icon and text elements, all tap_action variants, override
+# of overlay icon, custom transition + edge behavior.
+
+type: custom:floor-navigator-card
+viewbox: "0 0 1920 1080"
+
+settings:
+  transition: slide-scale
+  transition_duration: 500
+  start_floor: L0
+  navigation_mode: both
+  edge_behavior: bounce
+  show_floor_indicator: true
+  overlay_buttons_position: bottom
+
+# Floors are listed top-of-house → bottom (or whichever order makes sense
+# for your layout). Scrolling DOWN advances to the next item in this list.
+floors:
+  - id: L0
+    name: Rez-de-chaussée
+    background: /local/floor-plans/L0.png
+  - id: L1
+    name: Étage 1
+    background: /local/floor-plans/L1.png
+  - id: L2
+    name: Bureau et combles
+    background: /local/floor-plans/L2.png
+
+overlays:
+  # Lights : pastille colored amber when on, gray when off, red when unavailable.
+  # Most use the short tap_action: toggle form. Salon demonstrates the long
+  # form with brightness adjustment via call-service.
+  - id: lights
+    name: Éclairage
+    icon: mdi:lightbulb
+    default_visible: true
+    elements:
+      - floor: L0
+        entity: light.salon
+        position: { x: 600, y: 450 }
+        type: icon
+        tap_action:
+          action: call-service
+          service: light.turn_on
+          service_data:
+            entity_id: light.salon
+            brightness: 200
+      - floor: L0
+        entity: light.cuisine
+        position: { x: 1200, y: 380 }
+        type: icon
+        tap_action: toggle
+      - floor: L1
+        entity: light.chambre_alice
+        position: { x: 800, y: 300 }
+        type: icon
+        tap_action: toggle
+
+  # Power outlets : overlay icon mdi:power-socket inherited by every switch
+  # element automatically — no need to repeat element.icon on each one.
+  - id: outlets
+    name: Prises
+    icon: mdi:power-socket
+    default_visible: false
+    elements:
+      - floor: L0
+        entity: switch.prise_salon
+        position: { x: 700, y: 600 }
+        type: icon
+        tap_action: toggle
+      - floor: L1
+        entity: switch.prise_bureau
+        position: { x: 950, y: 420 }
+        type: icon
+        tap_action: toggle
+
+  # Temperatures : text-type elements that render the entity state with the
+  # entity's unit_of_measurement attribute appended automatically (no need to
+  # set unit explicitly here — it falls back to the attribute).
+  - id: temperature
+    name: Températures
+    icon: mdi:thermometer
+    default_visible: false
+    elements:
+      - floor: L0
+        entity: sensor.salon_temperature
+        position: { x: 620, y: 470 }
+        type: text
+        precision: 1
+        font_size: 32
+      - floor: L1
+        entity: sensor.chambre_alice_temperature
+        position: { x: 850, y: 320 }
+        type: text
+        precision: 1
+        font_size: 32
+
+  # Presence : binary sensors. Tap opens the more-info dialog (default
+  # behavior when tap_action is omitted).
+  - id: presence
+    name: Présence
+    icon: mdi:motion-sensor
+    default_visible: false
+    elements:
+      - floor: L1
+        entity: binary_sensor.cm_chambre_antoine_occupancy
+        position: { x: 400, y: 280 }
+        type: icon
+
+  # Network infra : tapping a WiFi AP icon navigates to a dedicated network
+  # dashboard view rather than toggling.
+  - id: infra
+    name: Infrastructure réseau
+    icon: mdi:wifi
+    default_visible: false
+    elements:
+      - floor: L0
+        entity: sensor.wifi_ap_l0_etat_de_l_appareil
+        position: { x: 700, y: 500 }
+        type: icon
+        icon: mdi:access-point
+        tap_action:
+          action: navigate
+          navigation_path: /lovelace/network
+      - floor: L2
+        entity: sensor.wifi_ap_l2_etat_de_l_appareil
+        position: { x: 950, y: 420 }
+        type: icon
+        icon: mdi:access-point
+        tap_action:
+          action: navigate
+          navigation_path: /lovelace/network

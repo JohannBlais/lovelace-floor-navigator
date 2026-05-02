@@ -1,0 +1,64 @@
+# Themed example — overrides every CSS variable Floor Navigator exposes,
+# using card-mod. Drop this into a Lovelace dashboard that has card-mod
+# installed (https://github.com/thomasloven/lovelace-card-mod) to verify
+# the theming surface.
+
+type: custom:floor-navigator-card
+viewbox: "0 0 1920 1080"
+
+settings:
+  transition: crossfade
+  start_floor: L0
+
+floors:
+  - id: L0
+    name: Salon
+    background: /local/floor-plans/L0.png
+  - id: L1
+    name: Étage
+    background: /local/floor-plans/L1.png
+
+overlays:
+  - id: lights
+    name: Éclairage
+    icon: mdi:lightbulb
+    default_visible: true
+    elements:
+      - floor: L0
+        entity: light.salon
+        position: { x: 800, y: 540 }
+        type: icon
+        tap_action: toggle
+      - floor: L1
+        entity: light.chambre
+        position: { x: 600, y: 400 }
+        type: icon
+        tap_action: toggle
+
+# card-mod overrides — change every state color and chrome to a neon-on-dark theme.
+card_mod:
+  style: |
+    :host {
+      /* Generic states */
+      --fn-color-on:           #00e5ff;        /* cyan */
+      --fn-color-off:          #2a2a3a;        /* very dark blue */
+      --fn-color-unavailable:  #ff3366;        /* hot pink */
+
+      /* Domain overrides */
+      --fn-color-light-on:     #ffeb3b;        /* sun yellow */
+      --fn-color-light-off:    #2a2a3a;
+      --fn-color-switch-on:    #00e676;        /* neon green */
+
+      /* Pastille tweaks */
+      --fn-color-icon-foreground: #0a0a0f;     /* dark glyph against bright pastille */
+      --fn-pastille-halo:         rgba(0, 229, 255, 0.4);
+
+      /* Text outline */
+      --fn-color-text:         #00e5ff;
+
+      /* UI chrome */
+      --fn-floor-indicator-bg:        rgba(10, 10, 15, 0.85);
+      --fn-floor-indicator-color:     #00e5ff;
+      --fn-overlay-button-bg:         rgba(20, 20, 30, 0.7);
+      --fn-overlay-button-active-bg:  rgba(0, 229, 255, 0.85);
+    }
