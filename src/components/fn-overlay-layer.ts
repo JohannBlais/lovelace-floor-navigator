@@ -31,7 +31,7 @@ export function renderOverlayLayer(
       id="fn-floor-${floorId}-overlay-${overlay.id}"
       data-overlay-id=${overlay.id}
     >
-      ${elements.map((el) => renderElement(el, hass))}
+      ${elements.map((el) => renderElement(el, hass, overlay.icon))}
     </g>
   `;
 }
@@ -39,9 +39,10 @@ export function renderOverlayLayer(
 function renderElement(
   element: OverlayElement,
   hass: HomeAssistant | undefined,
+  overlayIcon: string | undefined,
 ): SVGTemplateResult | null {
   if (element.type === 'icon') {
-    return renderIconElement(element, hass);
+    return renderIconElement(element, hass, overlayIcon);
   }
   if (element.type === 'text') {
     return renderTextElement(element, hass);
@@ -52,6 +53,7 @@ function renderElement(
 function renderIconElement(
   element: IconElement,
   hass: HomeAssistant | undefined,
+  overlayIcon: string | undefined,
 ): SVGTemplateResult {
   const size = element.size ?? 48;
   const x = element.position.x - size / 2;
@@ -70,6 +72,7 @@ function renderIconElement(
       <fn-element-icon
         .element=${element}
         .hass=${hass}
+        .overlayIcon=${overlayIcon}
       ></fn-element-icon>
     </foreignObject>
   `;

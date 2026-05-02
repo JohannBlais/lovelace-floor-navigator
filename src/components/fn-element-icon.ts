@@ -29,6 +29,15 @@ import type { HomeAssistant } from '../types/ha.js';
 export class FnElementIcon extends LitElement {
   @property({ attribute: false }) hass?: HomeAssistant;
   @property({ attribute: false }) element!: IconElement;
+  /**
+   * Icon name configured at the parent overlay level. Used as fallback
+   * when the element doesn't override it explicitly. Resolution chain :
+   *   element.icon → overlayIcon → resolveIcon(entity domain)
+   * This way an overlay like "Prises" with `icon: mdi:power-socket` can
+   * propagate that icon to all its switch elements without needing to
+   * repeat it on every element.
+   */
+  @property({ attribute: false }) overlayIcon?: string;
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -91,7 +100,8 @@ export class FnElementIcon extends LitElement {
   protected override render() {
     const stateObj = this.hass?.states?.[this.element.entity];
     const state = stateObj?.state;
-    const icon = this.element.icon ?? resolveIcon(this.element.entity);
+    const icon =
+      this.element.icon ?? this.overlayIcon ?? resolveIcon(this.element.entity);
     const color = resolveColorVar(this.element.entity, state);
     // Inside foreignObject CSS lengths are interpreted in user (viewBox)
     // units, so a 48-unit element gets a ~31-unit glyph. Proportional to
