@@ -67,10 +67,24 @@ export class FloorNavigatorCard extends LitElement {
     }
     const floorIds = new Set<string>();
     for (const floor of config.floors) {
-      if (!floor || typeof floor !== 'object' || !floor.id || !floor.name || !floor.background) {
+      if (!floor || typeof floor !== 'object' || !floor.id || !floor.name) {
         throw new Error(
-          `Invalid floor: \`id\`, \`name\` and \`background\` are required (got ${JSON.stringify(floor)})`,
+          `Invalid floor: \`id\` and \`name\` are required (got ${JSON.stringify(floor)})`,
         );
+      }
+      // v0.1.1 — au moins l'un de `background` (forme courte) ou
+      // `backgrounds.default` (forme étendue) doit être présent.
+      if (!floor.background && !floor.backgrounds) {
+        throw new Error(
+          `Floor "${floor.id}" requires either 'background' or 'backgrounds.default'`,
+        );
+      }
+      if (floor.backgrounds) {
+        if (typeof floor.backgrounds !== 'object' || !floor.backgrounds.default) {
+          throw new Error(
+            `Floor "${floor.id}" has 'backgrounds' but no 'backgrounds.default'`,
+          );
+        }
       }
       floorIds.add(floor.id);
     }

@@ -1,5 +1,5 @@
 // Configuration types for floor-navigator-card.
-// Mirrors SPEC.md §3 — keep aligned when the spec evolves.
+// Mirrors specs/features/data-model.md and specs/features/dark-mode.md.
 
 export interface CardConfig {
   type: string;
@@ -17,17 +17,51 @@ export interface CardSettings {
   edge_behavior?: EdgeBehavior;
   show_floor_indicator?: boolean;
   overlay_buttons_position?: OverlayButtonsPosition;
+  /**
+   * v0.1.1 — Pilote l'affichage des dark variants.
+   * - `auto` (défaut) : suit `hass.themes.darkMode` puis `prefers-color-scheme`
+   * - `on`            : force le dark mode
+   * - `off`           : force le light mode + n'émet PAS les <image> dark dans le DOM
+   */
+  dark_mode?: DarkModeSetting;
 }
 
 export type TransitionMode = 'crossfade' | 'slide' | 'slide-scale';
 export type NavigationMode = 'wheel' | 'swipe' | 'both' | 'none';
 export type EdgeBehavior = 'bounce' | 'none' | 'loop';
 export type OverlayButtonsPosition = 'top' | 'bottom' | 'none';
+export type DarkModeSetting = 'auto' | 'on' | 'off';
+
+/**
+ * v0.1.1 — Forme étendue des images de fond d'un floor.
+ *
+ * `default` est l'image par défaut (mode light + fallback universel).
+ * `dark` est l'image alternative en mode dark, optionnelle.
+ *
+ * La signature index ouvre la porte à des modes futurs
+ * (high-contrast, sepia, ambient...) sans breaking change. Toute clé
+ * autre que `default` / `dark` est ignorée silencieusement en v0.1.1.
+ */
+export interface Backgrounds {
+  default: string;
+  dark?: string;
+  [key: string]: string | undefined;
+}
 
 export interface Floor {
   id: string;
   name: string;
-  background: string;
+  /**
+   * Forme courte v0.1.0 (compat backward).
+   * Au moins l'un de `background` ou `backgrounds.default` doit être
+   * présent. Si les deux sont posés, `backgrounds` gagne, `background`
+   * est ignoré silencieusement.
+   */
+  background?: string;
+  /**
+   * Forme étendue v0.1.1+ — permet de fournir des variants par mode.
+   */
+  backgrounds?: Backgrounds;
 }
 
 export interface Overlay {
