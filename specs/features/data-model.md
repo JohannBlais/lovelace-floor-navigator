@@ -7,110 +7,110 @@ related: [color-scheme.md, overlays-toggle.md, dark-mode.md, ../architecture/com
 
 # Data Model
 
-API publique YAML de la card. Schéma complet, champs, types, valeurs par
-défaut, tap_actions. **Spec figée jusqu'à v1.0** — toute évolution doit
-être backward-compatible.
+The card's public YAML API. Full schema, fields, types, defaults,
+tap_actions. **Frozen spec until v1.0** — every evolution must be
+backward-compatible.
 
-## Contexte
+## Context
 
-Le data model est l'API publique du composant : c'est ce que les
-utilisateurs écrivent dans leur YAML de Lovelace. Il doit être lisible
-pour un humain qui édite à la main, prévisible (pas de surprise sur les
-valeurs par défaut), et cohérent avec les conventions HA standard
-(snake_case, format des tap_actions).
+The data model is the public API of the component: it is what users
+write in their Lovelace YAML. It must be readable for a human editing
+by hand, predictable (no surprises on default values), and consistent
+with HA standard conventions (snake_case, tap_action format).
 
-## Objectifs
+## Goals
 
-1. Lisibilité YAML pour édition manuelle
-2. Compat backward jusqu'à v1.0 sur tous les champs
-3. Cohérence avec les conventions HA pour les tap_actions
-4. Coordonnées dans un système isolé des dimensions réelles (viewBox)
+1. YAML readability for manual editing
+2. Backward compatibility through v1.0 across all fields
+3. Consistency with HA conventions for tap_actions
+4. Coordinates in a system isolated from the actual display
+   dimensions (viewBox)
 
 ## Scope
 
 ### In
 
-- Schéma YAML complet
-- Types et obligations de chaque champ
-- Valeurs par défaut
-- Format des tap_actions
+- Full YAML schema
+- Types and obligation of each field
+- Default values
+- Tap_action format
 
 ### Out
 
-- Couleurs d'état et CSS variables (voir
+- State colours and CSS variables (see
   [`color-scheme.md`](color-scheme.md))
-- Mécanique du toggle d'overlays (voir
+- Overlay toggle mechanism (see
   [`overlays-toggle.md`](overlays-toggle.md))
-- Implémentation des composants (voir
+- Component implementation (see
   [`../architecture/component-tree.md`](../architecture/component-tree.md))
 
-## Comportement attendu — Structure conceptuelle
+## Expected behaviour — Conceptual structure
 
 ```
 Card
-├── viewbox (système de coordonnées global, std SVG)
+├── viewbox (global coordinate system, std SVG)
 ├── settings (transition, navigation, dark_mode, etc.)
-├── floors[] (liste ordonnée du HAUT vers le BAS)
-│   ├── id (identifiant logique)
-│   ├── name (label affiché)
-│   └── background (forme courte v0.1.0)
-│       OU backgrounds.{default, dark} (forme étendue v0.1.1+)
-└── overlays[] (couches transverses globales)
+├── floors[] (ordered list, TOP-of-house to BOTTOM)
+│   ├── id (logical identifier)
+│   ├── name (displayed label)
+│   └── background (short form, v0.1.0)
+│       OR backgrounds.{default, dark} (extended form, v0.1.1+)
+└── overlays[] (transverse global layers)
     ├── id
     ├── name
-    ├── icon (pour la barre de toggle)
+    ├── icon (for the toggle bar)
     ├── default_visible
     └── elements[]
-        ├── floor (sur quel floor l'élément vit)
-        ├── entity (entity_id HA)
-        ├── position { x, y } (en coordonnées viewBox)
+        ├── floor (which floor this element lives on)
+        ├── entity (HA entity_id)
+        ├── position { x, y } (in viewBox coordinates)
         ├── type (icon | text)
-        ├── tap_action (action HA standard)
-        └── ... (props spécifiques au type)
+        ├── tap_action (HA standard action)
+        └── ... (type-specific props)
 ```
 
-## Comportement attendu — Schéma YAML complet
+## Expected behaviour — Full YAML schema
 
 ```yaml
 type: custom:floor-navigator-card
 
-# Système de coordonnées global (standard SVG)
+# Global coordinate system (standard SVG)
 viewbox: "0 0 1920 1080"
 
-# Configuration globale du comportement
+# Global behaviour configuration
 settings:
   transition: crossfade            # crossfade | slide | slide-scale
   transition_duration: 400         # ms, 100-2000
-  start_floor: L0                  # id d'un floor déclaré
+  start_floor: L0                  # id of a declared floor
   navigation_mode: both            # wheel | swipe | both | none
   edge_behavior: bounce            # bounce | none | loop
   show_floor_indicator: true
   overlay_buttons_position: bottom # top | bottom | none
-  dark_mode: auto                  # auto | on | off  (v0.1.1+, cf. dark-mode.md)
+  dark_mode: auto                  # auto | on | off  (v0.1.1+, see dark-mode.md)
 
-# Liste des floors (ORDRE = du HAUT vers le BAS dans la maison)
-# Le scroll vers le bas avance dans cette liste : L0 → L1 → L2
-# Forme courte v0.1.0 (background) ou forme étendue v0.1.1+
-# (backgrounds.default + backgrounds.dark optionnel) — voir dark-mode.md.
+# Floor list (ORDER = TOP to BOTTOM in the house)
+# Scrolling down moves through this list: L0 → L1 → L2
+# Short form v0.1.0 (background) or extended form v0.1.1+
+# (backgrounds.default + optional backgrounds.dark) — see dark-mode.md.
 floors:
   - id: L0
-    name: "Rez-de-chaussée"
+    name: "Ground floor"
     backgrounds:
       default: /local/floorplans/L0-day.png
       dark: /local/floorplans/L0-night.png
 
   - id: L1
-    name: "Étage 1"
-    background: /local/floorplans/L1.png   # forme courte = pas de dark variant
+    name: "First floor"
+    background: /local/floorplans/L1.png   # short form = no dark variant
 
   - id: L2
-    name: "Bureau et combles"
+    name: "Office and attic"
     background: /local/floorplans/L2.png
 
-# Overlays : couches transverses aux floors
+# Overlays: transverse layers across floors
 overlays:
   - id: lights
-    name: Éclairage
+    name: Lights
     icon: mdi:lightbulb
     default_visible: true
     elements:
@@ -122,7 +122,7 @@ overlays:
         tap_action: toggle
 
   - id: temperature
-    name: Températures
+    name: Temperatures
     icon: mdi:thermometer
     default_visible: false
     elements:
@@ -134,107 +134,107 @@ overlays:
         precision: 1
 ```
 
-## Comportement attendu — Spécification des champs
+## Expected behaviour — Field specification
 
 ### Card root
 
-| Champ | Type | Obligatoire | Défaut | Description |
+| Field | Type | Required | Default | Description |
 |---|---|---|---|---|
-| `type` | string | ✅ | — | Toujours `"custom:floor-navigator-card"` |
-| `viewbox` | string | ✅ | — | Format SVG viewBox standard, ex: `"0 0 1920 1080"` |
-| `settings` | object | ❌ | défauts ci-dessous | Configuration globale |
-| `floors` | array | ✅ | — | Liste ordonnée des floors (min 1) |
-| `overlays` | array | ❌ | `[]` | Liste des overlays |
+| `type` | string | ✅ | — | Always `"custom:floor-navigator-card"` |
+| `viewbox` | string | ✅ | — | Standard SVG viewBox format, e.g. `"0 0 1920 1080"` |
+| `settings` | object | ❌ | defaults below | Global configuration |
+| `floors` | array | ✅ | — | Ordered list of floors (min 1) |
+| `overlays` | array | ❌ | `[]` | Overlay list |
 
 ### Settings
 
-| Champ | Type | Défaut | Valeurs |
+| Field | Type | Default | Values |
 |---|---|---|---|
 | `transition` | enum | `crossfade` | `crossfade`, `slide`, `slide-scale` |
 | `transition_duration` | int (ms) | `400` | 100-2000 |
-| `start_floor` | string | premier floor | id d'un floor déclaré |
+| `start_floor` | string | first floor | id of a declared floor |
 | `navigation_mode` | enum | `both` | `wheel`, `swipe`, `both`, `none` |
 | `edge_behavior` | enum | `bounce` | `bounce`, `none`, `loop` |
 | `show_floor_indicator` | bool | `true` | — |
 | `overlay_buttons_position` | enum | `bottom` | `top`, `bottom`, `none` |
-| `dark_mode` | enum | `auto` | `auto`, `on`, `off` (v0.1.1+, cf. [`dark-mode.md`](dark-mode.md)) |
+| `dark_mode` | enum | `auto` | `auto`, `on`, `off` (v0.1.1+, see [`dark-mode.md`](dark-mode.md)) |
 
 ### Floor
 
-Un floor déclare son image de fond dans **une** des deux formes : courte
-(v0.1.0) ou étendue (v0.1.1+, permet un dark variant — voir
+A floor declares its background image in **one** of two forms: short
+(v0.1.0) or extended (v0.1.1+, allows a dark variant — see
 [`dark-mode.md`](dark-mode.md)).
 
-#### Forme courte (v0.1.0, compat backward)
+#### Short form (v0.1.0, backward-compatible)
 
-| Champ | Type | Obligatoire | Description |
+| Field | Type | Required | Description |
 |---|---|---|---|
-| `id` | string | ✅ | Identifiant unique parmi les floors |
-| `name` | string | ✅ | Label affiché dans l'indicateur |
-| `background` | string | ✅ | Path/URL de l'image (PNG, JPG, SVG) |
+| `id` | string | ✅ | Unique among floors |
+| `name` | string | ✅ | Label shown in the indicator |
+| `background` | string | ✅ | Path/URL to the image (PNG, JPG, SVG) |
 
-#### Forme étendue (v0.1.1+)
+#### Extended form (v0.1.1+)
 
-| Champ | Type | Obligatoire | Description |
+| Field | Type | Required | Description |
 |---|---|---|---|
-| `id` | string | ✅ | Identifiant unique parmi les floors |
-| `name` | string | ✅ | Label affiché dans l'indicateur |
+| `id` | string | ✅ | Unique among floors |
+| `name` | string | ✅ | Label shown in the indicator |
 | `backgrounds` | object | ✅ | `{ default, dark?, ... }` |
-| `backgrounds.default` | string | ✅ | Path image utilisée en mode `light` (et fallback universel) |
-| `backgrounds.dark` | string | ❌ | Path image alternative en mode `dark` |
-| `backgrounds.<autres>` | string | ❌ | Réservé pour modes futurs (high-contrast, sepia...). Ignoré en v0.1.1. |
+| `backgrounds.default` | string | ✅ | Path used in `light` mode (and universal fallback) |
+| `backgrounds.dark` | string | ❌ | Alternative path used in `dark` mode |
+| `backgrounds.<other>` | string | ❌ | Reserved for future modes (high-contrast, sepia...). Ignored in v0.1.1. |
 
-Si les deux formes sont posées sur le même floor, `backgrounds` gagne et
-`background` est ignoré silencieusement (situation transitoire de
-migration acceptable).
+If both forms are set on the same floor, `backgrounds` wins and
+`background` is silently ignored (acceptable transitory migration
+state).
 
 ### Overlay
 
-| Champ | Type | Obligatoire | Défaut | Description |
+| Field | Type | Required | Default | Description |
 |---|---|---|---|---|
-| `id` | string | ✅ | — | Identifiant unique parmi les overlays |
-| `name` | string | ✅ | — | Label affiché sur le bouton de toggle |
-| `icon` | string (MDI) | ❌ | `mdi:layers` | Icône du bouton de toggle |
-| `default_visible` | bool | ❌ | `false` | Visibilité initiale |
-| `elements` | array | ✅ | — | Liste des éléments de cet overlay |
+| `id` | string | ✅ | — | Unique among overlays |
+| `name` | string | ✅ | — | Label shown on the toggle button |
+| `icon` | string (MDI) | ❌ | `mdi:layers` | Toggle button icon |
+| `default_visible` | bool | ❌ | `false` | Initial visibility |
+| `elements` | array | ✅ | — | List of elements in this overlay |
 
-### Element (commun)
+### Element (common)
 
-| Champ | Type | Obligatoire | Description |
+| Field | Type | Required | Description |
 |---|---|---|---|
-| `floor` | string | ✅ | id d'un floor déclaré |
-| `entity` | string | ✅ | entity_id HA |
-| `position` | object | ✅ | `{ x: number, y: number }` en coords viewBox |
-| `type` | enum | ✅ | `icon` ou `text` |
-| `tap_action` | object/string | ❌ | Action HA standard |
+| `floor` | string | ✅ | id of a declared floor |
+| `entity` | string | ✅ | HA entity_id |
+| `position` | object | ✅ | `{ x: number, y: number }` in viewBox coords |
+| `type` | enum | ✅ | `icon` or `text` |
+| `tap_action` | object/string | ❌ | HA standard action |
 
 ### Element type `icon`
 
-| Champ | Type | Obligatoire | Défaut | Description |
+| Field | Type | Required | Default | Description |
 |---|---|---|---|---|
-| `icon` | string (MDI) | ❌ | dérivé du domaine de l'entity | Icône MDI à afficher |
-| `size` | int (viewBox units) | ❌ | `48` | Taille du carré d'icône |
+| `icon` | string (MDI) | ❌ | derived from the entity domain | MDI icon to display |
+| `size` | int (viewBox units) | ❌ | `48` | Icon square size |
 
 ### Element type `text`
 
-| Champ | Type | Obligatoire | Défaut | Description |
+| Field | Type | Required | Default | Description |
 |---|---|---|---|---|
-| `unit` | string | ❌ | `unit_of_measurement` de l'entité | Suffixe affiché |
-| `precision` | int | ❌ | `1` | Nb de décimales |
-| `font_size` | int | ❌ | `24` | Taille de police en viewBox units |
+| `unit` | string | ❌ | entity's `unit_of_measurement` | Suffix shown |
+| `precision` | int | ❌ | `1` | Number of decimals |
+| `font_size` | int | ❌ | `24` | Font size in viewBox units |
 
-## Comportement attendu — Tap actions
+## Expected behaviour — Tap actions
 
-Format identique à HA standard. Voir
+Format identical to HA standard. See
 https://www.home-assistant.io/dashboards/actions/
 
-### Forme courte (string)
+### Short form (string)
 
 ```yaml
 tap_action: toggle
 ```
 
-### Forme longue (object)
+### Long form (object)
 
 ```yaml
 tap_action:
@@ -245,81 +245,82 @@ tap_action:
     brightness: 200
 ```
 
-### Actions supportées en v0.1.0
+### Actions supported in v0.1.0
 
 - `toggle`
 - `more-info`
-- `navigate` (avec `navigation_path`)
-- `call-service` (avec `service` + `service_data`)
-- `url` (avec `url_path`)
+- `navigate` (with `navigation_path`)
+- `call-service` (with `service` + `service_data`)
+- `url` (with `url_path`)
 - `none`
 
-### Comportement par défaut si `tap_action` absent
+### Default behaviour when `tap_action` is absent
 
-`more-info` (ouvre la modale standard HA). Cohérent avec les autres
-custom cards de l'écosystème.
+`more-info` (opens the standard HA modal). Consistent with other
+custom cards in the ecosystem.
 
 ### `tap_action: none`
 
-L'icône reste visible et colorée, mais ne réagit pas au clic. Le
-curseur n'est pas un pointer en survol. Use case : éléments purement
-informatifs (badges de présence, état d'AP).
+The icon stays visible and coloured, but does not react to clicks.
+The cursor is not a pointer on hover. Use case: purely informative
+elements (presence badges, AP status).
 
-## Cas limites
+## Edge cases
 
-### Floor référencé par un élément mais pas déclaré
+### Floor referenced by an element but not declared
 
-Élément avec `floor: L99` alors que `floors` ne contient que L0/L1/L2.
-Comportement : l'élément n'est rendu sur aucun floor (silencieux). Pas
-d'erreur explicite en v0.1.0. Validation runtime à durcir en v0.2.0+
-si retours utilisateurs (warning console au moins).
+Element with `floor: L99` while `floors` only contains L0/L1/L2.
+Behaviour: the element is rendered on no floor (silently). No
+explicit error in v0.1.0. Runtime validation to harden in v0.2.0+ if
+user feedback warrants (at least a console warning).
 
-### Entité inexistante dans HA
+### Entity not present in HA
 
-`entity: light.nonexistent`. Comportement : l'élément est rendu en état
-`unavailable` (couleur rouge sombre, valeur `?` pour le type text).
-Cohérent avec le comportement standard HA pour les entités manquantes.
+`entity: light.nonexistent`. Behaviour: the element is rendered in
+the `unavailable` state (dark red colour, `?` value for type text).
+Consistent with the standard HA behaviour for missing entities.
 
-### Position hors viewBox
+### Position outside viewBox
 
-`position: { x: 9999, y: 9999 }` alors que `viewbox: "0 0 1920 1080"`.
-Comportement : l'élément est rendu mais hors-vue. Pas d'erreur. Le SVG
-gère naturellement les coordonnées hors viewBox sans clip par défaut.
+`position: { x: 9999, y: 9999 }` while
+`viewbox: "0 0 1920 1080"`. Behaviour: the element is rendered but
+out of view. No error. SVG handles out-of-viewBox coordinates
+naturally without clipping by default.
 
-### Coordonnées négatives
+### Negative coordinates
 
-`position: { x: -50, y: -50 }`. Comportement : l'élément est rendu en
-haut-gauche, partiellement hors-vue. Pas d'erreur. Use case rare mais
-valide (déborder volontairement).
+`position: { x: -50, y: -50 }`. Behaviour: the element is rendered
+top-left, partially out of view. No error. Rare but valid use case
+(intentional overflow).
 
-### Float vs int sur `precision`
+### Float vs int on `precision`
 
-`precision: 1.5`. Comportement : tronqué à 1 (Math.floor) avant usage
-dans `toFixed()`. Pas d'erreur explicite. Bonnes pratiques YAML : utiliser
-des integers.
+`precision: 1.5`. Behaviour: truncated to 1 (Math.floor) before use
+in `toFixed()`. No explicit error. YAML good practice: use integers.
 
-### Multiple éléments même `entity` dans des overlays différents
+### Multiple elements with the same `entity` across different overlays
 
-`light.salon` apparaît dans overlay `lights` ET overlay `energie`. Les
-deux éléments sont rendus indépendamment (positions et props
-indépendantes). Pas de conflit. Voir BACKLOG.md pour use case à
-documenter.
+`light.salon` appears in overlay `lights` AND overlay `energy`. Both
+elements are rendered independently (positions and props
+independent). No conflict. See BACKLOG.md for the use case to
+document.
 
-## Questions ouvertes
+## Open questions
 
-Aucune.
+None.
 
-## Décisions
+## Decisions
 
-Le data model a été figé en début de design session (2026-05-01) sans
-ADRs individuels. Les choix structurants étaient :
+The data model was frozen at the start of the design session
+(2026-05-01) without individual ADRs. The structuring choices were:
 
-- **Overlays globaux transverses** (vs un overlay par floor) : permet
-  de regrouper sémantiquement (tous les éclairages dans un même
-  overlay) et de toggleer cohéremment
-- **Coordonnées viewBox** (vs pourcentages ou pixels absolus) : isole
-  les positions de la dimension réelle de la card, scale naturellement
-- **tap_action format HA standard** (vs format custom) : compat directe
-  avec `custom-card-helpers`, pas de surprise pour les utilisateurs
-- **Convention scroll-aligned** (down → suivant) : intuitive desktop
-  ET mobile, alignée avec le scroll de page classique
+- **Global transverse overlays** (vs one overlay per floor): allows
+  semantic grouping (all lights in a single overlay) and consistent
+  toggling
+- **viewBox coordinates** (vs percentages or absolute pixels):
+  isolates positions from the card's actual dimensions, scales
+  naturally
+- **tap_action HA standard format** (vs custom format): direct
+  compatibility with `custom-card-helpers`, no surprise for users
+- **Scroll-aligned convention** (down → next): intuitive on desktop
+  AND mobile, aligned with classic page scrolling

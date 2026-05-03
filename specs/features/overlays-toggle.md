@@ -1,62 +1,63 @@
 ---
 status: implemented
 owner: Johann Blais
-last_updated: 2026-05-03
+last_updated: 2026-05-04
 related: [data-model.md, ../architecture/component-tree.md]
 ---
 
 # Overlays Toggle
 
-Mécanisme de bascule de visibilité des overlays. État local non persisté
-en v0.1.0, extension v0.2.0+ vers binding HA. Spec figée pour la v0.1.0.
+Visibility-toggle mechanism for overlays. Local non-persisted state in
+v0.1.0, v0.2.0+ extension toward HA binding. Frozen spec for v0.1.0.
 
-## Contexte
+## Context
 
-Les overlays regroupent les éléments par thématique (lampes, températures,
-présence, infrastructure). L'utilisateur veut pouvoir afficher/masquer
-chaque overlay indépendamment pour réduire la densité visuelle quand il
-ne s'intéresse qu'à un sujet à la fois.
+Overlays group elements by theme (lights, temperatures, presence,
+infrastructure). The user wants to be able to show/hide each overlay
+independently to reduce visual density when only interested in one
+topic at a time.
 
-Pour la v0.1.0, on vise simple : état local mémorisé pendant la session,
-réinitialisé selon `default_visible` à chaque rechargement. Les use cases
-plus avancés (synchroniser entre plusieurs dashboards, persister entre
-sessions) sont différés en v0.2.0+ via binding à des entités HA.
+For v0.1.0 we keep it simple: local state held during the session,
+reset per `default_visible` on every reload. More advanced use cases
+(syncing across multiple dashboards, persisting between sessions) are
+deferred to v0.2.0+ via binding to HA entities.
 
-## Objectifs
+## Goals
 
-1. Toggle d'overlay en un clic, retour visuel immédiat
-2. État initial piloté par la config (`default_visible`)
-3. Pas de surprise : l'utilisateur sait que c'est local et non persisté
-4. Mécanique extensible vers binding HA en v0.2.0+ sans casser l'API
+1. Overlay toggle in one click, immediate visual feedback
+2. Initial state driven by config (`default_visible`)
+3. No surprise: the user knows it is local and not persisted
+4. Mechanism extensible to HA binding in v0.2.0+ without breaking the
+   API
 
 ## Scope
 
 ### In
 
-- Mécanique d'état local v0.1.0
-- Initialisation depuis `default_visible`
-- Barre de boutons UI
-- Pattern d'extension v0.2.0+ (binding `input_boolean`)
+- v0.1.0 local state mechanism
+- Initialisation from `default_visible`
+- UI button bar
+- Extension pattern for v0.2.0+ (binding to `input_boolean`)
 
 ### Out
 
-- Composant UI lui-même (voir
+- The UI component itself (see
   [`../architecture/component-tree.md`](../architecture/component-tree.md)
-  pour `<fn-overlay-buttons>`)
-- Champs de config (voir [`data-model.md`](data-model.md))
+  for `<fn-overlay-buttons>`)
+- Config fields (see [`data-model.md`](data-model.md))
 
-## Comportement attendu — État local v0.1.0
+## Expected behaviour — v0.1.0 local state
 
-### Stockage
+### Storage
 
-État dans une `@state() visibleOverlays: Set<string>` du composant racine
-`floor-navigator-card`.
+State held in a `@state() visibleOverlays: Set<string>` on the root
+component `floor-navigator-card`.
 
-Le `Set<string>` contient les `id` des overlays actuellement visibles.
+The `Set<string>` contains the ids of overlays currently visible.
 
 ### Initialisation
 
-Au premier render après `setConfig()` :
+On the first render after `setConfig()`:
 
 ```
 visibleOverlays = new Set(
@@ -66,139 +67,138 @@ visibleOverlays = new Set(
 )
 ```
 
-Les overlays avec `default_visible: true` sont visibles au démarrage.
-Les autres (défaut `false`) sont cachés.
+Overlays with `default_visible: true` are visible at startup. Others
+(default `false`) are hidden.
 
-### Modification
+### Mutation
 
-Les boutons de la barre `<fn-overlay-buttons>` émettent un event custom
-`overlay-toggle` avec l'overlay id. Le composant racine intercepte et
-met à jour `visibleOverlays` :
+Buttons in the `<fn-overlay-buttons>` bar emit a custom `overlay-toggle`
+event with the overlay id. The root component intercepts and updates
+`visibleOverlays`:
 
 ```
 toggleOverlay(id) {
   const next = new Set(visibleOverlays);
   if (next.has(id)) next.delete(id);
   else next.add(id);
-  visibleOverlays = next;  // nouvelle référence pour Lit reactive
+  visibleOverlays = next;  // new reference for Lit reactivity
 }
 ```
 
-La nouvelle référence (`new Set(...)`) est nécessaire pour que Lit
-détecte le changement et re-render (pas de mutation in-place).
+The new reference (`new Set(...)`) is required so Lit detects the
+change and re-renders (no in-place mutation).
 
 ### Propagation
 
-`visibleOverlays` est passé en prop down à `<fn-floor>` puis à
-`<fn-overlay-layer>`. Chaque overlay layer applique
-`display: none` ou `display: block` selon que son id est dans le Set.
+`visibleOverlays` is passed down as a prop to `<fn-floor>`, then to
+`<fn-overlay-layer>`. Each overlay layer applies `display: none` or
+`display: block` depending on whether its id is in the Set.
 
-### Persistance
+### Persistence
 
-**Non persisté** en v0.1.0. État perdu au refresh de la page, reset
-selon `default_visible` à chaque chargement. Comportement assumé pour la
-v0.1.0 — extension prévue.
+**Not persisted** in v0.1.0. State lost on page refresh, reset per
+`default_visible` on every load. Behaviour assumed for v0.1.0 —
+extension planned.
 
-## Comportement attendu — UI
+## Expected behaviour — UI
 
-### Barre de boutons
+### Button bar
 
-La barre `<fn-overlay-buttons>` est positionnée en bas (défaut) ou en
-haut, ou cachée, selon `settings.overlay_buttons_position`.
+The `<fn-overlay-buttons>` bar is positioned at the bottom (default)
+or top, or hidden, per `settings.overlay_buttons_position`.
 
-Pour chaque overlay déclaré, un bouton :
-- Affiche l'icône (`overlay.icon`, défaut `mdi:layers`)
-- Affiche le label (`overlay.name`)
-- État visuel "actif" si l'id est dans `visibleOverlays`
-- Tap → émet `overlay-toggle` avec l'id
+For each declared overlay, one button:
+- Shows the icon (`overlay.icon`, default `mdi:layers`)
+- Shows the label (`overlay.name`)
+- Visual "active" state if the id is in `visibleOverlays`
+- Tap → emits `overlay-toggle` with the id
 
-### Style des boutons
+### Button styling
 
-Un bouton actif a un fond `--fn-overlay-button-active-bg` (jaune amber
-translucide par défaut). Un bouton inactif a un fond
-`--fn-overlay-button-bg` (noir translucide par défaut). Voir
-[`color-scheme.md`](color-scheme.md) pour les CSS variables.
+An active button has the background `--fn-overlay-button-active-bg`
+(translucent amber yellow by default). An inactive button has the
+background `--fn-overlay-button-bg` (translucent black by default).
+See [`color-scheme.md`](color-scheme.md) for the CSS variables.
 
 ### `overlay_buttons_position: none`
 
-Si `none`, la barre n'est pas rendue. L'utilisateur n'a alors aucun moyen
-de toggler les overlays interactivement (sauf code custom). Use case
-rare : dashboards verrouillés où la config définit ce qui est visible et
-l'utilisateur ne peut pas changer.
+If `none`, the bar is not rendered. The user has no interactive way to
+toggle overlays (other than custom code). Rare use case: locked
+dashboards where the config defines what is visible and the user
+cannot change it.
 
-## Comportement attendu — Extension v0.2.0+ (binding HA)
+## Expected behaviour — v0.2.0+ extension (HA binding)
 
-Spec d'orientation pour ne pas casser l'API en v0.2.0. **Pas implémenté
-en v0.1.0**.
+Forward-looking spec to avoid breaking the API in v0.2.0. **Not
+implemented in v0.1.0.**
 
-### Champ de config
+### Config field
 
-Ajout optionnel d'un champ `visible_entity` au niveau de chaque overlay :
+Optional addition of a `visible_entity` field at the overlay level:
 
 ```yaml
 overlays:
   - id: lights
-    name: Éclairage
+    name: Lights
     default_visible: true
-    visible_entity: input_boolean.show_lights_overlay  # nouveau v0.2.0+
+    visible_entity: input_boolean.show_lights_overlay  # new in v0.2.0+
     elements: [...]
 ```
 
-### Comportement
+### Behaviour
 
-- Si `visible_entity` est défini : la visibilité est lue depuis l'état
-  de l'entité HA (`on`/`off`). Le toggle UI met à jour l'entité via
-  service call (`input_boolean.toggle`). État synchronisé entre tous
-  les dashboards et persistant.
-- Si `visible_entity` n'est pas défini : comportement v0.1.0 (état local).
+- If `visible_entity` is defined: visibility is read from the HA
+  entity state (`on`/`off`). The UI toggle updates the entity via
+  service call (`input_boolean.toggle`). State synced across
+  dashboards and persistent.
+- If `visible_entity` is not defined: v0.1.0 behaviour (local state).
 
-Compat backward parfaite : les configs v0.1.0 sans `visible_entity`
-fonctionnent inchangées.
+Perfect backward compatibility: v0.1.0 configs without
+`visible_entity` work unchanged.
 
-## Cas limites
+## Edge cases
 
-### Pas d'overlays
+### No overlays
 
-`overlays: []` ou `overlays` absent. Comportement : `<fn-overlay-buttons>`
-n'est pas rendu (barre vide cachée). Pas d'erreur, juste une card sans
-overlays interactifs.
+`overlays: []` or `overlays` absent. Behaviour:
+`<fn-overlay-buttons>` is not rendered (empty bar hidden). No error,
+just a card without interactive overlays.
 
-### Tous les overlays cachés au départ
+### All overlays hidden at start
 
-Tous les overlays ont `default_visible: false` (ou non spécifié). Au
-chargement, aucun élément n'est visible sur les plans. La barre de
-boutons est rendue avec tous les boutons inactifs. L'utilisateur clique
-pour activer.
+All overlays have `default_visible: false` (or unspecified). At load,
+no element is visible on the plans. The button bar is rendered with
+all buttons inactive. The user clicks to activate.
 
-### Overlay avec id dupliqué
+### Duplicate overlay id
 
-Deux overlays avec le même `id`. Comportement : le `Set<string>` ne
-distingue pas les doublons, donc toggler l'un toggle aussi l'autre. Pas
-d'erreur explicite. Bonnes pratiques YAML : ids uniques (à valider
-manuellement, pas de validation runtime en v0.1.0).
+Two overlays with the same `id`. Behaviour: the `Set<string>` does
+not distinguish duplicates, so toggling one toggles the other. No
+explicit error. YAML good practice: unique ids (validated manually,
+no runtime validation in v0.1.0).
 
-### Toggle pendant une transition
+### Toggle during a transition
 
-L'utilisateur clique sur un bouton d'overlay pendant qu'une transition
-de floor est en cours. Comportement : le toggle s'applique
-immédiatement, l'overlay devient visible/caché sur tous les floors. La
-transition de floor continue son cours. Pas de conflit visuel.
+The user clicks an overlay button while a floor transition is in
+progress. Behaviour: the toggle applies immediately, the overlay
+becomes visible/hidden on every floor. The floor transition continues.
+No visual conflict.
 
-### `default_visible` modifié au runtime
+### `default_visible` modified at runtime
 
-L'utilisateur modifie sa config Lovelace et change `default_visible: true`
-en `false`. Comportement : au prochain `setConfig()` (recharge du
-dashboard), `visibleOverlays` est ré-initialisé selon la nouvelle
-valeur. État précédent perdu. Cohérent avec "pas de persistance".
+The user edits their Lovelace config and changes `default_visible:
+true` to `false`. Behaviour: on the next `setConfig()` (dashboard
+reload), `visibleOverlays` is re-initialised per the new value.
+Previous state lost. Consistent with "no persistence".
 
-## Questions ouvertes
+## Open questions
 
-Aucune.
+None.
 
-## Décisions
+## Decisions
 
-Pas d'ADR formel. Le choix "état local v0.1.0 + binding entité v0.2.0+"
-permet de livrer rapidement une feature minimale fonctionnelle et de
-l'étendre proprement quand le besoin de synchronisation se manifeste.
-Pattern récurrent dans l'écosystème custom cards (cf. button-card qui a
-suivi un parcours similaire).
+No formal ADR. The "v0.1.0 local state + v0.2.0+ entity binding"
+choice lets us ship a minimal functional feature quickly and extend
+it cleanly when the need for synchronisation arises. Recurring
+pattern in the custom cards ecosystem (cf. button-card which
+followed a similar path).

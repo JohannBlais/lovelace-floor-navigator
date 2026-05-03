@@ -1,61 +1,61 @@
 ---
 status: implemented
 owner: Johann Blais
-last_updated: 2026-05-03
+last_updated: 2026-05-04
 related: [data-model.md, ../architecture/conventions.md]
 ---
 
-# Color Scheme
+# Colour Scheme
 
-Couleurs d'état des éléments et CSS variables exposées pour customisation.
-Spec figée pour la v0.1.0.
+Element state colours and CSS variables exposed for customisation.
+Frozen spec for v0.1.0.
 
-## Contexte
+## Context
 
-Les éléments d'overlay (icônes, texte) doivent refléter l'état des
-entités HA visuellement, sans config explicite par l'utilisateur basique.
-Le standard HA a des conventions de couleurs par domaine (jaune pour
-lampes, vert pour switches, rouge pour erreurs) qu'on suit. Les
-utilisateurs avancés doivent pouvoir override via card-mod ou via le
-thème Lovelace.
+Overlay elements (icons, text) must visually reflect HA entity state
+without explicit configuration from the basic user. The HA standard has
+per-domain colour conventions (yellow for lights, green for switches,
+red for errors) that we follow. Advanced users must be able to override
+via card-mod or via the Lovelace theme.
 
-## Objectifs
+## Goals
 
-1. Couleurs sensées par défaut sans config (pattern HA standard)
-2. CSS variables exposées avec noms prédictibles
-3. Override possible via card-mod ou thème Lovelace
-4. Lisibilité sur fonds clairs ET sombres (contrast ratio acceptable)
+1. Sensible default colours without configuration (HA standard pattern)
+2. Exposed CSS variables with predictable names
+3. Override possible via card-mod or Lovelace theme
+4. Readability on light AND dark backgrounds (acceptable contrast
+   ratio)
 
 ## Scope
 
 ### In
 
-- Couleurs par défaut par domaine et état
-- CSS variables exposées pour override
-- Pattern de nommage des variables
+- Default colours per domain and state
+- CSS variables exposed for override
+- Variable naming pattern
 
 ### Out
 
-- Mécanisme dark mode pour les images de fond (sera couvert par
-  `features/dark-mode.md` en v0.1.1)
-- Champs de config qui pilotent les couleurs (pas de champ direct, tout
-  passe par CSS variables)
+- Dark-mode mechanism for background images (covered by
+  `features/dark-mode.md` from v0.1.1)
+- Config fields driving colours (no direct field — everything goes
+  through CSS variables)
 
-## Comportement attendu — Couleurs par défaut
+## Expected behaviour — Default colours
 
-Le composant applique automatiquement des couleurs selon le **domaine de
-l'entité** et son **état**. L'utilisateur basique n'a rien à configurer.
+The component automatically applies colours based on the **entity
+domain** and its **state**. The basic user has nothing to configure.
 
-### CSS variables exposées
+### Exposed CSS variables
 
 ```css
 :host {
-  /* États génériques */
-  --fn-color-on:           rgb(255, 193, 7);    /* jaune amber, état actif */
-  --fn-color-off:          rgb(120, 120, 120);  /* gris, état inactif */
-  --fn-color-unavailable:  rgb(180, 80, 80);    /* rouge sombre */
+  /* Generic states */
+  --fn-color-on:           rgb(255, 193, 7);    /* amber yellow, active state */
+  --fn-color-off:          rgb(120, 120, 120);  /* grey, inactive state */
+  --fn-color-unavailable:  rgb(180, 80, 80);    /* dark red */
 
-  /* Domaines spécifiques (override les génériques) */
+  /* Domain-specific (override the generic) */
   --fn-color-light-on:     rgb(255, 193, 7);
   --fn-color-light-off:    rgb(120, 120, 120);
   --fn-color-switch-on:    rgb(76, 175, 80);
@@ -63,7 +63,7 @@ l'entité** et son **état**. L'utilisateur basique n'a rien à configurer.
   --fn-color-binary_sensor-on:  rgb(33, 150, 243);
   --fn-color-binary_sensor-off: rgb(120, 120, 120);
 
-  /* Texte (overlay type "text") */
+  /* Text (overlay type "text") */
   --fn-color-text:         rgb(255, 255, 255);
   --fn-text-shadow:        0 0 4px rgba(0, 0, 0, 0.8);
 
@@ -75,29 +75,31 @@ l'entité** et son **état**. L'utilisateur basique n'a rien à configurer.
 }
 ```
 
-## Comportement attendu — Cascade de résolution
+## Expected behaviour — Resolution cascade
 
-Pour une entité donnée, l'algorithme de résolution de couleur :
+For a given entity, the colour-resolution algorithm:
 
 ```
-1. Lire le domaine de l'entité (light, switch, binary_sensor, sensor, ...)
-2. Lire l'état (on, off, unavailable, ou valeur numérique pour sensor)
-3. Chercher --fn-color-{domain}-{state}
-   ├── Trouvé → utiliser cette couleur
-   └── Non trouvé → fallback sur --fn-color-{state} (générique)
-4. Si l'état n'est ni on/off/unavailable, utiliser la couleur "on"
-   par défaut (pour les sensors avec valeur)
+1. Read the entity domain (light, switch, binary_sensor, sensor, ...)
+2. Read the state (on, off, unavailable, or numeric value for sensors)
+3. Look up --fn-color-{domain}-{state}
+   ├── Found → use that colour
+   └── Not found → fall back to --fn-color-{state} (generic)
+4. If the state is neither on/off/unavailable, use the "on" colour by
+   default (for sensors with a value)
 ```
 
-Exemple concret :
-- `light.salon` état `on` → résout `--fn-color-light-on` (jaune amber)
-- `switch.cafetiere` état `on` → résout `--fn-color-switch-on` (vert)
-- `sensor.temperature` valeur `21.5` → résout `--fn-color-on` (générique
-  jaune amber)
+Concrete examples:
+- `light.salon` state `on` → resolves to `--fn-color-light-on` (amber
+  yellow)
+- `switch.cafetiere` state `on` → resolves to `--fn-color-switch-on`
+  (green)
+- `sensor.temperature` value `21.5` → resolves to `--fn-color-on`
+  (generic amber yellow)
 
-## Comportement attendu — Override par l'utilisateur
+## Expected behaviour — User override
 
-### Via card-mod (style local)
+### Via card-mod (local style)
 
 ```yaml
 card_mod:
@@ -107,7 +109,7 @@ card_mod:
     }
 ```
 
-### Via thème Lovelace (style global)
+### Via Lovelace theme (global style)
 
 ```yaml
 # themes.yaml
@@ -116,20 +118,20 @@ my_theme:
   fn-color-switch-on: "#00ff88"
 ```
 
-Le thème Lovelace s'applique au niveau `:root` et est hérité par tous
-les composants enfants, donc les variables `--fn-*` sont accessibles
-automatiquement.
+The Lovelace theme applies at the `:root` level and is inherited by
+every child component, so the `--fn-*` variables are accessible
+automatically.
 
-## Comportement attendu — Texte
+## Expected behaviour — Text
 
-Pour les éléments type `text`, deux variables :
+For elements of type `text`, two variables:
 
-- `--fn-color-text` : couleur de la police (blanc par défaut)
-- `--fn-text-shadow` : ombre portée pour lisibilité sur fonds variés
-  (par défaut, ombre noire avec blur 4px)
+- `--fn-color-text`: font colour (white by default)
+- `--fn-text-shadow`: drop shadow for readability over varied
+  backgrounds (default: black shadow with 4px blur)
 
-L'ombre permet une bonne lisibilité même sur des plans clairs (bandes
-blanches de mur, par exemple). Override possible :
+The shadow ensures good readability even on light plans (white wall
+strips, for example). Override possible:
 
 ```yaml
 card_mod:
@@ -140,45 +142,44 @@ card_mod:
     }
 ```
 
-## Cas limites
+## Edge cases
 
-### État custom non standard
+### Non-standard custom state
 
-Une entité peut avoir un état non standard (ex: `media_player` avec
-état `playing`, `paused`, `idle`). Comportement actuel : seuls
-`on`/`off`/`unavailable` ont des couleurs spécifiques. Les autres
-tombent sur `--fn-color-on` par défaut.
+An entity may have a non-standard state (e.g. `media_player` with
+`playing`, `paused`, `idle`). Current behaviour: only `on`/`off`/
+`unavailable` have specific colours. Others fall back to
+`--fn-color-on` by default.
 
-À étendre en v0.2.0+ si besoin via une mécanique de mapping
-domaine→états→couleurs plus riche.
+To extend in v0.2.0+ if needed via a richer
+domain→states→colours mapping mechanism.
 
-### Couleurs et accessibilité
+### Colours and accessibility
 
-Les couleurs par défaut ont été choisies empiriquement, pas via une
-analyse formelle du contrast ratio. Pour des utilisateurs avec besoins
-d'accessibilité, utiliser un thème Lovelace dédié qui override les
-variables avec des couleurs plus contrastées.
+Default colours were chosen empirically, not through a formal contrast
+ratio analysis. For users with accessibility needs, use a dedicated
+Lovelace theme that overrides the variables with higher-contrast
+colours.
 
-### Conflit avec le thème HA dark/light
+### Conflict with HA dark/light theme
 
-Le thème Lovelace global peut définir des CSS variables qui rentrent en
-conflit avec celles du composant. Pas de mécanisme de réconciliation —
-le dernier override applique. C'est conforme à la cascade CSS standard.
+The global Lovelace theme can define CSS variables that conflict with
+the component's. No reconciliation mechanism — the last override wins.
+Conforms to standard CSS cascade.
 
-### Couleurs et dark mode
+### Colours and dark mode
 
-Le dark mode (v0.1.1) ne change pas les CSS variables des couleurs
-d'état — seulement l'image de fond. Les couleurs d'éléments restent
-identiques en mode light et dark (jaune pour lampe on dans les deux).
-Si des couleurs spécifiques au dark mode sont voulues, l'utilisateur
-peut les définir dans un thème HA dark.
+Dark mode (v0.1.1) does not change state-colour CSS variables — only
+the background image. Element colours stay the same in light and dark
+mode (yellow for "light on" in both). If specific dark-mode colours
+are wanted, the user can define them in a dark HA theme.
 
-## Questions ouvertes
+## Open questions
 
-Aucune.
+None.
 
-## Décisions
+## Decisions
 
-Pas d'ADR formel. Les couleurs par défaut suivent les conventions HA
-standard (notamment les couleurs Material Design utilisées par les
-icônes natives HA pour les domaines correspondants).
+No formal ADR. The default colours follow HA standard conventions
+(notably the Material Design colours used by HA's native domain
+icons).

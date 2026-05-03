@@ -7,168 +7,174 @@ related: [data-model.md, color-scheme.md, ../architecture/component-tree.md, ../
 
 # Dark Mode
 
-Support optionnel d'images de fond alternatives en mode sombre. Spec
-draft pour la **v0.1.1**, feature isolée et compat backward complète.
+Optional support for alternative background images in dark mode. Spec
+for **v0.1.1**, isolated feature with full backward compatibility.
 
-## Contexte
+## Context
 
-La v0.1.0 affiche une image de fond unique par floor (champ `background`).
-Cette image est typiquement un plan exporté de Sweet Home 3D ou
-équivalent, conçu en couleurs claires pour bonne lisibilité.
+v0.1.0 displays a single background image per floor (the `background`
+field). This image is typically a plan exported from Sweet Home 3D or
+equivalent, designed in light colours for good readability.
 
-Quand l'utilisateur active le dark mode HA (manuellement ou via
-auto-détection horaire), le reste de l'interface Lovelace bascule en
-sombre, mais la card reste en plan clair — incohérence visuelle qui
-agresse l'œil le soir.
+When the user enables HA dark mode (manually or via time-based
+auto-detection), the rest of the Lovelace UI switches to dark, but the
+card stays on the light plan — visual inconsistency that strains the
+eyes in the evening.
 
-L'utilisateur veut pouvoir fournir une **version sombre** de chaque plan
-(typiquement un export inversé ou re-stylé) et que la card bascule
-automatiquement entre les deux selon le contexte HA.
+The user wants to provide a **dark version** of each plan (typically
+an inverted or restyled export) and have the card switch automatically
+between the two depending on the HA context.
 
-Cette feature est **isolée** : elle n'affecte ni la navigation, ni les
-overlays, ni les couleurs des éléments. Uniquement l'image de fond.
+This feature is **isolated**: it affects neither navigation, nor
+overlays, nor element colours. Only the background image.
 
-## Objectifs
+## Goals
 
-1. Permettre une déclaration optionnelle d'une image dark par floor
-2. Bascule automatique en suivant le thème HA (avec override manuel
+1. Allow an optional dark image declaration per floor
+2. Automatic switch following the HA theme (with manual override
    possible)
-3. Crossfade fluide entre les deux images, sans flash ni latence
-4. Compat backward complète : toute config v0.1.0 fonctionne sans
-   modification
-5. Si dark variant absent pour un floor, comportement gracieux (fallback
-   sur image par défaut + warning console une fois)
+3. Smooth crossfade between the two images, without flash or latency
+4. Full backward compatibility: every v0.1.0 config works unchanged
+5. If the dark variant is missing for a floor, graceful behaviour
+   (fallback to default image + one-time console warning)
 
 ## Scope
 
 ### In
 
-- Nouveau setting global `dark_mode: auto | on | off` (défaut `auto`)
-- Nouveau champ `backgrounds: { default, dark }` au niveau floor (forme
-  étendue)
-- Compat backward avec champ `background` v0.1.0 (forme courte)
-- Cascade de détection : setting > `hass.themes.darkMode` > `prefers-color-scheme`
-- Rendu DOM avec 2 `<image>` superposés et crossfade CSS ~200ms
-- Optimisation : pas de DOM dark si `dark_mode: off`
-- Warning console une fois par floor sans dark variant en mode dark
-- Mise à jour de `dev/mock-hass.ts` pour exposer un toggle dark mode
-- Nouvel exemple `docs/examples/dark-mode.yaml`
+- New global setting `dark_mode: auto | on | off` (default `auto`)
+- New `backgrounds: { default, dark }` field on each floor (extended
+  form)
+- Backward compatibility with the v0.1.0 `background` field (short
+  form)
+- Detection cascade: setting > `hass.themes.darkMode` >
+  `prefers-color-scheme`
+- DOM rendering with 2 `<image>` elements stacked and CSS crossfade
+  ~200ms
+- Optimisation: no dark DOM if `dark_mode: off`
+- One-time console warning per floor without a dark variant in dark
+  mode
+- Update `dev/mock-hass.ts` to expose a dark-mode toggle
+- New example `docs/examples/dark-mode.yaml`
 
 ### Out
 
-- Couleurs des éléments en dark mode (cf.
-  [`color-scheme.md`](color-scheme.md) — les CSS variables restent
-  identiques, le thème HA gère la cohérence des couleurs)
-- Modes additionnels au-delà de light/dark (high-contrast, sepia,
-  ambient...) — réservés pour futures clés dans `backgrounds.<mode>`,
-  pas implémentés en v0.1.1
-- Auto-génération d'image dark à partir de l'image light (filtres CSS
-  d'inversion) — ce serait moins lisible qu'une image dédiée
-- Pinch-zoom sur les plans (rapport orthogonal au dark mode)
+- Element colours in dark mode (see
+  [`color-scheme.md`](color-scheme.md) — the CSS variables stay
+  identical, the HA theme handles colour consistency)
+- Modes beyond light/dark (high-contrast, sepia, ambient...) —
+  reserved for future keys in `backgrounds.<mode>`, not implemented
+  in v0.1.1
+- Auto-generation of a dark image from the light one (CSS inversion
+  filters) — would be less readable than a dedicated image
+- Pinch-zoom on plans (orthogonal to dark mode)
 
-## Comportement attendu
+## Expected behaviour
 
-### Source de la décision (cascade)
+### Source of the decision (cascade)
 
-Le mode courant (`'light' | 'dark'`) est résolu via cette cascade, dans
-l'ordre :
+The current mode (`'light' | 'dark'`) is resolved by walking this
+cascade, in order:
 
-1. **Setting `settings.dark_mode`** (priorité maximale)
-   - `on` → force le dark mode quel que soit le contexte HA/browser
-   - `off` → force le light mode quel que soit le contexte HA/browser
-   - `auto` (défaut) → délégué aux sources ci-dessous
+1. **Setting `settings.dark_mode`** (highest priority)
+   - `on` → forces dark mode regardless of HA/browser context
+   - `off` → forces light mode regardless of HA/browser context
+   - `auto` (default) → delegated to the sources below
 
-2. **HA `hass.themes.darkMode`** (en mode auto)
-   - Signal officiel HA, suit le thème courant et le mode auto basé sur
-     l'heure si configuré côté thème HA
+2. **HA `hass.themes.darkMode`** (in auto mode)
+   - Official HA signal, follows the active theme and any
+     time-based auto mode configured on the HA theme side
 
-3. **Browser `window.matchMedia('(prefers-color-scheme: dark)')`** (fallback)
-   - Si `hass.themes.darkMode` est indisponible (HA pas encore chargé,
-     mode standalone, etc.)
+3. **Browser `window.matchMedia('(prefers-color-scheme: dark)')`**
+   (fallback)
+   - When `hass.themes.darkMode` is unavailable (HA not yet loaded,
+     standalone mode, etc.)
 
-### Champ `backgrounds` (forme étendue)
+### `backgrounds` field (extended form)
 
-Nouveau champ optionnel au niveau floor :
+New optional field at the floor level:
 
 ```yaml
 floors:
   - id: L0
-    name: "Rez-de-chaussée"
+    name: "Ground floor"
     backgrounds:
       default: /local/floorplans/L0-day.png
       dark: /local/floorplans/L0-night.png
 ```
 
-| Clé | Type | Obligatoire | Description |
+| Key | Type | Required | Description |
 |---|---|---|---|
-| `default` | string | ✅ | Path image utilisée en mode `light` (et fallback) |
-| `dark` | string | ❌ | Path image utilisée en mode `dark` |
-| `<autres>` | string | ❌ | Réservé pour futurs modes (high-contrast, sepia...). Ignoré en v0.1.1. |
+| `default` | string | ✅ | Path used in `light` mode (and fallback) |
+| `dark` | string | ❌ | Path used in `dark` mode |
+| `<other>` | string | ❌ | Reserved for future modes (high-contrast, sepia...). Ignored in v0.1.1. |
 
-### Compat backward avec `background` (forme courte)
+### Backward compatibility with `background` (short form)
 
-Le champ `background` v0.1.0 reste fonctionnel :
+The v0.1.0 `background` field stays functional:
 
 ```yaml
 floors:
   - id: L0
-    name: "Rez-de-chaussée"
-    background: /local/floorplans/L0.png  # forme courte v0.1.0
+    name: "Ground floor"
+    background: /local/floorplans/L0.png  # short form, v0.1.0
 ```
 
-Règles de validation runtime :
+Runtime validation rules:
 
-- Au moins **un** des deux champs `background` ou `backgrounds` doit
-  être présent. Sinon throw `Floor X requires either 'background' or 'backgrounds.default'`.
-- Si `backgrounds` est présent, il **doit** contenir une clé `default`.
-  Sinon throw `Floor X has 'backgrounds' but no 'backgrounds.default'`.
-- Si les deux sont présents : `backgrounds` prend la priorité,
-  `background` est ignoré **silencieusement** (situation transitoire de
-  migration acceptable, pas de warning).
+- At least **one** of the two fields `background` or `backgrounds`
+  must be present. Otherwise: throw
+  `Floor X requires either 'background' or 'backgrounds.default'`.
+- If `backgrounds` is present, it **must** contain a `default` key.
+  Otherwise: throw
+  `Floor X has 'backgrounds' but no 'backgrounds.default'`.
+- If both are present: `backgrounds` takes priority, `background` is
+  ignored **silently** (acceptable transitory migration state, no
+  warning).
 
-### Algorithme de résolution du path d'image
+### Image-path resolution algorithm
 
-Pour un floor donné et un mode courant `'light' | 'dark'` :
+For a given floor and a current mode `'light' | 'dark'`:
 
 ```
-SI floor.backgrounds est défini :
-  SI mode === 'light' :
+IF floor.backgrounds is defined:
+  IF mode === 'light':
     → backgrounds.default
-  SI mode === 'dark' :
-    SI backgrounds.dark présent :
+  IF mode === 'dark':
+    IF backgrounds.dark is present:
       → backgrounds.dark
-    SINON :
-      → backgrounds.default + console.warn() (une fois)
-SINON (forme courte uniquement) :
-  SI mode === 'light' :
+    ELSE:
+      → backgrounds.default + console.warn() (once)
+ELSE (short form only):
+  IF mode === 'light':
     → background
-  SI mode === 'dark' :
-    → background + console.warn() (une fois, "no dark variant")
+  IF mode === 'dark':
+    → background + console.warn() (once, "no dark variant")
 ```
 
-### Rendu DOM et crossfade
+### DOM rendering and crossfade
 
-Pour chaque floor, le composant émet **2 `<image>` superposés** dans le
-SVG quand un dark variant existe (forme étendue avec `backgrounds.dark`)
-**ET** quand `settings.dark_mode !== 'off'` :
+For each floor, the component emits **2 stacked `<image>`** in the SVG
+when a dark variant exists (extended form with `backgrounds.dark`)
+**AND** when `settings.dark_mode !== 'off'`:
 
 ```html
 <g id="fn-floor-L0">
   <image id="fn-floor-L0-bg-default" href="L0-day.png" class="fn-bg-default" />
   <image id="fn-floor-L0-bg-dark"    href="L0-night.png" class="fn-bg-dark" />
-  <!-- overlays par-dessus -->
+  <!-- overlays on top -->
 </g>
 ```
 
-Si un floor n'a **pas** de dark variant (forme courte ou `backgrounds`
-sans `dark`), seul le `<image>` default est émis.
+If a floor has **no** dark variant (short form, or extended form
+without `dark`), only the default `<image>` is emitted.
 
-Si `settings.dark_mode === 'off'`, le composant n'émet PAS les `<image>`
-dark même quand `backgrounds.dark` est déclaré dans la config. Pas de
-DOM inutile pour un mode désactivé explicitement.
+If `settings.dark_mode === 'off'`, the component does NOT emit the
+dark `<image>` even when `backgrounds.dark` is declared in the config.
+No useless DOM for an explicitly disabled mode.
 
-Une classe globale sur le composant racine (`fn-theme-light` ou
-`fn-theme-dark`) détermine quelle image est visible :
+A global class on the root component (`fn-theme-light` or
+`fn-theme-dark`) determines which image is visible:
 
 ```css
 .fn-bg-default, .fn-bg-dark {
@@ -180,178 +186,179 @@ Une classe globale sur le composant racine (`fn-theme-light` ou
 .fn-theme-dark  .fn-bg-dark    { opacity: 1; }
 ```
 
-Les 2 images restent dans le DOM en permanence, le toggle est purement
-opacité → crossfade fluide, pas de re-fetch network au switch.
+Both images stay in the DOM permanently; the toggle is purely
+opacity-driven → smooth crossfade, no network re-fetch on switch.
 
-### Souscription aux changements de thème
+### Subscribing to theme changes
 
-Le composant racine `floor-navigator-card` :
+The root component `floor-navigator-card`:
 
-- Maintient une `@state() currentTheme: 'light' | 'dark'`
-- Recalcule `currentTheme` via `theme-resolver` à chaque update du
-  `hass` (réactif via Lit)
-- Souscrit dans `connectedCallback` à
+- Holds a `@state() currentTheme: 'light' | 'dark'`
+- Recomputes `currentTheme` via `theme-resolver` on every `hass`
+  update (reactive via Lit)
+- Subscribes in `connectedCallback` to
   `window.matchMedia('(prefers-color-scheme: dark)')` via
   `addEventListener('change', ...)`
-- Cleanup obligatoire dans `disconnectedCallback` pour éviter des fuites
-  mémoire en navigation Lovelace
+- Mandatory cleanup in `disconnectedCallback` to avoid memory leaks
+  when navigating Lovelace
 
-L'événement de changement de `hass.themes.darkMode` ne nécessite **pas**
-d'EventTarget custom : la prop `hass` étant reactive, Lit re-render
-automatiquement quand HA push une nouvelle valeur.
+The `hass.themes.darkMode` change event does **not** require a custom
+EventTarget: the `hass` prop being reactive, Lit re-renders
+automatically when HA pushes a new value.
 
-### Préchargement et performance
+### Preloading and performance
 
-Les 2 images étant chargées dès le montage initial (les 2 `<image>` sont
-dans le DOM avec leurs `href`), le toggle est instantané sans latence
-réseau. Le coût mémoire est doublé sur les floors qui ont les 2
-variantes — acceptable étant donné qu'un floor plan PNG fait typiquement
-100-500 KB.
+Both images are loaded at initial mount (the 2 `<image>` are in the
+DOM with their `href`), so the toggle is instant with no network
+latency. The memory cost is doubled on floors that have both variants
+— acceptable given that a floor plan PNG is typically 100–500 KB.
 
-## Cas limites
+## Edge cases
 
-### Floor sans dark variant en mode dark
+### Floor without dark variant in dark mode
 
-L'utilisateur a déclaré `backgrounds: { default: ... }` sans `dark`, et
-le mode courant est dark. Comportement :
-- Image par défaut affichée
-- `console.warn('[floor-navigator-card] Floor "L1" has no dark variant. Falling back to default image in dark mode.')` émis **une seule fois** par instance de floor (flag `_hasWarned: boolean` sur `<fn-floor>`)
-- Pas de placeholder rouge ou autre signal visuel
+The user has declared `backgrounds: { default: ... }` without `dark`,
+and the current mode is dark. Behaviour:
+- Default image displayed
+- `console.warn('[floor-navigator-card] Floor "L1" has no dark variant. Falling back to default image in dark mode.')`
+  emitted **once** per floor instance (`_hasWarned: boolean` flag on
+  `<fn-floor>`)
+- No red placeholder or other visual signal
 
-### Mix de floors avec et sans dark variant
+### Mix of floors with and without dark variant
 
-L'utilisateur a 3 floors : L0 et L2 ont `backgrounds.dark`, L1 n'en a
-pas. Comportement en mode dark :
-- L0 et L2 : image dark
-- L1 : image light + warning console une fois
-- Visuellement incohérent, mais l'utilisateur a été averti et peut
-  fournir le dark variant manquant à son rythme
+The user has 3 floors: L0 and L2 have `backgrounds.dark`, L1 does
+not. Behaviour in dark mode:
+- L0 and L2: dark image
+- L1: light image + one console warning
+- Visually inconsistent, but the user has been warned and can
+  provide the missing dark variant at their own pace
 
-### Toggle de thème HA pendant une transition de floor
+### HA theme toggle during a floor transition
 
-L'utilisateur navigue entre floors et change de thème HA en même temps.
-Comportement : le crossfade light/dark se superpose au mouvement de
-transition de floor. Visuellement OK car les transitions ciblent des
-propriétés différentes (opacity pour theme switch, transform pour
+The user navigates between floors and changes the HA theme at the
+same time. Behaviour: the light/dark crossfade overlays the floor
+transition motion. Visually fine because the transitions target
+different properties (opacity for theme switch, transform for
 navigation).
 
-### Setting `dark_mode: on` mais aucun floor n'a `dark`
+### `dark_mode: on` setting but no floor has `dark`
 
-L'utilisateur force `dark_mode: on` mais tous les floors sont en forme
-courte (`background` uniquement). Comportement : warning console émis
-pour chaque floor (au connectedCallback de chacun, une fois par
-instance), images light affichées partout. Cohérent avec le
-comportement "fallback gracieux".
+The user forces `dark_mode: on` but every floor is in short form
+(`background` only). Behaviour: console warning emitted for each
+floor (in each instance's connectedCallback, once), light images
+displayed everywhere. Consistent with the "graceful fallback"
+behaviour.
 
-### `backgrounds.dark` en chemin invalide (404)
+### `backgrounds.dark` with an invalid path (404)
 
-L'utilisateur déclare `backgrounds.dark: /local/missing.png`.
-Comportement : le browser charge l'image, le 404 produit une image
-cassée (broken image icon). Pas de gestion explicite côté composant.
-Le DevTools network montre le 404 — l'utilisateur diagnostique facilement.
+The user declares `backgrounds.dark: /local/missing.png`. Behaviour:
+the browser loads the image, the 404 produces a broken image (broken
+image icon). No explicit handling in the component. The DevTools
+network panel shows the 404 — easy to diagnose.
 
-### Cache du browser sur image dark modifiée
+### Browser cache on a modified dark image
 
-L'utilisateur modifie son image dark côté HAOS pendant le développement.
-Le browser sert la version cachée. Solutions :
-- `Ctrl+Shift+R` pour bypass cache
-- Ajouter un query string différent (`?v=2`) au path dans la config
+The user changes their dark image on the HAOS side during dev. The
+browser serves the cached version. Workarounds:
+- `Ctrl+Shift+R` to bypass cache
+- Add a different query string (`?v=2`) to the path in the config
 
-Documenté dans
+Documented in
 [`../architecture/dev-workflow.md`](../architecture/dev-workflow.md).
 
-### Plusieurs instances de la card sur le même dashboard
+### Multiple instances of the card on the same dashboard
 
-L'utilisateur a 2 cards `floor-navigator-card` sur le même dashboard
-(use case rare mais possible). Chaque instance souscrit indépendamment
-à `matchMedia` et reçoit son propre `hass`. Pas de partage d'état entre
-instances. Pas de problème particulier.
+The user has 2 `floor-navigator-card` cards on the same dashboard
+(rare but possible use case). Each instance subscribes
+independently to `matchMedia` and receives its own `hass`. No state
+shared between instances. No particular issue.
 
-### Mode standalone (sans HA, dev rapide)
+### Standalone mode (no HA, quick dev)
 
-En mode dev rapide (`dev/index.html`), `hass` est mocké. Le mock doit
-exposer `themes.darkMode` togglable pour permettre le test du dark
-mode sans HA réel. Sinon le fallback `prefers-color-scheme` du browser
-prend le relais.
+In quick dev mode (`dev/index.html`), `hass` is mocked. The mock must
+expose a togglable `themes.darkMode` to allow dark-mode testing
+without real HA. Otherwise the browser `prefers-color-scheme`
+fallback takes over.
 
-## Questions ouvertes
+## Open questions
 
-Aucune. Les 4 décisions structurantes (setting global vs per-floor,
-naming `backgrounds`, transition crossfade, fallback warning) ont été
-tranchées en session de design Claude Opus.
+None. The 4 structuring decisions (global vs per-floor setting,
+naming `backgrounds`, crossfade transition, fallback warning) were
+settled in the Claude Opus design session.
 
-## Décisions
+## Decisions
 
-### Décisions tranchées (2026-05-03, session Claude Opus)
+### Settled decisions (2026-05-03, Claude Opus session)
 
-- **Granularité** : setting global `dark_mode` + déclaration optionnelle
-  par floor. Cohérence visuelle pilotée globalement, déclaration locale
-  pour le contenu. Permet à l'utilisateur de désactiver explicitement
-  même s'il a fourni des dark variants.
+- **Granularity**: global `dark_mode` setting + optional per-floor
+  declaration. Visual consistency driven globally, content
+  declaration locally. Lets the user explicitly disable even when
+  dark variants are provided.
 
-- **Override config** : valeurs `auto | on | off` (3 valeurs claires)
-  plutôt qu'un boolean ou un enum plus riche. Couvre tous les cas
-  d'usage sans complexité.
+- **Config override**: `auto | on | off` values (3 clear values)
+  rather than a boolean or a richer enum. Covers every use case
+  without complexity.
 
-- **Naming `backgrounds.{default, dark}`** : forme étendue extensible
-  pour modes futurs (high-contrast, sepia...) sans casser l'API.
-  `default` plutôt que `light` parce que c'est le fallback universel,
-  pas seulement l'image en mode light.
+- **Naming `backgrounds.{default, dark}`**: extensible extended form
+  for future modes (high-contrast, sepia...) without breaking the
+  API. `default` rather than `light` because it is the universal
+  fallback, not just the light-mode image.
 
-- **Compat backward `background` (court) + `backgrounds` (étendu)** :
-  les deux formes supportées simultanément, `backgrounds` prioritaire
-  si les deux présents. Permet aux configs v0.1.0 de fonctionner
-  inchangées et de migrer progressivement.
+- **Backward compatibility short `background` + extended
+  `backgrounds`**: both forms supported simultaneously,
+  `backgrounds` priority if both are present. Lets v0.1.0 configs
+  work unchanged and migrate gradually.
 
-- **Crossfade simple ~200ms** sur opacity, plutôt que réutiliser le
-  système de transitions de navigation (slide, slide-scale). Le toggle
-  light/dark est sémantiquement différent d'un mouvement spatial — c'est
-  un changement d'apparence, pas de niveau.
+- **Simple crossfade ~200ms** on opacity, rather than reusing the
+  navigation transition system (slide, slide-scale). The light/dark
+  toggle is semantically different from a spatial movement — it is
+  an appearance change, not a level change.
 
-- **Fallback silencieux + warning console** plutôt que "all or nothing"
-  (désactivation globale du dark mode si un floor manque). L'utilisateur
-  prend ses responsabilités, le warning aide à diagnostiquer.
+- **Silent fallback + console warning** rather than "all or
+  nothing" (global dark-mode disablement if a floor is missing).
+  The user takes responsibility, the warning aids diagnosis.
 
-- **Cible release v0.1.1 isolée** plutôt que v0.2.0 groupée. Feature
-  autonome, bien isolée techniquement. Justifie un patch SemVer (compat
-  backward complète). Voir
+- **Isolated v0.1.1 release** rather than v0.2.0 grouped. Self-
+  contained feature, well isolated technically. Justifies a SemVer
+  patch (full backward compatibility). See
   [`../architecture/conventions.md`](../architecture/conventions.md)
-  pour la justification SemVer.
+  for SemVer justification.
 
-### Décisions reportées
+### Deferred decisions
 
-- **Modes additionnels** (high-contrast, sepia, ambient...) : structure
-  `backgrounds.<mode>` prête à les accueillir, mais aucun n'est
-  implémenté en v0.1.1. À considérer en v0.4.0+ selon demandes.
+- **Additional modes** (high-contrast, sepia, ambient...):
+  `backgrounds.<mode>` structure ready to host them, but none
+  implemented in v0.1.1. To consider in v0.4.0+ on demand.
 
-- **Couleurs d'éléments en dark mode** : pas dans le scope. Les CSS
-  variables restent identiques light/dark. Si l'utilisateur veut des
-  couleurs différentes, il peut les définir dans un thème HA dark.
+- **Element colours in dark mode**: not in scope. CSS variables stay
+  identical between light and dark. If the user wants different
+  colours, they can define them in a dark HA theme.
 
-## Implémentation — sera détaillée par Claude Code
+## Implementation — to be detailed by Claude Code
 
-Cette spec est `draft` jusqu'à validation post-implémentation. Claude
-Code doit, en suivant cette spec :
+This spec is `draft` until validation post-implementation. Claude
+Code, following this spec, must:
 
-1. Créer `src/utils/theme-resolver.ts` — résolution du mode courant
-2. Créer `src/utils/background-resolver.ts` — résolution du path d'image
-3. Étendre `src/types/config.ts` — types `Backgrounds`, `dark_mode`
-4. Modifier `src/components/fn-floor.ts` — émettre 2 `<image>` selon
-   contexte
-5. Modifier `src/floor-navigator-card.ts` — `currentTheme` reactive +
-   souscription matchMedia + classe `fn-theme-*`
-6. Étendre `src/styles/card-styles.ts` — règles CSS de crossfade
-7. Mettre à jour `dev/mock-hass.ts` — toggle `themes.darkMode`
-8. Créer `docs/examples/dark-mode.yaml` — exemple complet
-9. Bump `CARD_VERSION` à `0.1.1` dans `floor-navigator-card.ts`
-10. Mettre à jour `README.md` du repo — section configuration
+1. Create `src/utils/theme-resolver.ts` — current mode resolution
+2. Create `src/utils/background-resolver.ts` — image-path resolution
+3. Extend `src/types/config.ts` — types `Backgrounds`, `dark_mode`
+4. Modify `src/components/fn-floor.ts` — emit 2 `<image>` per
+   context
+5. Modify `src/floor-navigator-card.ts` — reactive `currentTheme`
+   + matchMedia subscription + `fn-theme-*` class
+6. Extend `src/styles/card-styles.ts` — crossfade CSS rules
+7. Update `dev/mock-hass.ts` — `themes.darkMode` toggle
+8. Create `docs/examples/dark-mode.yaml` — full example
+9. Bump `CARD_VERSION` to `0.1.1` in `floor-navigator-card.ts`
+10. Update the repo `README.md` — configuration section
 
-Une fois implémentée et validée :
+Once implemented and validated:
 
-- Statut de cette spec passe à `implemented`
-- Les nouveaux champs (`backgrounds`, `dark_mode`) sont mergés dans
+- Status of this spec moves to `implemented`
+- The new fields (`backgrounds`, `dark_mode`) are merged into
   [`data-model.md`](data-model.md)
-- Un ADR-005 est ajouté dans
-  [`../decisions.md`](../decisions.md) consignant les choix structurants
-- Un nouvel item dans le changelog du
-  [`../README.md`](../README.md) sous v0.1.1
+- An ADR-005 is added in [`../decisions.md`](../decisions.md)
+  recording the structuring choices
+- A new changelog item appears in
+  [`../README.md`](../README.md) under v0.1.1
