@@ -1,0 +1,21 @@
+# Default behaviour: Git auto-detects whether a file is text, normalises
+# line endings to LF in the repo, and lets each working tree convert
+# back to its native EOL on checkout. This eliminates the noisy
+# "LF will be replaced by CRLF the next time Git touches it" warnings
+# on Windows.
+* text=auto eol=lf
+
+# Windows-only scripts that genuinely require CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary assets — never normalise.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary

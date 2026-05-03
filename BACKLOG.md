@@ -35,12 +35,6 @@ top so it stays visible as a history trail.
 
 ## 🐛 Bugs / quality
 
-- **CRLF / LF warnings on every commit (Windows).**
-  The repo has no `.gitattributes`, so Git detects CRLF writes on
-  files it stores as LF and emits the `LF will be replaced by CRLF`
-  warning. Harmless but noisy. Fix: add `.gitattributes` with
-  `* text=auto eol=lf` plus an override for `.bat` / `.cmd` files.
-
 - **Swipe starting on an overlay button → navigation instead of
   toggle.** If the user starts a swipe (>50px) with their finger on
   a button in the overlay bar, the browser does not synthesise a
@@ -132,8 +126,6 @@ Captured during dev:
 ---
 
 ## 🛠 Tooling / chore
-
-- **`.gitattributes` to normalise EOLs.** See the CRLF/LF bug above.
 
 - **Pre-commit hook with lint + build size check.**
   Catches regressions before push. Husky + lint-staged.
