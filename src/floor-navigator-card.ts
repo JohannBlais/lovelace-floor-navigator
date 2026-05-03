@@ -1,8 +1,9 @@
-import { LitElement, css, html } from 'lit';
+import { LitElement, css, html, type PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 
 import './components/fn-navigation-controller.js';
 import { cardVariables } from './styles/card-styles.js';
+import { resolveTheme, type ThemeMode } from './utils/theme-resolver.js';
 import type { CardConfig, Overlay, OverlayElement } from './types/config.js';
 import type { HomeAssistant } from './types/ha.js';
 
@@ -54,6 +55,55 @@ export class FloorNavigatorCard extends LitElement {
    * Will be mutated by `<fn-overlay-buttons>` at step 7.
    */
   @state() private _visibleOverlayIds: Set<string> = new Set();
+  /**
+   * v0.1.1 — Current theme mode resolved from the cascade
+   * `settings.dark_mode` > `hass.themes.darkMode` > `prefers-color-scheme`.
+   * Recomputed in `willUpdate` whenever `hass` or `_config` changes, and
+   * by the matchMedia listener when the OS-level preference toggles.
+   */
+  @state() private _currentTheme: ThemeMode = 'light';
+
+  /** Browser-level dark-mode preference watcher, populated in connectedCallback. */
+  private _matchMedia?: MediaQueryList;
+  private _matchMediaListener = (): void => {
+    this._recomputeTheme();
+  };
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+      this._matchMedia = window.matchMedia('(prefers-color-scheme: dark)');
+      this._matchMedia.addEventListener('change', this._matchMediaListener);
+    }
+    this._recomputeTheme();
+  }
+
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    if (this._matchMedia) {
+      this._matchMedia.removeEventListener('change', this._matchMediaListener);
+      this._matchMedia = undefined;
+    }
+  }
+
+  protected override willUpdate(changed: PropertyValues): void {
+    // Drop the `<this>` generic — Lit's strict overload of `Map.has()` for
+    // PropertyValueMap<T> filters keyof T to public properties, so private
+    // @state fields like `_config` aren't recognized. Falling back to the
+    // generic-less `PropertyValues` (alias for Map<PropertyKey, unknown>)
+    // allows any string key.
+    if (changed.has('hass') || changed.has('_config')) {
+      this._recomputeTheme();
+    }
+  }
+
+  private _recomputeTheme(): void {
+    const setting = this._config?.settings?.dark_mode;
+    const next = resolveTheme(this.hass, setting);
+    if (next !== this._currentTheme) {
+      this._currentTheme = next;
+    }
+  }
 
   public setConfig(config: CardConfig): void {
     if (!config || typeof config !== 'object') {
@@ -141,6 +191,8 @@ export class FloorNavigatorCard extends LitElement {
           .allOverlays=${allOverlays}
           .visibleOverlayIds=${this._visibleOverlayIds}
           .hass=${this.hass}
+          .currentTheme=${this._currentTheme}
+          .darkModeSetting=${settings.dark_mode ?? 'auto'}
           @overlay-toggle=${this._onOverlayToggle}
         ></fn-navigation-controller>
       </ha-card>

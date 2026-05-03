@@ -1,6 +1,39 @@
 import { css } from 'lit';
 
 /**
+ * v0.1.1 — Dark-mode crossfade CSS for floor backgrounds.
+ *
+ * Applied inside `fn-floor`'s shadow DOM. The `<svg>` of each fn-floor
+ * carries a `fn-theme-{light|dark}` class. When the floor has a dark
+ * variant, two `<image>` elements are rendered (classes `fn-bg-default`
+ * + `fn-bg-dark`) and the theme class drives their opacity. When the
+ * floor has only one image, it carries no class and stays fully opaque
+ * regardless of theme.
+ *
+ * Lives here (rather than inline in fn-floor) because it's a "design
+ * system" rule — visible to anyone reading card-styles.ts who wants to
+ * understand the theming surface alongside `cardVariables`.
+ */
+export const backgroundCrossfade = css`
+  .fn-bg-default,
+  .fn-bg-dark {
+    transition: opacity 200ms ease-in-out;
+  }
+  svg.fn-theme-light .fn-bg-default {
+    opacity: 1;
+  }
+  svg.fn-theme-light .fn-bg-dark {
+    opacity: 0;
+  }
+  svg.fn-theme-dark .fn-bg-default {
+    opacity: 0;
+  }
+  svg.fn-theme-dark .fn-bg-dark {
+    opacity: 1;
+  }
+`;
+
+/**
  * CSS custom properties exposed on the card root (`floor-navigator-card`).
  * Mirrors SPEC §3.4. Users can override any of these via `card-mod` or via
  * the Lovelace theme.

@@ -4,7 +4,8 @@ import { classMap } from 'lit/directives/class-map.js';
 import { styleMap } from 'lit/directives/style-map.js';
 
 import './fn-floor.js';
-import type { Floor, Overlay, TransitionMode } from '../types/config.js';
+import type { ThemeMode } from '../utils/theme-resolver.js';
+import type { DarkModeSetting, Floor, Overlay, TransitionMode } from '../types/config.js';
 import type { HomeAssistant } from '../types/ha.js';
 
 /**
@@ -30,6 +31,9 @@ export class FnFloorStack extends LitElement {
   @property({ attribute: false }) bounceDirection: BounceDirection = null;
   @property({ attribute: false }) overlays: Overlay[] = [];
   @property({ attribute: false }) hass?: HomeAssistant;
+  /** v0.1.1 — forwarded to each fn-floor for the dark-mode crossfade. */
+  @property({ type: String, attribute: false }) currentTheme: ThemeMode = 'light';
+  @property({ type: String, attribute: false }) darkModeSetting: DarkModeSetting = 'auto';
 
   private get _aspectRatio(): string {
     const parts = this.viewbox.trim().split(/\s+/).map(Number);
@@ -66,6 +70,8 @@ export class FnFloorStack extends LitElement {
                 .floor=${floor}
                 .overlays=${this.overlays}
                 .hass=${this.hass}
+                .currentTheme=${this.currentTheme}
+                .darkModeSetting=${this.darkModeSetting}
               ></fn-floor>
             </div>
           `;

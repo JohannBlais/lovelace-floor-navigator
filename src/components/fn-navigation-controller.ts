@@ -5,7 +5,9 @@ import './fn-floor-indicator.js';
 import './fn-floor-stack.js';
 import './fn-overlay-buttons.js';
 import type { BounceDirection } from './fn-floor-stack.js';
+import type { ThemeMode } from '../utils/theme-resolver.js';
 import type {
+  DarkModeSetting,
   EdgeBehavior,
   Floor,
   NavigationMode,
@@ -52,6 +54,9 @@ export class FnNavigationController extends LitElement {
   /** Position of the overlay buttons bar. SPEC §3.3.2 default = bottom. */
   @property({ type: String, attribute: false }) overlayButtonsPosition: OverlayButtonsPosition = 'bottom';
   @property({ attribute: false }) hass?: HomeAssistant;
+  /** v0.1.1 — forwarded to fn-floor-stack → fn-floor for the dark-mode crossfade. */
+  @property({ type: String, attribute: false }) currentTheme: ThemeMode = 'light';
+  @property({ type: String, attribute: false }) darkModeSetting: DarkModeSetting = 'auto';
 
   @state() private _currentIndex = 0;
   @state() private _bounceDirection: BounceDirection = null;
@@ -199,6 +204,8 @@ export class FnNavigationController extends LitElement {
           .bounceDirection=${this._bounceDirection}
           .overlays=${this.overlays}
           .hass=${this.hass}
+          .currentTheme=${this.currentTheme}
+          .darkModeSetting=${this.darkModeSetting}
         ></fn-floor-stack>
         ${this.showFloorIndicator && currentFloor
           ? html`<fn-floor-indicator .floor=${currentFloor}></fn-floor-indicator>`
