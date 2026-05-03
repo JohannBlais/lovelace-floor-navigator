@@ -1,170 +1,169 @@
 ---
 status: implemented
 owner: Johann Blais
-last_updated: 2026-05-03
+last_updated: 2026-05-04
 related: [rendering-strategy.md, ../features/data-model.md]
 ---
 
 # Navigation
 
-Détection des intentions utilisateur (wheel desktop, swipe mobile) et
-comportement aux extrémités. Spec figée pour la v0.1.0.
+User-intent detection (desktop wheel, mobile swipe) and edge behaviour.
+Frozen spec for v0.1.0.
 
-## Contexte
+## Context
 
-La proposition de valeur centrale de la card est la navigation fluide
-entre niveaux. Cette navigation doit être :
+The card's central value proposition is fluid navigation between
+levels. This navigation must be:
 
-- **Intuitive** : convention de direction cohérente desktop/mobile
-- **Fiable** : pas de saut accidentel, pas de double trigger
-- **Réactive** : transitions immédiates au geste, pas de latence
-  perçue
-- **Discriminée** : un swipe ne doit pas déclencher un tap d'élément, et
-  vice versa
+- **Intuitive**: consistent direction convention across desktop/mobile
+- **Reliable**: no accidental jump, no double trigger
+- **Responsive**: transitions immediate on gesture, no perceived
+  latency
+- **Discriminated**: a swipe must not trigger an element tap, and vice
+  versa
 
-## Objectifs
+## Goals
 
-1. Wheel desktop : 1 cran molette = 1 changement de floor, jamais 2
-2. Swipe mobile : seuil clair pour distinguer scroll vs swipe intentionnel
-3. Convention "scroll-aligned" : down → suivant dans la liste
-4. Comportement aux extrémités configurable (bounce / none / loop)
-5. Pas d'interférence avec les tap_actions des éléments
+1. Desktop wheel: 1 wheel notch = 1 floor change, never 2
+2. Mobile swipe: clear threshold to distinguish scroll vs intentional
+   swipe
+3. "Scroll-aligned" convention: down → next in the list
+4. Configurable edge behaviour at the boundaries (bounce / none / loop)
+5. No interference with element tap_actions
 
 ## Scope
 
 ### In
 
-- Détection wheel + throttle
-- Détection swipe touch
-- Edge behavior aux extrémités
-- Discrimination tap vs swipe
+- Wheel detection + throttle
+- Touch swipe detection
+- Edge behaviour at the boundaries
+- Tap vs swipe discrimination
 
 ### Out
 
-- Animation des transitions (voir
+- Transition animations (see
   [`rendering-strategy.md`](rendering-strategy.md))
-- Champs de config (voir
-  [`../features/data-model.md`](../features/data-model.md))
-- Raccourcis clavier (PageUp/PageDown) → reporté en v0.2.0+
+- Config fields (see [`../features/data-model.md`](../features/data-model.md))
+- Keyboard shortcuts (PageUp/PageDown) → deferred to v0.2.0+
 
-## Comportement attendu — Détection wheel (desktop)
+## Expected behaviour — Wheel detection (desktop)
 
-- Listener `wheel` sur le conteneur racine (`<floor-navigator-card>`)
-- Throttle pour éviter les sauts multiples : 1 changement de floor par
-  400ms minimum
-- Direction `deltaY > 0` → floor SUIVANT dans la liste
-  (`currentFloorIndex + 1`)
-- Direction `deltaY < 0` → floor PRÉCÉDENT (`currentFloorIndex - 1`)
+- `wheel` listener on the root container (`<floor-navigator-card>`)
+- Throttle to avoid multiple jumps: 1 floor change per 400ms minimum
+- `deltaY > 0` → NEXT floor in the list (`currentFloorIndex + 1`)
+- `deltaY < 0` → PREVIOUS floor (`currentFloorIndex - 1`)
 
-Le throttle est implémenté via une variable de timestamp local
-(`_lastNavigationTime`) sans `setTimeout` pour éviter les leaks.
+The throttle is implemented via a local timestamp variable
+(`_lastNavigationTime`) without `setTimeout` to avoid leaks.
 
-## Comportement attendu — Détection swipe (mobile/touch)
+## Expected behaviour — Swipe detection (mobile/touch)
 
-- Listeners `touchstart` / `touchmove` / `touchend` sur le conteneur
-  racine
-- Tracking du déplacement vertical (`deltaY = touch.clientY -
-  startY`) pendant le `touchmove`
-- Au `touchend`, déclenchement de la navigation si :
-  - `|deltaY| > 50` (px de déplacement minimum)
-  - **OU** vélocité `|deltaY| / duration > 0.3` (px/ms)
-- Direction down (deltaY > 0) → floor SUIVANT
-- Direction up (deltaY < 0) → floor PRÉCÉDENT
+- `touchstart` / `touchmove` / `touchend` listeners on the root
+  container
+- Track vertical displacement (`deltaY = touch.clientY - startY`)
+  during `touchmove`
+- On `touchend`, trigger navigation if:
+  - `|deltaY| > 50` (px minimum displacement)
+  - **OR** velocity `|deltaY| / duration > 0.3` (px/ms)
+- Down direction (deltaY > 0) → NEXT floor
+- Up direction (deltaY < 0) → PREVIOUS floor
 
-Le double critère (déplacement OU vélocité) gère deux cas :
-- Geste lent et long : déplacement franchit le seuil
-- Geste rapide et court : vélocité franchit le seuil
+The dual criterion (displacement OR velocity) handles two cases:
+- Slow long gesture: displacement crosses the threshold
+- Fast short gesture: velocity crosses the threshold
 
-## Comportement attendu — Edge behavior
+## Expected behaviour — Edge behaviour
 
-`settings.edge_behavior` pilote le comportement quand l'utilisateur
-tente de naviguer au-delà du dernier ou du premier floor.
+`settings.edge_behavior` controls what happens when the user tries to
+navigate past the last or first floor.
 
-### `bounce` (défaut)
+### `bounce` (default)
 
-- Animation CSS de "rebond" (~150ms, easing back-out, amplitude 20px)
-  appliquée au floor courant
-- Aucun changement de floor effectif (`currentFloorIndex` reste constant)
-- Indicateur visuel implicite : l'utilisateur comprend qu'il est en butée
+- CSS "bounce" animation (~150ms, back-out easing, 20px amplitude)
+  applied to the current floor
+- No effective floor change (`currentFloorIndex` stays constant)
+- Implicit visual feedback: the user understands they have hit the
+  boundary
 
 ### `none`
 
-Rien ne se passe. Pas d'animation, pas de feedback. Pour les setups où
-l'animation parasite distrait.
+Nothing happens. No animation, no feedback. For setups where parasitic
+animation distracts.
 
 ### `loop`
 
-Retour au floor opposé : si on est au dernier floor et qu'on scroll
-down, on retourne au premier floor (et inversement). Comportement type
-"carrousel infini".
+Wrap to the opposite floor: at the last floor scrolling down returns
+to the first floor (and vice versa). Carousel-style infinite
+behaviour.
 
-## Comportement attendu — Discrimination tap vs swipe
+## Expected behaviour — Tap vs swipe discrimination
 
-Le challenge : un tap sur un élément d'overlay déclenche son
-`tap_action` (toggle, more-info, etc.), mais un swipe initié sur cet
-élément doit déclencher la navigation, pas l'action.
+The challenge: tapping an overlay element triggers its `tap_action`
+(toggle, more-info, etc.), but a swipe initiated on that element must
+trigger navigation, not the action.
 
-### Mécanique exploitée
+### Mechanism leveraged
 
-Les browsers ne synthétisent **pas** d'événement `click` quand le
-`touchend` est éloigné de plus de ~10px du `touchstart`. Donc :
+Browsers do **not** synthesise a `click` event when `touchend` is more
+than ~10px away from `touchstart`. Therefore:
 
-- Tap court sur un élément (déplacement < 10px) → click event natif →
-  `<fn-element-icon>` capte → `handleAction` appelé
-- Swipe long sur un élément (déplacement > 50px) → pas de click natif
-  → `<fn-element-icon>` ne capte rien → seul le controller voit le
-  geste et navigue
+- Short tap on an element (movement < 10px) → native click event →
+  `<fn-element-icon>` catches it → `handleAction` called
+- Long swipe on an element (movement > 50px) → no native click →
+  `<fn-element-icon>` catches nothing → only the controller sees the
+  gesture and navigates
 
-Le seuil natif du browser (~10px) est plus strict que notre seuil de
-swipe (50px), donc la zone "ambiguë" entre 10 et 50px ne déclenche **ni**
-tap **ni** swipe (rien ne se passe). Comportement acceptable, voire
-souhaitable (filtre les gestes accidentels).
+The browser's native threshold (~10px) is stricter than our swipe
+threshold (50px), so the "ambiguous zone" between 10 and 50px triggers
+**neither** tap **nor** swipe (nothing happens). Acceptable, even
+desirable behaviour (filters accidental gestures).
 
-### Garde-fou défensif
+### Defensive guard
 
-`<fn-element-icon>` appelle `e.stopPropagation()` dans son handler de
-click pour éviter que le controller capte aussi l'événement et
-navigue. Pas strictement nécessaire vu le mécanisme browser ci-dessus,
-mais protège contre des comportements futurs (hold_action, etc.).
+`<fn-element-icon>` calls `e.stopPropagation()` in its click handler
+to prevent the controller from also catching the event and navigating.
+Not strictly necessary given the browser mechanism above, but protects
+against future behaviours (hold_action, etc.).
 
-## Cas limites
+## Edge cases
 
-### Geste pinch-to-zoom
+### Pinch-to-zoom gesture
 
-Un geste à 2 doigts (zoom natif iOS/Android) ne doit pas déclencher la
-navigation. Le `touchstart` enregistre `e.touches.length === 1` comme
-condition d'engagement du tracking. Si plusieurs doigts sont posés,
-le tracking est annulé.
+A 2-finger gesture (native iOS/Android zoom) must not trigger
+navigation. `touchstart` records `e.touches.length === 1` as the
+condition for engaging tracking. If multiple fingers are down,
+tracking is cancelled.
 
-### Tap sur un bouton d'overlay pendant qu'on swipe
+### Tap on an overlay button while swiping
 
-Si l'utilisateur commence un swipe avec le doigt sur un bouton de la
-barre d'overlay, le browser ne synthétise pas de click → la navigation
-se fait, le bouton n'est pas toggle. Comportement actuel = sémantique
-"swipe gagne sur tap si déplacement > 50px". Cohérent.
+If the user starts a swipe with the finger on an overlay-bar button,
+the browser does not synthesise a click → navigation occurs, the
+button is not toggled. Current behaviour = "swipe wins over tap if
+movement > 50px" semantics. Consistent.
 
-Voir BACKLOG.md à la racine pour un fix candidat (filtrer le tracking
-de swipe quand `e.target` est dans `<fn-overlay-buttons>`).
+See BACKLOG.md at the repo root for a candidate fix (filter the swipe
+tracking when `e.target` is inside `<fn-overlay-buttons>`).
 
-### Wheel sur trackpad MacBook
+### Wheel on a MacBook trackpad
 
-Les trackpads MacBook émettent des `wheel` events à très haute fréquence
-(ratio horaire/vertical mixés). Le throttle 400ms gère bien : 1 swipe
-trackpad complet = 1 changement de floor, comme attendu.
+MacBook trackpads emit `wheel` events at very high frequency (mixed
+horizontal/vertical ratios). The 400ms throttle handles this well: 1
+full trackpad swipe = 1 floor change, as expected.
 
-### Mode `none` pour navigation
+### `none` navigation mode
 
-`settings.navigation_mode: none` désactive complètement la navigation
-(ni wheel ni swipe). La card devient un dashboard statique avec
-seulement le floor de départ. Use case rare mais valide.
+`settings.navigation_mode: none` fully disables navigation (neither
+wheel nor swipe). The card becomes a static dashboard with only the
+start floor. Rare but valid use case.
 
-## Questions ouvertes
+## Open questions
 
-Aucune.
+None.
 
-## Décisions
+## Decisions
 
-Pas d'ADR formel. Les seuils (50px déplacement, 0.3px/ms vélocité,
-400ms throttle, 150ms bounce) ont été calibrés empiriquement sur Pixel
-9 Pro XL et poste desktop pendant le dev. Ajustables sans changement de
-spec si retours utilisateurs justifient.
+No formal ADR. The thresholds (50px displacement, 0.3px/ms velocity,
+400ms throttle, 150ms bounce) were calibrated empirically on a Pixel 9
+Pro XL and a desktop machine during development. Adjustable without
+spec change if user feedback warrants.

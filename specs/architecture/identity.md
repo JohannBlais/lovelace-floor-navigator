@@ -1,98 +1,96 @@
 ---
 status: implemented
 owner: Johann Blais
-last_updated: 2026-05-03
+last_updated: 2026-05-04
 related: [conventions.md, tech-stack.md]
 ---
 
 # Identity
 
-Nomenclature et identité figée du composant. Spec figée — toute évolution
-est un breaking change versionné.
+Frozen nomenclature and identity of the component. Frozen spec — every
+evolution is a versioned breaking change.
 
-## Contexte
+## Context
 
-Le composant existe sous plusieurs noms selon le contexte (repo GitHub,
-package npm, custom element DOM, type YAML, label HACS). Aligner ces
-noms évite les confusions et bugs subtils (notamment le mismatch entre
-custom element tag et type YAML, qui produit l'erreur "Custom element
-doesn't exist" au chargement).
+The component exists under several names depending on context (GitHub
+repo, npm package, DOM custom element, YAML type, HACS label).
+Aligning these names avoids confusion and subtle bugs (notably the
+mismatch between custom element tag and YAML type, which produces the
+"Custom element doesn't exist" error at load time).
 
-## Objectifs
+## Goals
 
-1. Une nomenclature unique référencée partout
-2. Conformité aux conventions HACS pour faciliter l'installation
-3. Clarté pour l'utilisateur final (config YAML lisible)
+1. A single nomenclature referenced everywhere
+2. Compliance with HACS conventions to ease installation
+3. Clarity for the end user (readable YAML config)
 
 ## Scope
 
 ### In
 
-- Nom du repo, du package, de la classe, du custom element
-- Type YAML utilisé dans la config Lovelace
-- Label HACS
+- Repo, package, class, custom element names
+- YAML type used in the Lovelace config
+- HACS label
 
 ### Out
 
-- Implémentation (voir composants `src/`)
-- Conventions de code (voir [`conventions.md`](conventions.md))
+- Implementation (see `src/` components)
+- Code conventions (see [`conventions.md`](conventions.md))
 
-## Comportement attendu — Nomenclature figée
+## Expected behaviour — Frozen nomenclature
 
-| Élément | Valeur |
+| Element | Value |
 |---|---|
-| Nom du repo GitHub | `lovelace-floor-navigator` |
-| Owner GitHub | `JohannBlais` |
+| GitHub repo name | `lovelace-floor-navigator` |
+| GitHub owner | `JohannBlais` |
 | **Custom element tag** | **`floor-navigator-card`** |
-| **Type YAML** | **`custom:floor-navigator-card`** |
-| Nom de la classe TS | `FloorNavigatorCard` |
-| Nom du package npm | `lovelace-floor-navigator` |
-| Nom marketing HACS | "Floor Navigator" |
-| Filename du bundle | `floor-navigator.js` |
+| **YAML type** | **`custom:floor-navigator-card`** |
+| TS class name | `FloorNavigatorCard` |
+| npm package name | `lovelace-floor-navigator` |
+| HACS marketing name | "Floor Navigator" |
+| Bundle filename | `floor-navigator.js` |
 
-## Cas limites
+## Edge cases
 
-### Mismatch tag / type YAML
+### Tag / YAML type mismatch
 
-Le custom element tag (`floor-navigator-card`) et le type YAML
-(`custom:floor-navigator-card`) doivent matcher exactement. HA résout
-`type: custom:<X>` en cherchant un custom element défini avec
-`customElements.define('<X>', ...)`. Si les deux ne matchent pas,
-l'erreur "Custom element doesn't exist" apparaît au chargement de la
-card.
+The custom element tag (`floor-navigator-card`) and the YAML type
+(`custom:floor-navigator-card`) must match exactly. HA resolves
+`type: custom:<X>` by looking for a custom element defined with
+`customElements.define('<X>', ...)`. If they don't match, the "Custom
+element doesn't exist" error appears at card load.
 
-La convention HACS standard est de suffixer le custom element tag en
+The standard HACS convention is to suffix the custom element tag with
 `-card` (cf. `mushroom-light-card`, `mini-graph-card`, `button-card`,
-`bubble-card`). Notre tag suit cette convention.
+`bubble-card`). Our tag follows this convention.
 
-Voir ADR-001 dans [`../decisions.md`](../decisions.md) pour l'historique
-de cette décision.
+See ADR-001 in [`../decisions.md`](../decisions.md) for the history of
+this decision.
 
-### Renommage du repo
+### Repo rename
 
-Le nom du repo GitHub influence l'URL d'installation custom HACS et les
-liens externes. **Renommer le repo serait un breaking change pour les
-utilisateurs HACS**. Pas envisagé avant publication HACS officielle.
+The GitHub repo name affects the custom HACS install URL and external
+links. **Renaming the repo would be a breaking change for HACS users.**
+Not under consideration before official HACS publication.
 
-### Conflit de namespace
+### Namespace conflict
 
-Le préfixe `fn-` du custom element et des CSS variables est court
-(2 lettres). Risque théorique de collision avec une autre card qui
-utiliserait le même préfixe. À ce jour, aucune custom card HACS connue
-ne prend ce préfixe. Si une collision apparaissait, le mainteneur
-adverse changerait probablement (préfixes courts = first-come,
-first-served dans la communauté).
+The `fn-` prefix on custom element tags and CSS variables is short
+(2 letters). Theoretical risk of collision with another card using the
+same prefix. To date, no known HACS custom card claims this prefix. If
+a collision arose, the opposing maintainer would likely change (short
+prefixes follow first-come, first-served in the community).
 
 ## Licence
 
-MIT (standard HACS, permet réutilisation maximale, y compris commerciale).
+MIT (HACS standard, allows maximal reuse, including commercial).
 
-## Questions ouvertes
+## Open questions
 
-Aucune.
+None.
 
-## Décisions
+## Decisions
 
-- ADR-001 — Custom element tag suffixé en `-card` (2026-05-01)
+- ADR-001 — Custom element tag suffixed with `-card` (2026-05-01)
 
-Voir [`../decisions.md`](../decisions.md) pour le détail.
+See [`../decisions.md`](../decisions.md) for details.

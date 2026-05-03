@@ -1,200 +1,198 @@
 ---
 status: implemented
 owner: Johann Blais
-last_updated: 2026-05-03
+last_updated: 2026-05-04
 related: [tech-stack.md]
 ---
 
 # Dev Workflow
 
-Workflow de développement quotidien : modes dev, déploiement HA réel,
-cycle de release. Spec figée pour la v0.1.0.
+Day-to-day development workflow: dev modes, real-HA deployment, release
+cycle. Frozen spec for v0.1.0.
 
-## Contexte
+## Context
 
-Le développement d'une custom card Lovelace combine deux phases avec des
-contraintes différentes :
+Developing a Lovelace custom card combines two phases with different
+constraints:
 
-- **Itération rapide visuelle** : tuning de positions, transitions,
-  styles. Pas besoin de HA réel, mock suffit.
-- **Validation intégration** : test sur le vrai HA avec les vraies
-  entités. Nécessaire avant chaque release.
+- **Quick visual iteration**: tuning positions, transitions, styles. No
+  real HA needed; a mock is sufficient.
+- **Integration validation**: testing on real HA against real entities.
+  Required before each release.
 
-L'écosystème HACS a convergé sur des conventions partagées
-(`HA_LOCAL_DIR`, `TARGET_DIRECTORY`) qu'on adopte pour rester aligné.
+The HACS ecosystem has converged on shared conventions
+(`HA_LOCAL_DIR`, `TARGET_DIRECTORY`); we adopt them to stay aligned.
 
-## Objectifs
+## Goals
 
-1. Itération visuelle en quelques secondes (pas de cycle build/install)
-2. Test intégration HA en quelques minutes (pas de copie manuelle de
-   fichier)
-3. Cycle de release reproductible via GitHub Actions
-4. Pas de friction côté HAOS (pas de ssh root quotidien)
+1. Visual iteration in seconds (no build/install cycle)
+2. HA integration testing in minutes (no manual file copying)
+3. Reproducible release cycle via GitHub Actions
+4. No friction on the HAOS side (no daily ssh root)
 
 ## Scope
 
 ### In
 
-- Mode "dev rapide" (page HTML standalone)
-- Mode "test intégration" (déploiement HA via Samba)
-- Cycle de release v0.1.x
-- Notes spécifiques à l'environnement de Johann
+- "Quick dev" mode (standalone HTML page)
+- "Integration test" mode (HA deployment via Samba)
+- v0.1.x release cycle
+- Notes specific to Johann's environment
 
 ### Out
 
-- Build configuration (voir [`tech-stack.md`](tech-stack.md))
-- Code style (voir [`conventions.md`](conventions.md))
+- Build configuration (see [`tech-stack.md`](tech-stack.md))
+- Code style (see [`conventions.md`](conventions.md))
 
-## Comportement attendu — Mode "dev rapide"
+## Expected behaviour — Quick dev mode
 
-**Quand l'utiliser** : développement courant, itération sur le visuel,
-tuning des transitions et des positions d'icônes. Mode par défaut pour
-~80% du temps de dev.
+**When to use**: routine development, visual iteration, tuning
+transitions and icon positions. Default mode for ~80% of dev time.
 
 ### Setup
 
-- `dev/index.html` charge le bundle compilé avec un mock du `hass` object
-- `dev/mock-hass.ts` simule 5-10 entités (1 light, 1 sensor, 1
-  binary_sensor, etc.) avec des états faux mais réalistes, et un
-  mécanisme pour simuler des state changes
-- Servi via un static server local (ex: `npx serve dev/` ou
-  `python -m http.server` depuis `dev/`)
-- Reload manuel après `npm run build` (~2s de build)
+- `dev/index.html` loads the compiled bundle alongside a mock `hass`
+  object
+- `dev/mock-hass.ts` simulates 5–10 entities (1 light, 1 sensor, 1
+  binary_sensor, etc.) with fake but realistic states, plus a mechanism
+  to simulate state changes
+- Served via a local static server (e.g. `npx serve dev/` or
+  `python -m http.server` from `dev/`)
+- Manual reload after `npm run build` (~2s build)
 
-### Avantages
+### Benefits
 
-- Itération en quelques secondes
-- Pas besoin de HA pour tester
-- Debug DOM facile (DevTools natif)
-- Hot reload du JS en relançant juste un build
+- Iteration in seconds
+- No HA needed for testing
+- Easy DOM debugging (native DevTools)
+- JS hot reload by re-running a build
 
-## Comportement attendu — Mode "test intégration"
+## Expected behaviour — Integration test mode
 
-**Quand l'utiliser** : avant chaque release v0.1.x, pour valider que la
-card fonctionne dans le vrai HA avec les vraies entités. Aussi quand un
-bug ne peut être reproduit qu'avec des données HA réelles.
+**When to use**: before each v0.1.x release, to validate that the card
+works in real HA against real entities. Also when a bug can only be
+reproduced with real HA data.
 
-**Pattern** : convention HACS standard `HA_LOCAL_DIR` (équivalent à
-`TARGET_DIRECTORY` de streamline-card) via variable d'environnement, lue
-par Rollup.
+**Pattern**: standard HACS convention `HA_LOCAL_DIR` (equivalent to
+`TARGET_DIRECTORY` in streamline-card) via an environment variable read
+by Rollup.
 
-### Setup côté HAOS (une seule fois)
+### HAOS side setup (one-time)
 
-1. Installer l'add-on **"Samba share"** : Settings → Add-ons → Add-on
+1. Install the **"Samba share"** add-on: Settings → Add-ons → Add-on
    Store → Samba share → Install
-2. Configurer un username + password dédié pour le partage SMB
-3. Démarrer l'add-on, activer "Start on boot"
+2. Configure a dedicated username + password for the SMB share
+3. Start the add-on, enable "Start on boot"
 
-Le partage expose `/config` en SMB, accessible à `\\<haos-ip>\config\`.
+The share exposes `/config` over SMB, accessible at
+`\\<haos-ip>\config\`.
 
-### Setup côté poste de dev (une seule fois)
+### Dev machine side setup (one-time)
 
-1. Mapper le partage `\\<haos-ip>\config\` comme lecteur réseau (ex:
-   lettre `Z:` sur Windows)
-2. Dans le repo `lovelace-floor-navigator`, créer un fichier
-   `.env.local` (gitignored) :
+1. Map the share `\\<haos-ip>\config\` as a network drive (e.g. drive
+   letter `Z:` on Windows)
+2. In the `lovelace-floor-navigator` repo, create a `.env.local` file
+   (gitignored):
 
 ```env
-# Pointe vers le dossier www/ de HAOS, accessible via le mapping Samba.
-# Le sous-dossier floor-navigator/ sera créé au premier build watch.
+# Points to the HAOS www/ folder, accessible via the Samba mapping.
+# The floor-navigator/ subfolder will be created on the first watch build.
 HA_LOCAL_DIR=Z:/www/floor-navigator
 ```
 
-3. Vérifier que `Z:/www/` existe (créé automatiquement par HA si la card
-   avait été installée via HACS, sinon le créer manuellement une fois)
+3. Verify that `Z:/www/` exists (created automatically by HA if the card
+   was installed via HACS, otherwise create it manually once)
 
-### Setup côté Lovelace (une seule fois)
+### Lovelace side setup (one-time)
 
-Déclarer la ressource dans Lovelace via l'UI :
-- Paramètres → Tableaux de bord → Ressources → Ajouter
-- URL : `/local/floor-navigator/floor-navigator.js?v=DEV`
-- Type : Module JavaScript
+Declare the resource in Lovelace via the UI:
+- Settings → Dashboards → Resources → Add
+- URL: `/local/floor-navigator/floor-navigator.js?v=DEV`
+- Type: JavaScript Module
 
-### Workflow quotidien
+### Daily workflow
 
-1. Lancer `npm run watch` dans le repo
-2. Modifier le code dans `src/`
-3. À chaque save, Rollup rebuild et écrit directement dans
+1. Run `npm run watch` in the repo
+2. Edit code in `src/`
+3. On every save, Rollup rebuilds and writes directly to
    `Z:/www/floor-navigator/floor-navigator.js`
-4. Recharger le tableau de bord dans HA avec `Ctrl+Shift+R` (force le
-   bypass du cache navigateur)
-5. Voir le changement en direct, sur les vraies entités
+4. Reload the dashboard in HA with `Ctrl+Shift+R` (forces a browser
+   cache bypass)
+5. See the change live, against real entities
 
-## Comportement attendu — Cache busting
+## Expected behaviour — Cache busting
 
-Le query string `?v=DEV` dans la déclaration de ressource ne change pas,
-donc HA va parfois servir la version cachée. Solutions :
+The `?v=DEV` query string in the resource declaration does not change,
+so HA will sometimes serve the cached version. Workarounds:
 
-- `Ctrl+Shift+R` après chaque save (le plus fiable au quotidien)
-- Pour forcer un reload : changer manuellement `?v=DEV` en `?v=DEV2`
-  dans Resources et reload
-- Pour la prod : la GitHub Action de release pourra ajouter
-  automatiquement le hash du commit à la fin du fichier (idée v0.2.0+,
-  voir BACKLOG.md)
+- `Ctrl+Shift+R` after every save (most reliable day-to-day)
+- To force a reload: manually change `?v=DEV` to `?v=DEV2` in Resources
+  and reload
+- For prod: the release GitHub Action could automatically append the
+  commit hash to the file (idea for v0.2.0+, see BACKLOG.md)
 
-## Comportement attendu — Cycle de release v0.1.x
+## Expected behaviour — v0.1.x release cycle
 
-1. Tester en mode dev rapide puis test intégration jusqu'à satisfaction
-2. Tag git `v0.X.Y` sur la branche `main`
-3. GitHub Actions build le bundle prod, attache `floor-navigator.js` à
-   la release GitHub (asset téléchargeable)
-4. Le binaire peut être téléchargé et placé manuellement dans
-   `/config/www/floor-navigator/`, ou installé via custom repo HACS
+1. Test in quick dev mode then integration test mode until satisfied
+2. Git tag `v0.X.Y` on the `main` branch
+3. GitHub Actions builds the prod bundle, attaches `floor-navigator.js`
+   to the GitHub release (downloadable asset)
+4. The binary can be downloaded and placed manually in
+   `/config/www/floor-navigator/`, or installed via custom HACS repo
 
-**Pas de soumission HACS officielle en v0.1.x**. La soumission HACS se
-fait quand le composant est mature (cible : v0.3.0). En attendant,
-l'utilisateur HACS-aware peut installer la card en ajoutant le repo en
-"Custom Repository" dans HACS, ce qui permet déjà de tester sans copie
-manuelle.
+**No official HACS submission in v0.1.x.** HACS submission happens once
+the component is mature (target: v0.3.0). Until then, HACS-aware users
+can install the card by adding the repo as a "Custom Repository" in
+HACS, which already lets them test without manual copying.
 
-## Cas limites
+## Edge cases
 
-### `HA_LOCAL_DIR` invalide
+### Invalid `HA_LOCAL_DIR`
 
-Si le mapping Samba est down ou le path n'existe pas, Rollup en mode
-watch écrit malgré tout — il tombe sur une erreur d'écriture explicite,
-pas un fallback silencieux. Le développeur voit immédiatement que le
-mapping est cassé.
+If the Samba mapping is down or the path does not exist, Rollup in
+watch mode still tries to write — it surfaces an explicit write error,
+not a silent fallback. The developer immediately sees that the mapping
+is broken.
 
-### Plusieurs HA cibles
+### Multiple HA targets
 
-Pour développer sur deux HA différents (test + prod), changer le
-`.env.local` à chaque fois. Pas de support natif multi-targets en
-v0.1.0. Si besoin, faire 2 clones du repo avec leur propre `.env.local`.
+To develop against two different HAs (test + prod), change `.env.local`
+each time. No native multi-targets support in v0.1.0. If needed, clone
+the repo twice with their own `.env.local`.
 
-### Sans Samba (Linux/macOS)
+### Without Samba (Linux/macOS)
 
-Le mode "test intégration" suppose Samba mais n'importe quel partage
-qui mappe `/config` en local fonctionne (NFS, SSHFS, etc.). La variable
-`HA_LOCAL_DIR` accepte n'importe quel path de filesystem local valide.
+Integration test mode assumes Samba but any share mapping `/config`
+locally works (NFS, SSHFS, etc.). The `HA_LOCAL_DIR` variable accepts
+any valid local filesystem path.
 
-### Build prod en CI
+### Prod build in CI
 
-GitHub Actions exécute `npm run build` sans `.env.local` → fallback sur
-`dist/` (cf. [`tech-stack.md`](tech-stack.md)). Le bundle est attaché à
-la release par `release.yml`.
+GitHub Actions runs `npm run build` without `.env.local` → fallback to
+`dist/` (see [`tech-stack.md`](tech-stack.md)). The bundle is attached
+to the release by `release.yml`.
 
-## Notes spécifiques à l'environnement Johann
+## Notes specific to Johann's environment
 
-Hors-spec mais utile pour le bootstrap :
+Off-spec but useful for bootstrap:
 
-- HAOS de Johann est en `192.168.1.61`. Le partage Samba est
+- Johann's HAOS is at `192.168.1.61`. The Samba share is therefore
   `\\192.168.1.61\config\`.
-- Le poste de dev principal est "Fatboy" (Bureau L2). Le mapping `Z:`
-  est défini là-dessus.
-- Le repo HA principal `JohannBlais/homeassistant-config` est privé et
-  utilise un Git Pull add-on. Le repo `lovelace-floor-navigator` est
-  distinct, privé jusqu'à v0.3.0 (stratégie publish polished).
-- Préférence personnelle : `transition_duration: 300` (au lieu du défaut
-  400) — réduit le motion sickness à l'usage répété. À noter dans la
-  config Johann uniquement, pas changement de défaut SPEC.
+- The main dev machine is "Fatboy" (Bureau L2). The `Z:` mapping is
+  set up there.
+- The main HA repo `JohannBlais/homeassistant-config` is private and
+  uses a Git Pull add-on. The `lovelace-floor-navigator` repo is
+  separate, private until v0.3.0 (publish-polished strategy).
+- Personal preference: `transition_duration: 300` (instead of the
+  default 400) — reduces motion sickness with repeated use. To note in
+  Johann's config only, not as a default change in the spec.
 
-## Questions ouvertes
+## Open questions
 
-Aucune.
+None.
 
-## Décisions
+## Decisions
 
-Pas d'ADR formel sur ce sujet. Le choix de Samba (vs SSHFS, vs upload
-manuel) a été dicté par l'add-on HAOS officiel "Samba share" qui rend la
-config triviale.
+No formal ADR on this topic. The choice of Samba (vs SSHFS, vs manual
+upload) was driven by the official HAOS "Samba share" add-on which
+makes the configuration trivial.
