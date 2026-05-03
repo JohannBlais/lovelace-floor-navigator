@@ -88,6 +88,10 @@ Capturés pendant le dev :
   "il y a 5 min" plutôt que la valeur brute. Détection via
   `device_class: timestamp` ou `unit_of_measurement === 'min'`.
 
+- **Dark mode**
+  Ajout de la gestion du dark mode avec possibilité de définir 
+  des version "dark" des images de chaque floor.
+
 ---
 
 ## ⚡ Perf / bundle
