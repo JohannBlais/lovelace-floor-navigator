@@ -1,6 +1,6 @@
 # Full house example — 3 floors with multiple overlays demonstrating every
 # v0.1.0 feature: icon and text elements, all tap_action variants, override
-# of overlay icon, custom transition + edge behavior.
+# of the overlay icon, custom transition + edge behaviour.
 
 type: custom:floor-navigator-card
 viewbox: "0 0 1920 1080"
@@ -18,21 +18,22 @@ settings:
 # for your layout). Scrolling DOWN advances to the next item in this list.
 floors:
   - id: L0
-    name: Rez-de-chaussée
+    name: Ground floor
     background: /local/floor-plans/L0.png
   - id: L1
-    name: Étage 1
+    name: First floor
     background: /local/floor-plans/L1.png
   - id: L2
-    name: Bureau et combles
+    name: Office and attic
     background: /local/floor-plans/L2.png
 
 overlays:
-  # Lights : pastille colored amber when on, gray when off, red when unavailable.
-  # Most use the short tap_action: toggle form. Salon demonstrates the long
-  # form with brightness adjustment via call-service.
+  # Lights: pastille in amber when on, grey when off, dark red when
+  # unavailable. Most use the short `tap_action: toggle` form. The salon
+  # entry demonstrates the long form with brightness adjustment via
+  # call-service.
   - id: lights
-    name: Éclairage
+    name: Lights
     icon: mdi:lightbulb
     default_visible: true
     elements:
@@ -57,10 +58,11 @@ overlays:
         type: icon
         tap_action: toggle
 
-  # Power outlets : overlay icon mdi:power-socket inherited by every switch
-  # element automatically — no need to repeat element.icon on each one.
+  # Power outlets: the overlay icon `mdi:power-socket` is inherited by
+  # every switch element automatically — no need to repeat `element.icon`
+  # on each one.
   - id: outlets
-    name: Prises
+    name: Power outlets
     icon: mdi:power-socket
     default_visible: false
     elements:
@@ -75,11 +77,11 @@ overlays:
         type: icon
         tap_action: toggle
 
-  # Temperatures : text-type elements that render the entity state with the
-  # entity's unit_of_measurement attribute appended automatically (no need to
-  # set unit explicitly here — it falls back to the attribute).
+  # Temperatures: text-type elements that render the entity state with the
+  # entity's `unit_of_measurement` attribute appended automatically (no need
+  # to set `unit` explicitly here — it falls back to the attribute).
   - id: temperature
-    name: Températures
+    name: Temperatures
     icon: mdi:thermometer
     default_visible: false
     elements:
@@ -96,10 +98,10 @@ overlays:
         precision: 1
         font_size: 32
 
-  # Presence : binary sensors. Tap opens the more-info dialog (default
-  # behavior when tap_action is omitted).
+  # Presence: binary sensors. Tap opens the more-info dialog (default
+  # behaviour when `tap_action` is omitted).
   - id: presence
-    name: Présence
+    name: Presence
     icon: mdi:motion-sensor
     default_visible: false
     elements:
@@ -108,10 +110,10 @@ overlays:
         position: { x: 400, y: 280 }
         type: icon
 
-  # Network infra : tapping a WiFi AP icon navigates to a dedicated network
-  # dashboard view rather than toggling.
+  # Network infrastructure: tapping a Wi-Fi AP icon navigates to a
+  # dedicated network dashboard view rather than toggling.
   - id: infra
-    name: Infrastructure réseau
+    name: Network infrastructure
     icon: mdi:wifi
     default_visible: false
     elements:

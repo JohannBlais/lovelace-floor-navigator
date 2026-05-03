@@ -1,5 +1,5 @@
-# Themed example — overrides every CSS variable Floor Navigator exposes,
-# using card-mod. Drop this into a Lovelace dashboard that has card-mod
+# Themed example — overrides every CSS variable Floor Navigator exposes
+# using card-mod. Drop this into a Lovelace dashboard with card-mod
 # installed (https://github.com/thomasloven/lovelace-card-mod) to verify
 # the theming surface.
 
@@ -12,15 +12,15 @@ settings:
 
 floors:
   - id: L0
-    name: Salon
+    name: Living room
     background: /local/floor-plans/L0.png
   - id: L1
-    name: Étage
+    name: Upstairs
     background: /local/floor-plans/L1.png
 
 overlays:
   - id: lights
-    name: Éclairage
+    name: Lights
     icon: mdi:lightbulb
     default_visible: true
     elements:
@@ -35,7 +35,8 @@ overlays:
         type: icon
         tap_action: toggle
 
-# card-mod overrides — change every state color and chrome to a neon-on-dark theme.
+# card-mod overrides — change every state colour and chrome to a
+# neon-on-dark theme.
 card_mod:
   style: |
     :host {

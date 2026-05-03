@@ -1,9 +1,9 @@
 # Dark-mode example — v0.1.1.
 #
 # Demonstrates the optional `backgrounds: { default, dark }` form and the
-# `settings.dark_mode` switch. Mix of floors with and without dark variants
-# to illustrate the graceful fallback (image par défaut + warning console
-# émis une fois pour le floor sans variant).
+# `settings.dark_mode` switch. A mix of floors with and without dark
+# variants illustrates the graceful fallback (default image used + a
+# one-time console warning for the floor without a variant).
 #
 # Place your floor plan files under `<config>/www/floor-plans/`.
 
@@ -11,8 +11,8 @@ type: custom:floor-navigator-card
 viewbox: "0 0 1920 1080"
 
 settings:
-  # auto = follow HA theme via hass.themes.darkMode, or
-  #        prefers-color-scheme as fallback (default)
+  # auto = follow the HA theme via hass.themes.darkMode, or
+  #        prefers-color-scheme as a fallback (default)
   # on   = force dark
   # off  = force light + don't even render the dark <image> in the DOM
   dark_mode: auto
@@ -23,33 +23,33 @@ settings:
   overlay_buttons_position: bottom
 
 floors:
-  # Forme étendue : default + dark
+  # Extended form with both default and dark variants
   - id: L0
-    name: "Rez-de-chaussée"
+    name: "Ground floor"
     backgrounds:
       default: /local/floor-plans/L0-day.png
       dark: /local/floor-plans/L0-night.png
 
-  # Forme étendue avec un seul mode → pas de fallback warning :
-  # `default` est utilisé en light ET en dark (équivalent à la forme
-  # courte mais avec la structure étendue déjà en place pour ajouter
-  # un dark plus tard).
+  # Extended form with only one variant → no fallback warning:
+  # `default` is used in both light AND dark mode (equivalent to the
+  # short form, but with the extended structure already in place to add
+  # a `dark` variant later).
   - id: L1
-    name: "Étage 1"
+    name: "First floor"
     backgrounds:
       default: /local/floor-plans/L1-day.png
-      # dark variant à venir → le mode dark utilise l'image default
-      # et un warning console est émis une fois au montage
+      # dark variant to come → in dark mode the default image is used
+      # and a console warning is emitted once at mount
 
-  # Forme courte v0.1.0 → 100% compat backward, fallback identique
-  # à L1 ci-dessus
+  # Short v0.1.0 form → 100% backward-compatible, fallback identical to
+  # L1 above
   - id: L2
-    name: "Bureau et combles"
+    name: "Office and attic"
     background: /local/floor-plans/L2.png
 
 overlays:
   - id: lights
-    name: Éclairage
+    name: Lights
     icon: mdi:lightbulb
     default_visible: true
     elements:
@@ -65,7 +65,7 @@ overlays:
         tap_action: toggle
 
   - id: temperature
-    name: Températures
+    name: Temperatures
     icon: mdi:thermometer
     default_visible: false
     elements:

@@ -6,5 +6,5 @@ type: custom:floor-navigator-card
 viewbox: "0 0 1920 1080"
 floors:
   - id: L0
-    name: Rez-de-chaussée
+    name: Ground floor
     background: /local/floor-plans/L0.png
