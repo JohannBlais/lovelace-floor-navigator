@@ -1,8 +1,8 @@
 ---
 status: implemented
 owner: Johann Blais
-last_updated: 2026-05-03
-related: [color-scheme.md, overlays-toggle.md, ../architecture/component-tree.md]
+last_updated: 2026-05-04
+related: [color-scheme.md, overlays-toggle.md, dark-mode.md, ../architecture/component-tree.md]
 ---
 
 # Data Model
@@ -49,11 +49,12 @@ valeurs par défaut), et cohérent avec les conventions HA standard
 ```
 Card
 ├── viewbox (système de coordonnées global, std SVG)
-├── settings (transition, navigation, etc.)
+├── settings (transition, navigation, dark_mode, etc.)
 ├── floors[] (liste ordonnée du HAUT vers le BAS)
 │   ├── id (identifiant logique)
 │   ├── name (label affiché)
-│   └── background (chemin vers l'image)
+│   └── background (forme courte v0.1.0)
+│       OU backgrounds.{default, dark} (forme étendue v0.1.1+)
 └── overlays[] (couches transverses globales)
     ├── id
     ├── name
@@ -85,17 +86,22 @@ settings:
   edge_behavior: bounce            # bounce | none | loop
   show_floor_indicator: true
   overlay_buttons_position: bottom # top | bottom | none
+  dark_mode: auto                  # auto | on | off  (v0.1.1+, cf. dark-mode.md)
 
 # Liste des floors (ORDRE = du HAUT vers le BAS dans la maison)
 # Le scroll vers le bas avance dans cette liste : L0 → L1 → L2
+# Forme courte v0.1.0 (background) ou forme étendue v0.1.1+
+# (backgrounds.default + backgrounds.dark optionnel) — voir dark-mode.md.
 floors:
   - id: L0
     name: "Rez-de-chaussée"
-    background: /local/floorplans/L0.png
+    backgrounds:
+      default: /local/floorplans/L0-day.png
+      dark: /local/floorplans/L0-night.png
 
   - id: L1
     name: "Étage 1"
-    background: /local/floorplans/L1.png
+    background: /local/floorplans/L1.png   # forme courte = pas de dark variant
 
   - id: L2
     name: "Bureau et combles"
@@ -151,14 +157,36 @@ overlays:
 | `edge_behavior` | enum | `bounce` | `bounce`, `none`, `loop` |
 | `show_floor_indicator` | bool | `true` | — |
 | `overlay_buttons_position` | enum | `bottom` | `top`, `bottom`, `none` |
+| `dark_mode` | enum | `auto` | `auto`, `on`, `off` (v0.1.1+, cf. [`dark-mode.md`](dark-mode.md)) |
 
 ### Floor
+
+Un floor déclare son image de fond dans **une** des deux formes : courte
+(v0.1.0) ou étendue (v0.1.1+, permet un dark variant — voir
+[`dark-mode.md`](dark-mode.md)).
+
+#### Forme courte (v0.1.0, compat backward)
 
 | Champ | Type | Obligatoire | Description |
 |---|---|---|---|
 | `id` | string | ✅ | Identifiant unique parmi les floors |
 | `name` | string | ✅ | Label affiché dans l'indicateur |
 | `background` | string | ✅ | Path/URL de l'image (PNG, JPG, SVG) |
+
+#### Forme étendue (v0.1.1+)
+
+| Champ | Type | Obligatoire | Description |
+|---|---|---|---|
+| `id` | string | ✅ | Identifiant unique parmi les floors |
+| `name` | string | ✅ | Label affiché dans l'indicateur |
+| `backgrounds` | object | ✅ | `{ default, dark?, ... }` |
+| `backgrounds.default` | string | ✅ | Path image utilisée en mode `light` (et fallback universel) |
+| `backgrounds.dark` | string | ❌ | Path image alternative en mode `dark` |
+| `backgrounds.<autres>` | string | ❌ | Réservé pour modes futurs (high-contrast, sepia...). Ignoré en v0.1.1. |
+
+Si les deux formes sont posées sur le même floor, `backgrounds` gagne et
+`background` est ignoré silencieusement (situation transitoire de
+migration acceptable).
 
 ### Overlay
 

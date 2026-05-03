@@ -1,7 +1,7 @@
 ---
 status: validated
 owner: Johann Blais
-last_updated: 2026-05-03
+last_updated: 2026-05-04
 related: []
 ---
 
@@ -48,7 +48,7 @@ Floorplan HACS) : navigation native multi-niveaux + overlays modulaires.
 | [`features/data-model.md`](features/data-model.md) | Schéma YAML, champs, tap_actions | implemented |
 | [`features/color-scheme.md`](features/color-scheme.md) | Couleurs CSS variables, override | implemented |
 | [`features/overlays-toggle.md`](features/overlays-toggle.md) | État local visibleOverlays | implemented |
-| [`features/dark-mode.md`](features/dark-mode.md) | Backgrounds light/dark + crossfade | **draft** |
+| [`features/dark-mode.md`](features/dark-mode.md) | Backgrounds light/dark + crossfade | implemented |
 
 ### Transverses (vivants)
 
@@ -69,12 +69,16 @@ publiée sur HACS.
 
 Voir [`decisions.md`](decisions.md) pour les ADRs de la v0.1.0.
 
-### v0.1.1 — En préparation
+### v0.1.1 — Livrée (2026-05-04)
 
-Dark mode pour les images de fond. Spec rédigée et figée pour
-implémentation : voir [`features/dark-mode.md`](features/dark-mode.md)
-(statut `draft`, à passer en `implemented` après merge de la PR
-`feature/dark-mode`).
+Dark mode pour les images de fond. Champ `backgrounds: { default, dark }`
+au niveau floor + setting global `dark_mode` (`auto`/`on`/`off`).
+Cascade de détection `setting > hass.themes.darkMode > prefers-color-scheme`,
+crossfade 200ms sur opacity, fallback gracieux + warning console pour
+les floors sans dark variant. Compat backward complète avec `background`
+court de v0.1.0. Voir [`features/dark-mode.md`](features/dark-mode.md)
+(statut `implemented`) et l'ADR-005 dans [`decisions.md`](decisions.md).
+Bundle 49.7 KiB.
 
 ### v0.2.0 — Confort utilisateur (date non fixée)
 

@@ -1,7 +1,7 @@
 ---
-status: draft
+status: implemented
 owner: Johann Blais
-last_updated: 2026-05-03
+last_updated: 2026-05-04
 related: [data-model.md, color-scheme.md, ../architecture/component-tree.md, ../architecture/rendering-strategy.md]
 ---
 

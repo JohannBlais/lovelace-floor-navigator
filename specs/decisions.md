@@ -1,7 +1,7 @@
 ---
 status: validated
 owner: Johann Blais
-last_updated: 2026-05-03
+last_updated: 2026-05-04
 related: []
 ---
 
@@ -142,8 +142,74 @@ sur chaque fichier. Une spec = un fichier.
 
 ---
 
+## [2026-05-04] ADR-005 — Dark mode pour les backgrounds de floor (v0.1.1)
+
+**Contexte** : v0.1.0 affiche une image unique par floor. Quand l'utilisateur
+active le dark mode HA (manuellement ou auto-détection horaire), le reste
+de Lovelace bascule en sombre, mais la card reste en plan clair —
+incohérence visuelle qui agresse l'œil le soir. Besoin d'un mécanisme
+optionnel de variants dark, isolé du reste de la card (ne touche ni la
+navigation ni les couleurs des éléments d'overlay).
+
+**Décision** : implémentation v0.1.1 isolée et compat backward complète,
+détaillée dans [`features/dark-mode.md`](features/dark-mode.md). Sept
+choix structurants :
+
+- **Granularité** : setting global `dark_mode` (`auto`/`on`/`off`) +
+  champ optionnel `backgrounds` par floor. Cohérence visuelle pilotée
+  globalement, déclaration des images localement.
+- **Naming `backgrounds.{default, dark}`** étendu, avec signature index
+  ouverte (`[key: string]: string`) pour modes futurs (high-contrast,
+  sepia, ambient...) sans breaking change. `default` plutôt que `light`
+  car c'est le fallback universel, pas seulement le mode light.
+- **Compat backward `background` court + `backgrounds` étendu** : les
+  deux formes coexistent. Si les deux sont posées sur le même floor,
+  `backgrounds` gagne et `background` est ignoré silencieusement.
+- **Cascade de détection** : `setting` (on/off priorité max) >
+  `hass.themes.darkMode` > `prefers-color-scheme: dark` (browser
+  fallback).
+- **Crossfade simple ~200ms** sur opacity, distinct du système de
+  transitions de navigation. Le toggle light/dark est un changement
+  d'apparence, pas un mouvement spatial.
+- **Fallback silencieux + warning console** une seule fois par floor
+  sans dark variant. Pas de "all or nothing" qui désactiverait le dark
+  mode global si un floor manque.
+- **Release v0.1.1 patch** plutôt que v0.2.0 grouper : feature isolée
+  techniquement + compat backward complète justifient le bump patch
+  SemVer (cf. [`architecture/conventions.md`](architecture/conventions.md)).
+
+**Alternatives écartées** :
+- Auto-génération d'une image dark via `filter: invert(1)` CSS → moins
+  lisible qu'une image dédiée, mauvais résultat sur photos colorées
+- Setting boolean `dark_mode: true/false` → ne couvre pas le cas "auto
+  basé sur HA", l'enum 3-valeurs est plus expressif
+- Champ unique `background` polymorphe (string ou object) → ambiguïté
+  dans le YAML, le 2-champ explicite est plus clair
+- Bascule de couleurs des éléments en dark mode → reporté, hors scope
+  v0.1.1 (les CSS variables de
+  [`features/color-scheme.md`](features/color-scheme.md) restent
+  identiques light/dark ; un thème HA dark peut les override)
+
+**Conséquences** :
+- Bundle 47.0 → 49.7 KiB (50877 bytes), marge 323 bytes sous le seuil
+  50 KiB du build CI. Tight ; le BACKLOG mentionne le vendoring de
+  `custom-card-helpers` (gain ~3 KiB) si plus de room est nécessaire
+  en v0.2+.
+- Index signature `Backgrounds[key: string]` ouvre le contrat YAML
+  pour modes futurs sans breaking change.
+- Les configs documentées en forme courte (v0.1.0) continueront de
+  fonctionner indéfiniment (compat backward jusqu'à v1.0).
+- Le toggle de classe `fn-theme-{light|dark}` est posé sur le `<svg>`
+  de chaque `<fn-floor>` (et non sur la card racine) pour rester dans
+  le shadow DOM où vivent les `<image>` ciblées par les règles CSS de
+  `backgroundCrossfade`.
+
+**Statut** : accepted
+
+---
+
 ## Template pour les futures décisions
 
 Copier-coller en tête de la liste, juste sous le séparateur principal.
 Numéroter `ADR-NNN` en continuant la suite (la dernière en date est
-`ADR-004`).
+`ADR-005`).
