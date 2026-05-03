@@ -1,10 +1,12 @@
 # Backlog
 
-Living list of improvements, ideas, and known issues for Floor Navigator.
+A living list of improvements, ideas, and known issues for Floor
+Navigator.
 
-Distinct from [`docs/SPEC.md`](docs/SPEC.md) — the spec is the frozen design
-baseline (v0.1.0 API contract). Items here are **candidates**, not
-commitments. Reorganize, promote to spec, or drop as priorities evolve.
+This file is **distinct from the specs** in [`specs/`](specs/). The
+specs describe the frozen design and the public API contract. The
+backlog lists **candidates** — things we might do, not commitments.
+Reorganise, promote to a spec, or drop items as priorities evolve.
 
 ## Conventions
 
@@ -12,170 +14,181 @@ commitments. Reorganize, promote to spec, or drop as priorities evolve.
 |-----|---------|
 | 🐛 | Known bug or quality issue |
 | ✨ | New feature, likely v0.2.x candidate |
-| ⚡ | Perf or bundle-size improvement |
-| 🛠 | Tooling, CI, dev workflow |
-| 🔮 | Speculative / future / maybe |
+| ⚡ | Performance or bundle-size improvement |
+| 🛠 | Tooling, CI, or dev workflow |
+| 🔮 | Speculative — future or maybe |
 
-When picking up an item, drop a checkmark next to it (`✅`) and link the
-PR / commit. Move done items to a "Released" section under the version
-that shipped them.
+When you pick up an item, mark it with `✅` and link the PR or commit.
+When an item ships, move it to a "Released in vX.Y.Z" section near the
+top so it stays visible as a history trail.
+
+---
+
+## Released in v0.1.1
+
+- ✅ **Dark mode for floor backgrounds.** Optional `backgrounds:
+  { default, dark }` field per floor + global `dark_mode` setting.
+  See [`specs/features/dark-mode.md`](specs/features/dark-mode.md)
+  and ADR-005 in [`specs/decisions.md`](specs/decisions.md).
 
 ---
 
 ## 🐛 Bugs / quality
 
-- **CRLF / LF warnings on every commit** sur Windows.
-  Le repo n'a pas de `.gitattributes` ; Git détecte les écritures en CRLF
-  sur les fichiers que git stocke en LF et émet un warning `LF will be
-  replaced by CRLF`. Bénin mais bruyant. Fix : ajouter `.gitattributes`
-  avec `* text=auto eol=lf` + override pour les `.bat`/`.cmd`.
+- **CRLF / LF warnings on every commit (Windows).**
+  The repo has no `.gitattributes`, so Git detects CRLF writes on
+  files it stores as LF and emits the `LF will be replaced by CRLF`
+  warning. Harmless but noisy. Fix: add `.gitattributes` with
+  `* text=auto eol=lf` plus an override for `.bat` / `.cmd` files.
 
-- **Swipe démarrant sur un bouton d'overlay → navigation au lieu de toggle.**
-  Si l'utilisateur commence un swipe (>50px) le doigt posé sur un bouton
-  de la barre d'overlay, le browser ne synthétise pas de click → le bouton
-  n'est pas toggle, le controller navigue. Cohérent avec la sémantique
-  "swipe = navigate", mais peut surprendre. Fix candidat : ignorer le
-  tracking de swipe dans `_onTouchStart` quand `e.target` est dans
-  `<fn-overlay-buttons>` (filtre sur `closest()`).
+- **Swipe starting on an overlay button → navigation instead of
+  toggle.** If the user starts a swipe (>50px) with their finger on
+  a button in the overlay bar, the browser does not synthesise a
+  click — the controller navigates and the button does not toggle.
+  Consistent with the "swipe = navigate" semantic, but can surprise.
+  Candidate fix: skip swipe tracking in `_onTouchStart` when
+  `e.target` is inside `<fn-overlay-buttons>` (filter via
+  `closest()`).
 
-- **Taille par défaut des icônes/text codée en dur (48 / 24 viewBox units).**
-  Adaptée à un viewBox 1920×1080. Pour des viewBox très différents
-  (ex. `0 0 200 100`) les défauts donnent des éléments énormes. Fix
-  candidat : défaut relatif au viewBox (ex. `viewBoxWidth / 40`).
+- **Default sizes for icons / text are hard-coded (48 / 24 viewBox
+  units).** Sized for a 1920×1080 viewBox. For very different
+  viewBoxes (e.g. `0 0 200 100`) the defaults produce huge elements.
+  Candidate fix: defaults relative to the viewBox (e.g.
+  `viewBoxWidth / 40`).
 
-- **Bounce + slide-scale : pendant le bounce, le scale est temporairement
-  perdu.** Le keyframe d'animation override le `transform` complet, donc
-  le `scale(1)` du floor actif disparaît pendant les 150ms du rebond.
-  Visuel mineur. Fix : injecter le scale dans les keyframes selon le
-  mode de transition (ou utiliser deux propriétés CSS séparées).
+- **Bounce + slide-scale: the scale is temporarily lost during the
+  bounce.** The animation keyframe overrides the full `transform`,
+  so the active floor's `scale(1)` disappears for the 150ms of the
+  bounce. Minor visual artifact. Fix: bake the scale into the
+  keyframes per transition mode (or use two separate CSS properties).
 
 ---
 
 ## ✨ v0.2.x candidates
 
-Items déjà listés dans SPEC §7 v0.2.0 (rappel) :
-- Tooltip au survol des éléments
-- Type `badge` (icon + valeur combinés)
-- Binding overlays à des entités HA (`visible_entity`)
-- Persistance état overlays (localStorage)
-- Animations CSS optionnelles (pulse pour présence, glow pour alerte)
-- Transitions additionnelles (fade-up, zoom, …)
+Items already listed in [`specs/README.md`](specs/README.md) under
+v0.2.0 (reminder):
+- Hover tooltip on elements
+- `badge` element type (icon + value combined)
+- Bind overlays to HA entities (`visible_entity`)
+- Persist overlay state (localStorage)
+- Optional CSS animations (pulse for presence, glow for alerts)
+- Additional transitions (fade-up, zoom, ...)
 
-Capturés pendant le dev :
+Captured during dev:
 
 - **`hold_action` + `double_tap_action`.**
-  `handleAction` de custom-card-helpers les supporte déjà ; il suffit
-  d'ajouter `hold_action` et `double_tap_action` dans `IconElement` (et
-  les types associés), de wirer `handleClick` from custom-card-helpers
-  qui gère la discrimination tap/hold/dblclick.
+  `handleAction` from `custom-card-helpers` already supports them.
+  We just need to add `hold_action` and `double_tap_action` to
+  `IconElement` (and the related types) and wire `handleClick` from
+  `custom-card-helpers`, which handles tap/hold/dblclick
+  discrimination.
 
-- **Cache busting automatique** (cf. SPEC annexe 9.5).
-  Embarquer le hash git dans le bundle au build, exposer via
-  `console.info` au chargement, optionnellement query-string auto dans
-  la doc d'install. Évite le `Ctrl+Shift+R` manuel après chaque release.
+- **Automatic cache busting.**
+  Embed the git hash into the bundle at build time, surface it via
+  `console.info` at load, and optionally auto-append a query string
+  to the install docs. Avoids the manual `Ctrl+Shift+R` after every
+  release.
 
 - **Keyboard navigation.**
-  `PageUp` / `PageDown` (ou `↑` / `↓`) pour naviguer entre floors quand
-  la card a le focus. Accessibilité.
+  `PageUp` / `PageDown` (or `↑` / `↓`) to navigate between floors
+  when the card has focus. Accessibility win.
 
-- **Plusieurs icônes pour la même entité dans des overlays différents.**
-  Use case : `light.salon` dans l'overlay "Lights" ET dans l'overlay
-  "Énergie" avec couleur différente. Marche déjà en théorie (rien ne
-  l'empêche), mais à valider et documenter.
+- **Multiple icons for the same entity across different overlays.**
+  Use case: `light.salon` in the "Lights" overlay AND in the
+  "Energy" overlay with a different colour. Already works in
+  principle (nothing prevents it), but worth validating and
+  documenting.
 
-- **Format de durée intelligent pour les timestamps.**
-  Pour les sensors de type `last_changed` ou `_timestamp`, afficher
-  "il y a 5 min" plutôt que la valeur brute. Détection via
-  `device_class: timestamp` ou `unit_of_measurement === 'min'`.
-
-- **Dark mode**
-  Ajout de la gestion du dark mode avec possibilité de définir 
-  des version "dark" des images de chaque floor.
+- **Smart duration formatting for timestamps.**
+  For sensors of type `last_changed` or `_timestamp`, display "5
+  min ago" instead of the raw value. Detection via
+  `device_class: timestamp` or `unit_of_measurement === 'min'`.
 
 ---
 
-## ⚡ Perf / bundle
+## ⚡ Performance / bundle
 
-- **Vendor les helpers de custom-card-helpers qu'on utilise réellement.**
-  Actuellement on importe `handleAction` qui pull `toggle-entity`,
-  `fire-event`, `navigate`, `forwardHaptic`, et leak `@formatjs/intl-utils`
-  via la barrel d'imports. Total ≈ 3-4 KB minifié pour ~150 lignes de
-  logique réelle. Réimplémenter les 5-6 helpers locaux ferait gagner
-  ~3 KB et virerait le warning Rollup `"this" has been rewritten to
-  "undefined"` sur `@formatjs`.
+- **Vendor the `custom-card-helpers` helpers we actually use.**
+  We currently import `handleAction`, which pulls in
+  `toggle-entity`, `fire-event`, `navigate`, `forwardHaptic`, and
+  leaks `@formatjs/intl-utils` via the barrel exports. Total ≈ 3–4
+  KB minified for ~150 lines of real logic. Reimplementing the 5–6
+  helpers locally would save ~3 KB and remove the Rollup warning
+  `"this" has been rewritten to "undefined"` from `@formatjs`.
 
-- **Per-element reactivity pour `fn-element-text`.**
-  Actuellement le whole layer re-render quand n'importe quelle entité
-  change. Trivial pour ~20 text elements ; à reconsidérer si profilage
-  montre du jank avec ~100+ overlays text actifs simultanément.
-  Solution : transformer le helper en LitElement (dans foreignObject
-  ou via un `<g>` natif avec un trick).
+- **Per-element reactivity for `fn-element-text`.**
+  At present the whole overlay layer re-renders when any entity
+  changes. Trivial for ~20 text elements; worth reconsidering if
+  profiling shows jank with ~100+ active text overlays
+  simultaneously. Solution: turn the helper into a LitElement
+  (inside a foreignObject, or via a native `<g>` with a trick).
 
-- **Lazy-load des transitions slide / slide-scale.**
-  Le CSS pour les 3 transitions est compilé dans le bundle ; on
-  pourrait split en CSS modules conditionnels selon `settings.transition`.
-  Gain marginal (~0.5 KB).
+- **Lazy-load the slide / slide-scale transitions.**
+  CSS for all three transitions ships in the bundle; we could split
+  into conditional CSS modules per `settings.transition`. Marginal
+  gain (~0.5 KB).
 
 ---
 
 ## 🛠 Tooling / chore
 
-- **`.gitattributes` pour normaliser les eol.** Cf. bug CRLF/LF plus haut.
+- **`.gitattributes` to normalise EOLs.** See the CRLF/LF bug above.
 
-- **Pre-commit hook avec lint + build size check.**
-  Détecte les régressions avant push. Husky + lint-staged.
+- **Pre-commit hook with lint + build size check.**
+  Catches regressions before push. Husky + lint-staged.
 
-- **Tests Vitest (déjà dans la roadmap v0.3.0).**
-  Au minimum : tests unitaires pour `color-resolver`, `icon-resolver`,
-  parsing de `tap_action` (string vs object), validation de config.
+- **Vitest tests** (already on the v0.3.0 roadmap).
+  At minimum: unit tests for `color-resolver`, `icon-resolver`,
+  `tap_action` parsing (string vs object), config validation.
 
-- **Screenshots dans `docs/screenshots/`.**
-  Le placeholder est en place ; reste à produire `hero.png`,
-  `transitions.gif`, `overlay-toggle.gif`. Hors-scope dev pur,
-  c'est au owner du repo.
+- **Screenshots in `docs/screenshots/`.**
+  Placeholder is in place; remains to produce `hero.png`,
+  `transitions.gif`, `overlay-toggle.gif`. Out of dev scope — for
+  the repo owner.
 
-- **Live reload en dev mode.**
-  Actuellement il faut `Ctrl+R` après chaque rebuild. Un petit
-  watcher WebSocket dans `dev/index.html` éliminerait ça.
+- **Live reload in dev mode.**
+  Currently a manual `Ctrl+R` is needed after every rebuild. A small
+  WebSocket watcher in `dev/index.html` would remove that.
 
-- **Dependabot grouping** dans `.github/dependabot.yml` : grouper les
-  bumps de minor/patch de devDependencies ensemble pour éviter le
-  bruit de 5 PRs séparées par semaine.
+- **Dependabot grouping** in `.github/dependabot.yml`: group minor /
+  patch bumps of devDependencies to avoid 5 separate PRs each week.
 
 ---
 
 ## 🔮 Speculative / longer term
 
-- **Pinch-zoom sur le plan.**
-  Actuellement bloqué par `touch-action: none` sur le controller. Pour
-  des plans très détaillés, le zoom serait utile. Implique un nouveau
-  state (zoom level + pan offset) et de réconcilier avec le système
-  de viewBox.
+- **Pinch-zoom on the plan.**
+  Currently blocked by `touch-action: none` on the controller. For
+  very detailed plans, zoom would be useful. Implies new state
+  (zoom level + pan offset) and reconciling with the viewBox
+  system.
 
-- **Drag-and-drop pour positionner les éléments.**
-  En mode édition uniquement (gated par un toggle). Synchronisation
-  avec le YAML config. Spec marque "hors scope durable" l'éditeur
-  WYSIWYG full, mais un mode "click pour placer" plus modeste pourrait
-  être très utile.
+- **Drag-and-drop element positioning.**
+  Edit-mode only (gated by a toggle). Sync with the YAML config.
+  The spec marks the full WYSIWYG editor as "permanent non-goal",
+  but a smaller "click to place" mode could be very useful.
 
-- **Mode 3D perspective.**
-  Cf. SPEC §7 v0.4.0+. Étages empilés inclinés type "isométrique"
-  pour un effet maquette.
+- **3D perspective mode.**
+  See `specs/README.md` v0.4.0+. Stacked floors tilted in an
+  "isometric" style for a model-house effect.
 
-- **Heatmaps animées.**
-  Température continue rendue comme un dégradé sur la maison plutôt
-  que des valeurs ponctuelles.
+- **Animated heatmaps.**
+  Continuous temperature rendered as a gradient over the house
+  rather than discrete values.
 
-- **Auto-suggestions via les Areas HA.**
-  Quand un overlay référence des entités HA, proposer leurs Areas
-  comme floors candidats.
+- **Auto-suggestions from HA Areas.**
+  When an overlay references HA entities, suggest their Areas as
+  candidate floors.
 
-- **Multi-bâtiments.**
-  Une "card" pour la maison principale, une autre pour le garage.
-  Avec navigation horizontale entre bâtiments + verticale entre floors.
+- **Multi-buildings.**
+  One card for the main house, another for the garage. Horizontal
+  navigation between buildings + vertical navigation between
+  floors.
 
 ---
 
-## Référence
+## Reference
 
-Roadmap haute-niveau : voir [`docs/SPEC.md` §7](docs/SPEC.md#7-roadmap).
+High-level roadmap: see
+[`specs/README.md`](specs/README.md#roadmap).
