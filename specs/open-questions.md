@@ -1,45 +1,45 @@
 ---
 status: validated
 owner: Johann Blais
-last_updated: 2026-05-03
+last_updated: 2026-05-04
 related: []
 ---
 
-# Open Questions — Inbox Claude Code
+# Open Questions — Claude Code Inbox
 
-Ce fichier est le canal de remontée des incohérences ou ambiguïtés repérées
-par Claude Code pendant l'implémentation. **Ne PAS éditer directement les
-specs depuis Claude Code** quand un doute apparaît : poser la question
-ici et attendre la résolution.
+This file is the feedback channel for inconsistencies or ambiguities
+spotted by Claude Code during implementation. **Do NOT edit specs
+directly from Claude Code** when a doubt arises: log the question
+here and wait for resolution.
 
 ## Format
 
-Chaque entrée suit ce format :
+Each entry follows this format:
 
 ```markdown
-## [YYYY-MM-DD] <slug-spec> — <résumé court>
-- Contexte : ce que je faisais quand le doute est apparu
-- Question : la question précise à trancher
-- Spec(s) impactée(s) : features/X.md, architecture/Y.md
+## [YYYY-MM-DD] <spec-slug> — <short summary>
+- Context: what I was doing when the doubt appeared
+- Question: the precise question to settle
+- Spec(s) affected: features/X.md, architecture/Y.md
 - Status: open | resolved (commit-hash)
 ```
 
-## Workflow de résolution
+## Resolution workflow
 
-1. Claude Code écrit en bas de ce fichier
-2. Johann lit l'entrée et en discute (typiquement avec Claude Opus dans le
-   projet)
-3. La ou les specs concernées sont mises à jour
-4. L'entrée passe en `Status: resolved` avec le hash du commit qui a
-   appliqué la résolution
-5. Si la résolution est structurante, une ligne est ajoutée à
+1. Claude Code writes at the bottom of this file
+2. Johann reads the entry and discusses it (typically with Claude
+   Opus in the project)
+3. The affected spec(s) are updated
+4. The entry moves to `Status: resolved` with the hash of the commit
+   that applied the resolution
+5. If the resolution is structuring, a line is added to
    [`decisions.md`](decisions.md)
 
-## Entrées résolues
+## Resolved entries
 
-Aucune pour l'instant — fichier initial. Les entrées résolues sont
-conservées ici (pas archivées) pour mémoire institutionnelle.
+None for now — initial file. Resolved entries are kept here (not
+archived) for institutional memory.
 
-## Entrées ouvertes
+## Open entries
 
-_Aucune entrée ouverte pour le moment._
+_No open entries at the moment._

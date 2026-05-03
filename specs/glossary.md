@@ -1,147 +1,144 @@
 ---
 status: validated
 owner: Johann Blais
-last_updated: 2026-05-03
+last_updated: 2026-05-04
 related: []
 ---
 
 # Glossary
 
-Termes du domaine utilisés dans le projet et ses specs. Ne contient pas
-les termes techniques généraux (Lit, TypeScript, Rollup, etc.) ni les
-termes Home Assistant standards (entity_id, hass, service) qui sont
-définis ailleurs.
+Domain terms used in the project and its specs. Does not list general
+technical terms (Lit, TypeScript, Rollup, etc.) or HA standard terms
+(entity_id, hass, service) which are defined elsewhere.
 
-## Concepts cœur
+## Core concepts
 
 ### Floor
 
-Un niveau de la maison. Représenté par une image de fond (PNG, JPG ou
-SVG) et un identifiant logique (`L0`, `L1`, `L-1`, etc.). Les floors
-sont déclarés en liste ordonnée du HAUT vers le BAS dans la maison
-réelle. Exemple : `[L2, L1, L0, L-1]` pour une maison à 4 niveaux dont
-le bureau, l'étage 1, le rez-de-chaussée et la cave.
+A level of the house. Represented by a background image (PNG, JPG or
+SVG) and a logical id (`L0`, `L1`, `L-1`, etc.). Floors are declared
+as an ordered list from TOP to BOTTOM in the actual house. Example:
+`[L2, L1, L0, L-1]` for a 4-level house with the office, first floor,
+ground floor, and cellar.
 
-L'ordre est important : le scroll vers le bas avance dans la liste
-(scroll-aligned).
+Order matters: scrolling down moves through the list (scroll-aligned).
 
 ### Overlay
 
-Une couche d'information transverse aux floors. Contient des éléments
-positionnés sur les plans qui partagent une thématique (lampes,
-températures, présence, infrastructure). Un même overlay peut avoir des
-éléments sur plusieurs floors.
+A layer of information transverse across floors. Contains elements
+positioned on the plans that share a theme (lights, temperatures,
+presence, infrastructure). The same overlay can have elements on
+multiple floors.
 
-Les overlays sont **toggleables** indépendamment via la barre de boutons
-en bas de la card.
+Overlays are **toggleable** independently via the button bar at the
+bottom of the card.
 
 ### Element
 
-Un point d'information unique dans un overlay. Lié à une entité Home
-Assistant, positionné en coordonnées viewBox sur un floor donné, avec un
-type (`icon` ou `text` en v0.1.0) et optionnellement une `tap_action`.
+A single information point inside an overlay. Linked to a Home
+Assistant entity, positioned in viewBox coordinates on a given floor,
+with a type (`icon` or `text` in v0.1.0) and optionally a
+`tap_action`.
 
 ### viewBox
 
-Système de coordonnées global de la card, format SVG standard
-(`"x_min y_min width height"`). Toutes les positions des éléments sont
-exprimées dans ce système. Choix typique pour des plans de maison :
-`"0 0 1920 1080"`.
+Global coordinate system of the card, in standard SVG format
+(`"x_min y_min width height"`). All element positions are expressed
+in this system. Typical choice for house plans: `"0 0 1920 1080"`.
 
-Le système viewBox isole les positions des plans des dimensions réelles
-de la card à l'affichage : la card peut être resize, le viewBox reste
-constant et les positions des éléments restent cohérentes.
+The viewBox system isolates plan positions from the card's actual
+on-screen dimensions: the card can be resized while the viewBox stays
+constant and element positions remain consistent.
 
-## Concepts de navigation
+## Navigation concepts
 
 ### Transition
 
-Animation entre deux floors lors d'un changement. Trois variantes
-disponibles en v0.1.0 :
+Animation between two floors on a change. Three variants available
+in v0.1.0:
 
-- `crossfade` (défaut) : fondu entre les deux floors
-- `slide` : translation verticale, le nouveau floor pousse l'ancien
-- `slide-scale` : translation + zoom subtil
+- `crossfade` (default): fade between the two floors
+- `slide`: vertical translation, the new floor pushes the old one
+- `slide-scale`: translation + subtle zoom
 
-### Edge behavior
+### Edge behaviour
 
-Comportement quand l'utilisateur tente de naviguer au-delà du dernier ou
-du premier floor.
+Behaviour when the user tries to navigate past the last or first
+floor.
 
-- `bounce` (défaut) : animation de rebond, pas de changement de floor
-- `none` : rien ne se passe
-- `loop` : retour au floor opposé (L0 ↔ Ln)
+- `bounce` (default): bounce animation, no floor change
+- `none`: nothing happens
+- `loop`: wrap to the opposite floor (L0 ↔ Ln)
 
 ### Scroll-aligned
 
-Convention de direction de navigation : scroll/swipe vers le BAS = floor
-SUIVANT dans la liste de configuration. Cohérent avec un comportement
-"scroll de page" classique : on descend pour aller vers le bas de la
-maison.
+Navigation direction convention: scroll/swipe DOWN = NEXT floor in
+the configuration list. Consistent with classic page-scroll
+behaviour: you scroll down to go down in the house.
 
-## Concepts visuels
+## Visual concepts
 
 ### Pastille
 
-Cercle coloré qui rend une icône d'élément (type `icon`). La couleur
-encode l'état de l'entité (allumé/éteint, occupé/vide, etc.) via les
-CSS variables du composant.
+Coloured circle that renders an element icon (type `icon`). The
+colour encodes the entity state (on/off, occupied/empty, etc.) via
+the component's CSS variables.
 
 ### Halo
 
-Liseré clair autour de la pastille (généralement blanc translucide) qui
-améliore la lisibilité des icônes sur des fonds variés. Pattern Material
-Design.
+Light ring around the pastille (typically translucent white) that
+improves icon readability over varied backgrounds. Material Design
+pattern.
 
 ### Indicator
 
-Petite pastille flottante en bas-droite qui affiche le `name` du floor
-courant. Visible par défaut, désactivable via
+Small floating pill at the bottom-right that shows the current
+floor's `name`. Visible by default, can be disabled via
 `settings.show_floor_indicator: false`.
 
-### Overlay buttons (barre)
+### Overlay buttons (bar)
 
-Barre de boutons toggleant la visibilité de chaque overlay. Position
+Bar of buttons toggling each overlay's visibility. Position
 configurable (`top`, `bottom`, `none`) via
 `settings.overlay_buttons_position`.
 
-## Conventions de nommage
+## Naming conventions
 
-### Préfixe `fn-`
+### `fn-` prefix
 
-Tous les custom elements et IDs SVG du composant utilisent le préfixe
-`fn-` (Floor Navigator). Évite les collisions avec d'autres composants
-Lovelace qui pourraient cohabiter sur le même dashboard.
+Every custom element and SVG ID in the component uses the `fn-`
+(Floor Navigator) prefix. Avoids collisions with other Lovelace
+components co-existing on the same dashboard.
 
-Exemples : `<fn-floor>`, `<fn-element-icon>`,
+Examples: `<fn-floor>`, `<fn-element-icon>`,
 `id="fn-floor-L0-bg-default"`, `--fn-color-on`.
 
-### CSS variables `--fn-*`
+### `--fn-*` CSS variables
 
-Toutes les CSS variables exposées par le composant pour customisation
-utilisent le préfixe `--fn-`. Documentées dans
+Every CSS variable exposed by the component for customisation uses
+the `--fn-` prefix. Documented in
 [`features/color-scheme.md`](features/color-scheme.md).
 
-## Termes spécifiques au projet
+## Project-specific terms
 
-### Pattern HACS
+### HACS pattern
 
-Conventions partagées par les custom cards de l'écosystème HACS, sans
-être obligatoires. Couvrent : suffixe `-card` pour les custom elements,
-exposition `console.info` au chargement avec version, registration via
-`window.customCards.push()`, manifest `hacs.json`. Voir
+Conventions shared by HACS-ecosystem custom cards, without being
+mandatory. Covers: `-card` suffix on custom elements, version
+exposure via `console.info` at load, registration via
+`window.customCards.push()`, `hacs.json` manifest. See
 [`architecture/identity.md`](architecture/identity.md).
 
-### Mode "dev rapide"
+### Quick dev mode
 
-Workflow de développement local qui ouvre `dev/index.html` dans le
-navigateur avec un mock du `hass` object, sans dépendance à HA réel.
-Permet d'itérer en quelques secondes sur le visuel et la logique. Voir
+Local development workflow that opens `dev/index.html` in the
+browser with a `hass` mock object, no real HA dependency. Allows
+iterating on visuals and logic in seconds. See
 [`architecture/dev-workflow.md`](architecture/dev-workflow.md).
 
-### Mode "test intégration"
+### Integration test mode
 
-Workflow utilisant la convention `HA_LOCAL_DIR` pour faire écrire le
-bundle Rollup directement dans le dossier `www/` de HAOS via partage
-Samba. Permet de tester sur le vrai HA avec les vraies entités. Voir
+Workflow using the `HA_LOCAL_DIR` convention to make Rollup write
+the bundle directly into HAOS's `www/` folder via Samba share.
+Allows testing on real HA against real entities. See
 [`architecture/dev-workflow.md`](architecture/dev-workflow.md).

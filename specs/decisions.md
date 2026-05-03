@@ -5,211 +5,222 @@ last_updated: 2026-05-04
 related: []
 ---
 
-# Decisions — ADRs chronologiques
+# Decisions — chronological ADRs
 
-Ce fichier consigne les décisions structurantes du projet sous forme d'ADRs
-(Architecture Decision Records) datés. Chaque entrée capture le contexte,
-l'option retenue, et les alternatives écartées.
+This file records the project's structuring decisions as dated ADRs
+(Architecture Decision Records). Each entry captures the context, the
+chosen option, and the rejected alternatives.
 
-Les décisions purement éditoriales (renommer une variable, déplacer un
-fichier) n'ont pas leur place ici. Les décisions techniques avec impact
-durable (choix de stack, naming d'API, conventions) sont consignées.
+Purely editorial decisions (renaming a variable, moving a file) do not
+belong here. Technical decisions with lasting impact (stack choice,
+API naming, conventions) are recorded.
 
 ## Format
 
 ```markdown
-## [YYYY-MM-DD] ADR-NNN — Titre court
+## [YYYY-MM-DD] ADR-NNN — Short title
 
-**Contexte** : pourquoi la question s'est posée.
+**Context**: why the question came up.
 
-**Décision** : ce qui a été retenu.
+**Decision**: what was chosen.
 
-**Alternatives écartées** : ce qui a été considéré et rejeté, avec raisons.
+**Rejected alternatives**: what was considered and rejected, with
+reasons.
 
-**Conséquences** : impacts pratiques, dette éventuelle, points de vigilance.
+**Consequences**: practical impacts, possible debt, points of vigilance.
 
-**Statut** : accepted | superseded by ADR-MMM | deprecated
+**Status**: accepted | superseded by ADR-MMM | deprecated
 ```
 
 ---
 
-## [2026-05-01] ADR-001 — Custom element tag suffixé en `-card`
+## [2026-05-01] ADR-001 — Custom element tag suffixed with `-card`
 
-**Contexte** : lors du bootstrap, première tentative avec
-`type: custom:floor-navigator` dans le YAML. HA retourne l'erreur
-"Custom element doesn't exist". HA résout `custom:<X>` en cherchant un
-custom element nommé exactement `<X>`. Notre tag étant
-`floor-navigator-card`, le YAML doit matcher.
+**Context**: at bootstrap, first attempt with
+`type: custom:floor-navigator` in the YAML. HA returned the error
+"Custom element doesn't exist". HA resolves `custom:<X>` by looking
+for a custom element named exactly `<X>`. Our tag being
+`floor-navigator-card`, the YAML had to match.
 
-**Décision** : custom element tag = `floor-navigator-card`, type YAML =
-`custom:floor-navigator-card`. Convention HACS standard
-(`mushroom-light-card`, `mini-graph-card`, `button-card`, `bubble-card`).
+**Decision**: custom element tag = `floor-navigator-card`, YAML type
+= `custom:floor-navigator-card`. Standard HACS convention
+(`mushroom-light-card`, `mini-graph-card`, `button-card`,
+`bubble-card`).
 
-**Alternatives écartées** :
-- `floor-navigator` court et type `custom:floor-navigator` → cassé,
-  pas conforme à la convention HACS
+**Rejected alternatives**:
+- `floor-navigator` short and `custom:floor-navigator` type → broken,
+  not compliant with the HACS convention
 
-**Conséquences** : tous les exemples YAML doivent référencer
+**Consequences**: every YAML example must reference
 `custom:floor-navigator-card`. Spec
-[`architecture/identity.md`](architecture/identity.md) consigne ce nom comme
-identité figée du composant.
+[`architecture/identity.md`](architecture/identity.md) records this
+name as the frozen identity of the component.
 
-**Statut** : accepted
-
----
-
-## [2026-05-01] ADR-002 — Chargement explicite de `.env.local` côté Rollup
-
-**Contexte** : config Rollup utilisait `import 'dotenv/config'` qui ne
-chargeait pas les variables de `.env.local` malgré ce qu'on attendait.
-Investigation : la convention `.env.local` qui override `.env` est
-spécifique à Vite/Next.js, pas à dotenv vanilla. Le raccourci charge `.env`
-par défaut, point.
-
-**Décision** : utiliser `dotenv.config({ path: '.env.local' })` explicite
-en tête de `rollup.config.js`.
-
-**Alternatives écartées** :
-- Garder `import 'dotenv/config'` et créer un `.env` au lieu de `.env.local`
-  → moins propre car `.env` est conventionnellement engagé dans le repo
-  pour les valeurs publiques tandis que `.env.local` est gitignored pour
-  les valeurs locales
-
-**Conséquences** : pattern documenté dans
-[`architecture/tech-stack.md`](architecture/tech-stack.md) §config Rollup.
-
-**Statut** : accepted
+**Status**: accepted
 
 ---
 
-## [2026-05-03] ADR-003 — Définition de "done" pour la v0.1.0
+## [2026-05-01] ADR-002 — Explicit `.env.local` loading on the Rollup side
 
-**Contexte** : avant de tagger v0.1.0, il fallait des critères objectifs de
-release pour ne pas livrer prématurément. Critères dérivés du périmètre
-spec et des contraintes pratiques (mobile, perf bundle).
+**Context**: the Rollup config used `import 'dotenv/config'`, which
+did not load variables from `.env.local` despite expectations.
+Investigation: the `.env.local` overriding `.env` convention is
+specific to Vite/Next.js, not vanilla dotenv. The shortcut loads
+`.env` by default, full stop.
 
-**Décision** : v0.1.0 livrée quand TOUTES ces conditions sont vraies :
-- Toutes les fonctionnalités v0.1.0 listées dans la roadmap sont implémentées
-- La card fonctionne sur le HA réel de Johann avec ses 3 plans (L0, L1, L2)
-- Au minimum 5 entités lights, 5 sensors temp, 2-3 binary_sensors présence
-  sont mappés
-- Test manuel sur Pixel 9 Pro XL : navigation swipe fluide, taps qui
-  marchent
-- Test manuel sur poste Fatboy : navigation molette fluide
-- README compréhensible par un non-Johann
-- Bundle JS final < 50 KB (gzipped < 20 KB)
-- Aucune erreur dans la console HA au chargement de la card
+**Decision**: use `dotenv.config({ path: '.env.local' })` explicitly
+at the top of `rollup.config.js`.
 
-**Alternatives écartées** :
-- Tester uniquement en mode dev local → insuffisant, des bugs de
-  chargement HA n'apparaissent qu'en intégration réelle
-- Cible bundle plus permissive → le risque de bloat est élevé sur des
-  custom cards Lovelace, fixer 50 KB tôt force la discipline
+**Rejected alternatives**:
+- Keep `import 'dotenv/config'` and create a `.env` instead of
+  `.env.local` → less clean because `.env` is conventionally
+  committed to the repo for public values, while `.env.local` is
+  gitignored for local values
 
-**Conséquences** : critères atteints le 2026-05-03, tag v0.1.0 publié
-avec bundle final 47 KB.
+**Consequences**: pattern documented in
+[`architecture/tech-stack.md`](architecture/tech-stack.md) §Rollup
+config.
 
-**Statut** : accepted (historique, pour mémoire)
+**Status**: accepted
 
 ---
 
-## [2026-05-03] ADR-004 — Bootstrap de la structure `/specs/`
+## [2026-05-03] ADR-003 — Definition of "done" for v0.1.0
 
-**Contexte** : la spec initiale tenait dans un mégadocument
-`docs/SPEC.md` de ~1100 lignes mêlant identité, modèle de données,
-architecture, stack, workflow, roadmap, étapes Claude Code. À l'approche
-de la v0.1.1 (dark mode) et au-delà, le format ne scale pas : pas de
-granularité statut par feature, pas de canal de remontée Claude Code,
-mégadocument à recharger entièrement à chaque modif.
+**Context**: before tagging v0.1.0, we needed objective release
+criteria to avoid shipping prematurely. Criteria derived from the
+spec scope and practical constraints (mobile, bundle perf).
 
-**Décision** : adopter la structure `/specs/` imposée par les règles du
-projet (à la racine du repo, pas dans `docs/`). Fichiers transverses
+**Decision**: v0.1.0 ships when ALL of these are true:
+- All v0.1.0 features listed on the roadmap are implemented
+- The card works on Johann's real HA against his 3 plans (L0, L1, L2)
+- At least 5 light entities, 5 temperature sensors, and 2–3 presence
+  binary_sensors are mapped
+- Manual test on Pixel 9 Pro XL: smooth swipe navigation, taps
+  working
+- Manual test on the Fatboy desktop: smooth wheel navigation
+- README understandable to a non-Johann
+- Final JS bundle < 50 KB (gzipped < 20 KB)
+- No error in the HA console at card load
+
+**Rejected alternatives**:
+- Test only in local dev mode → insufficient, certain HA load bugs
+  only show up in real integration
+- A more permissive bundle target → bloat risk is high on Lovelace
+  custom cards; setting 50 KB early enforces discipline
+
+**Consequences**: criteria met on 2026-05-03, v0.1.0 tag published
+with a final 47 KB bundle.
+
+**Status**: accepted (historical, for record)
+
+---
+
+## [2026-05-03] ADR-004 — Bootstrap of the `/specs/` structure
+
+**Context**: the initial spec lived in a single megadocument
+`docs/SPEC.md` of ~1100 lines mixing identity, data model,
+architecture, stack, workflow, roadmap, Claude Code steps. With
+v0.1.1 (dark mode) and beyond, the format does not scale: no per-
+feature status granularity, no Claude Code feedback channel, the
+megadocument has to be reloaded entirely on every edit.
+
+**Decision**: adopt the `/specs/` structure mandated by the project
+rules (at the repo root, not under `docs/`). Transverse files
 (README, open-questions, decisions, glossary, conventions) +
-sous-dossiers `architecture/` et `features/`. Frontmatter YAML obligatoire
-sur chaque fichier. Une spec = un fichier.
+`architecture/` and `features/` subfolders. YAML frontmatter
+mandatory on every file. One spec = one file.
 
-**Alternatives écartées** :
-- Garder `docs/SPEC.md` et l'étendre avec un changelog plus riche → ne
-  résout pas le problème de granularité ni de remontée Claude Code
-- Mettre `/specs/` dans `docs/specs/` → contre la convention du projet
+**Rejected alternatives**:
+- Keep `docs/SPEC.md` and extend it with a richer changelog → does
+  not solve the granularity problem nor the Claude Code feedback
+- Place `/specs/` under `docs/specs/` → contrary to the project
+  convention
 
-**Conséquences** :
-- `docs/SPEC.md` supprimé après migration intégrale du contenu
-- BACKLOG.md à racine reste valide (irritants vivants, pas spec)
-- Tous les futurs ajouts de feature passent par `specs/features/<slug>.md`
+**Consequences**:
+- `docs/SPEC.md` removed after full content migration
+- `BACKLOG.md` at the repo root remains valid (living irritants, not
+  spec)
+- Every future feature addition goes through
+  `specs/features/<slug>.md`
 
-**Statut** : accepted
+**Status**: accepted
 
 ---
 
-## [2026-05-04] ADR-005 — Dark mode pour les backgrounds de floor (v0.1.1)
+## [2026-05-04] ADR-005 — Dark mode for floor backgrounds (v0.1.1)
 
-**Contexte** : v0.1.0 affiche une image unique par floor. Quand l'utilisateur
-active le dark mode HA (manuellement ou auto-détection horaire), le reste
-de Lovelace bascule en sombre, mais la card reste en plan clair —
-incohérence visuelle qui agresse l'œil le soir. Besoin d'un mécanisme
-optionnel de variants dark, isolé du reste de la card (ne touche ni la
-navigation ni les couleurs des éléments d'overlay).
+**Context**: v0.1.0 displays a single image per floor. When the user
+enables HA dark mode (manually or via time-based auto-detection), the
+rest of Lovelace switches dark, but the card stays on the light plan
+— visual inconsistency that strains the eyes in the evening. Need
+for an optional dark-variant mechanism, isolated from the rest of the
+card (touches neither navigation nor overlay element colours).
 
-**Décision** : implémentation v0.1.1 isolée et compat backward complète,
-détaillée dans [`features/dark-mode.md`](features/dark-mode.md). Sept
-choix structurants :
+**Decision**: isolated v0.1.1 implementation with full backward
+compatibility, detailed in
+[`features/dark-mode.md`](features/dark-mode.md). Seven structuring
+choices:
 
-- **Granularité** : setting global `dark_mode` (`auto`/`on`/`off`) +
-  champ optionnel `backgrounds` par floor. Cohérence visuelle pilotée
-  globalement, déclaration des images localement.
-- **Naming `backgrounds.{default, dark}`** étendu, avec signature index
-  ouverte (`[key: string]: string`) pour modes futurs (high-contrast,
-  sepia, ambient...) sans breaking change. `default` plutôt que `light`
-  car c'est le fallback universel, pas seulement le mode light.
-- **Compat backward `background` court + `backgrounds` étendu** : les
-  deux formes coexistent. Si les deux sont posées sur le même floor,
-  `backgrounds` gagne et `background` est ignoré silencieusement.
-- **Cascade de détection** : `setting` (on/off priorité max) >
+- **Granularity**: global `dark_mode` setting (`auto`/`on`/`off`) +
+  optional `backgrounds` field per floor. Visual consistency driven
+  globally, image declaration locally.
+- **Naming `backgrounds.{default, dark}`** extended, with an open
+  index signature (`[key: string]: string`) for future modes
+  (high-contrast, sepia, ambient...) without breaking change.
+  `default` rather than `light` because it is the universal
+  fallback, not just the light-mode image.
+- **Backward compatibility short `background` + extended
+  `backgrounds`**: both forms coexist. If both are set on the same
+  floor, `backgrounds` wins and `background` is silently ignored.
+- **Detection cascade**: `setting` (on/off highest priority) >
   `hass.themes.darkMode` > `prefers-color-scheme: dark` (browser
   fallback).
-- **Crossfade simple ~200ms** sur opacity, distinct du système de
-  transitions de navigation. Le toggle light/dark est un changement
-  d'apparence, pas un mouvement spatial.
-- **Fallback silencieux + warning console** une seule fois par floor
-  sans dark variant. Pas de "all or nothing" qui désactiverait le dark
-  mode global si un floor manque.
-- **Release v0.1.1 patch** plutôt que v0.2.0 grouper : feature isolée
-  techniquement + compat backward complète justifient le bump patch
-  SemVer (cf. [`architecture/conventions.md`](architecture/conventions.md)).
+- **Simple ~200ms crossfade** on opacity, distinct from the
+  navigation transition system. The light/dark toggle is an
+  appearance change, not a spatial movement.
+- **Silent fallback + console warning** once per floor missing a
+  dark variant. No "all or nothing" that would disable global dark
+  mode if a single floor is missing.
+- **v0.1.1 patch release** rather than grouping into v0.2.0:
+  technically isolated feature + full backward compatibility justify
+  the SemVer patch bump (cf.
+  [`architecture/conventions.md`](architecture/conventions.md)).
 
-**Alternatives écartées** :
-- Auto-génération d'une image dark via `filter: invert(1)` CSS → moins
-  lisible qu'une image dédiée, mauvais résultat sur photos colorées
-- Setting boolean `dark_mode: true/false` → ne couvre pas le cas "auto
-  basé sur HA", l'enum 3-valeurs est plus expressif
-- Champ unique `background` polymorphe (string ou object) → ambiguïté
-  dans le YAML, le 2-champ explicite est plus clair
-- Bascule de couleurs des éléments en dark mode → reporté, hors scope
-  v0.1.1 (les CSS variables de
-  [`features/color-scheme.md`](features/color-scheme.md) restent
-  identiques light/dark ; un thème HA dark peut les override)
+**Rejected alternatives**:
+- Auto-generation of a dark image via CSS `filter: invert(1)` → less
+  readable than a dedicated image, poor result on coloured photos
+- Boolean `dark_mode: true/false` setting → does not cover the "auto
+  based on HA" case, the 3-value enum is more expressive
+- Single polymorphic `background` field (string or object) →
+  ambiguity in YAML, the 2-field explicit form is clearer
+- Switching element colours in dark mode → deferred, out of scope
+  for v0.1.1 (existing CSS variables stay identical between light
+  and dark; a dark HA theme can override them)
 
-**Conséquences** :
-- Bundle 47.0 → 49.7 KiB (50877 bytes), marge 323 bytes sous le seuil
-  50 KiB du build CI. Tight ; le BACKLOG mentionne le vendoring de
-  `custom-card-helpers` (gain ~3 KiB) si plus de room est nécessaire
-  en v0.2+.
-- Index signature `Backgrounds[key: string]` ouvre le contrat YAML
-  pour modes futurs sans breaking change.
-- Les configs documentées en forme courte (v0.1.0) continueront de
-  fonctionner indéfiniment (compat backward jusqu'à v1.0).
-- Le toggle de classe `fn-theme-{light|dark}` est posé sur le `<svg>`
-  de chaque `<fn-floor>` (et non sur la card racine) pour rester dans
-  le shadow DOM où vivent les `<image>` ciblées par les règles CSS de
-  `backgroundCrossfade`.
+**Consequences**:
+- The 4 post-impl files updated: status of `dark-mode.md` →
+  `implemented`, fields merged into `data-model.md`, ADR-005 here,
+  changelog item in `specs/README.md` v0.1.1
+- Bundle from 47.0 → 49.7 KiB (50877 bytes), 323-byte margin under
+  the build CI 50 KiB threshold. Tight; the BACKLOG mentions
+  vendoring `custom-card-helpers` (~3 KiB gain) if more headroom is
+  needed in v0.2+
+- `Backgrounds[key: string]` index signature opens the YAML contract
+  for future modes without breaking change
+- Floors documented in short form (v0.1.0) will continue to work
+  indefinitely (backward compat through v1.0)
+- The class toggle `fn-theme-{light|dark}` is placed on the `<svg>`
+  of each `<fn-floor>` (and not on the card root) to stay within the
+  shadow DOM where the `<image>` elements targeted by the
+  `backgroundCrossfade` rules live
 
-**Statut** : accepted
+**Status**: accepted
 
 ---
 
-## Template pour les futures décisions
+## Template for future decisions
 
-Copier-coller en tête de la liste, juste sous le séparateur principal.
-Numéroter `ADR-NNN` en continuant la suite (la dernière en date est
+Copy-paste at the top of the list, just under the main separator.
+Number `ADR-NNN` continuing the sequence (the latest one is
 `ADR-005`).

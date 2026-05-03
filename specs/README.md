@@ -7,135 +7,137 @@ related: []
 
 # Specs — lovelace-floor-navigator
 
-Ce dossier contient les specs vivantes du projet. Chaque fichier décrit une
-décision figée, une feature, ou une convention transverse. Les specs sont
-versionnées avec le code et le statut de chaque fichier reflète l'état réel
-de l'implémentation.
+This folder contains the project's living specs. Each file describes a
+frozen decision, a feature, or a transverse convention. Specs are
+versioned alongside the code, and each file's status reflects the real
+state of implementation.
 
-> **Note pour Claude Code** : avant toute modification de code, lis le ou les
-> fichiers de spec correspondants. Si une incohérence est repérée entre la
-> spec et le code, consigne-la dans `open-questions.md` plutôt que de
-> trancher seul.
+> **Note for Claude Code**: before any code change, read the relevant
+> spec file(s). If an inconsistency is spotted between the spec and the
+> code, log it in `open-questions.md` rather than deciding alone.
 
 ## Vision
 
-Carte Lovelace pour Home Assistant qui transforme des plans 2D de maison en
-dashboard interactif. L'utilisateur navigue verticalement entre les niveaux
-à la molette ou au swipe, et superpose des couches d'information sur les
-plans (lampes contrôlables, températures, présence, infrastructure...).
+Lovelace card for Home Assistant that turns 2D house plans into an
+interactive dashboard. The user navigates vertically between levels via
+the wheel or by swiping, and overlays layers of information on top of
+the plans (controllable lights, temperatures, presence, infrastructure...).
 
-Différenciateurs vs alternatives existantes (Picture-Elements natif,
-Floorplan HACS) : navigation native multi-niveaux + overlays modulaires.
+Differentiators vs existing alternatives (native Picture-Elements, HACS
+Floorplan): native multi-level navigation + modular overlays.
 
-## Index des specs
+## Spec index
 
 ### Architecture (transverse)
 
-| Fichier | Sujet | Statut |
+| File | Topic | Status |
 |---|---|---|
 | [`architecture/identity.md`](architecture/identity.md) | Nomenclature, custom element tag, licence | implemented |
-| [`architecture/component-tree.md`](architecture/component-tree.md) | Arbre Lit, conventions IDs SVG | implemented |
-| [`architecture/rendering-strategy.md`](architecture/rendering-strategy.md) | Stratégie 3 hybride + reactive updates | implemented |
+| [`architecture/component-tree.md`](architecture/component-tree.md) | Lit tree, SVG ID conventions | implemented |
+| [`architecture/rendering-strategy.md`](architecture/rendering-strategy.md) | Hybrid strategy 3 + reactive updates | implemented |
 | [`architecture/navigation.md`](architecture/navigation.md) | Wheel, swipe, edge_behavior | implemented |
-| [`architecture/tech-stack.md`](architecture/tech-stack.md) | Dépendances, TS, Rollup, manifest, scripts | implemented |
-| [`architecture/dev-workflow.md`](architecture/dev-workflow.md) | Mode dev rapide + Samba + cycle release | implemented |
+| [`architecture/tech-stack.md`](architecture/tech-stack.md) | Dependencies, TS, Rollup, manifest, scripts | implemented |
+| [`architecture/dev-workflow.md`](architecture/dev-workflow.md) | Quick dev mode + Samba + release cycle | implemented |
 | [`architecture/conventions.md`](architecture/conventions.md) | Code style + SemVer | implemented |
 
 ### Features
 
-| Fichier | Sujet | Statut |
+| File | Topic | Status |
 |---|---|---|
-| [`features/data-model.md`](features/data-model.md) | Schéma YAML, champs, tap_actions | implemented |
-| [`features/color-scheme.md`](features/color-scheme.md) | Couleurs CSS variables, override | implemented |
-| [`features/overlays-toggle.md`](features/overlays-toggle.md) | État local visibleOverlays | implemented |
-| [`features/dark-mode.md`](features/dark-mode.md) | Backgrounds light/dark + crossfade | implemented |
+| [`features/data-model.md`](features/data-model.md) | YAML schema, fields, tap_actions | implemented |
+| [`features/color-scheme.md`](features/color-scheme.md) | Colour CSS variables, override | implemented |
+| [`features/overlays-toggle.md`](features/overlays-toggle.md) | Local visibleOverlays state | implemented |
+| [`features/dark-mode.md`](features/dark-mode.md) | Light/dark backgrounds + crossfade | implemented |
 
-### Transverses (vivants)
+### Transverse (living)
 
-| Fichier | Rôle |
+| File | Role |
 |---|---|
-| [`open-questions.md`](open-questions.md) | Inbox des incohérences vues par Claude Code |
-| [`decisions.md`](decisions.md) | ADRs chronologiques |
-| [`glossary.md`](glossary.md) | Termes du domaine (floor, overlay, viewBox...) |
+| [`open-questions.md`](open-questions.md) | Inbox for inconsistencies seen by Claude Code |
+| [`decisions.md`](decisions.md) | Chronological ADRs |
+| [`glossary.md`](glossary.md) | Domain terms (floor, overlay, viewBox...) |
 
 ## Roadmap
 
-### v0.1.0 — Livrée (2026-05-03)
+### v0.1.0 — Shipped (2026-05-03)
 
-Card Lovelace fonctionnelle, multi-niveaux, navigation wheel + swipe,
-overlays icon + text, tap_actions HA standards. Bundle 47 KB sous la
-cible 50 KB. Release GitHub avec asset téléchargeable. Pas encore
-publiée sur HACS.
+Functional Lovelace card, multi-level, wheel + swipe navigation, icon
++ text overlays, HA standard tap_actions. Bundle 47 KB under the
+50 KB target. GitHub Release with downloadable asset. Not yet
+published on HACS.
 
-Voir [`decisions.md`](decisions.md) pour les ADRs de la v0.1.0.
+See [`decisions.md`](decisions.md) for v0.1.0 ADRs.
 
-### v0.1.1 — Livrée (2026-05-04)
+### v0.1.1 — Shipped (2026-05-04)
 
-Dark mode pour les images de fond. Champ `backgrounds: { default, dark }`
-au niveau floor + setting global `dark_mode` (`auto`/`on`/`off`).
-Cascade de détection `setting > hass.themes.darkMode > prefers-color-scheme`,
-crossfade 200ms sur opacity, fallback gracieux + warning console pour
-les floors sans dark variant. Compat backward complète avec `background`
-court de v0.1.0. Voir [`features/dark-mode.md`](features/dark-mode.md)
-(statut `implemented`) et l'ADR-005 dans [`decisions.md`](decisions.md).
+Dark mode for background images. `backgrounds: { default, dark }`
+field at the floor level + global `dark_mode` setting (`auto`/`on`/
+`off`). Detection cascade
+`setting > hass.themes.darkMode > prefers-color-scheme`, 200ms
+crossfade on opacity, graceful fallback + console warning for
+floors without a dark variant. Full backward compatibility with the
+v0.1.0 short `background`. See
+[`features/dark-mode.md`](features/dark-mode.md) (status
+`implemented`) and ADR-005 in [`decisions.md`](decisions.md).
 Bundle 49.7 KiB.
 
-### v0.2.0 — Confort utilisateur (date non fixée)
+### v0.2.0 — User comfort (date TBD)
 
-Tooltip au survol, type `badge`, binding overlays à entités HA,
-persistance état overlays (localStorage), animations CSS optionnelles,
-raccourcis clavier. Voir aussi [`BACKLOG.md`](../BACKLOG.md) à la racine
-pour les irritants identifiés en cours d'usage.
+Tooltip on hover, `badge` type, overlay binding to HA entities,
+overlay state persistence (localStorage), optional CSS animations,
+keyboard shortcuts. See also [`BACKLOG.md`](../BACKLOG.md) at the
+repo root for irritants spotted during use.
 
-### v0.3.0 — Maturité & publication HACS
+### v0.3.0 — Maturity & HACS publication
 
-Type `zone` (formes SVG colorables), éditeur visuel Lovelace UI,
-mode loop optionnel, tests Vitest, i18n, **soumission HACS officielle**.
+`zone` type (colourable SVG shapes), Lovelace UI visual editor,
+optional loop mode, Vitest tests, i18n, **official HACS submission**.
 
-### v0.4.0+ — Avancé
+### v0.4.0+ — Advanced
 
-Auto-détection des Areas HA, heatmaps animées, mode 3D perspective,
-support multi-bâtiments.
+HA Areas auto-detection, animated heatmaps, 3D perspective mode,
+multi-building support.
 
-### Hors scope durable
+### Permanent non-goals
 
-- WYSIWYG drag-and-drop des éléments → c'est un éditeur de config, pas
-  le rôle d'une card
-- Pack d'icônes meublées prédéfinies → trop dépendant des préférences
+- Drag-and-drop WYSIWYG of elements → that is a config editor, not
+  the role of a card
+- Pre-defined furnished icon pack → too dependent on personal
+  preferences
 
-## Workflow specs
+## Spec workflow
 
-1. Toute modification de spec passe par ce dossier (pas de markdown
-   en chat à copier-coller)
-2. Lire avant d'écrire : `README.md` (cet index) + `open-questions.md`
-   + le ou les fichiers de spec concernés
-3. Demander avant d'écraser : montrer un résumé du changement, attendre
-   le OK explicite avant le commit
-4. Une spec = un fichier (pas de mégadocument)
-5. Frontmatter YAML obligatoire sur chaque fichier
-6. Sections de spec : Contexte / Objectifs / Scope (in & out) /
-   Comportement attendu / Cas limites / Questions ouvertes / Décisions
+1. Every spec change goes through this folder (no markdown pasted in
+   chat to copy back)
+2. Read before writing: `README.md` (this index) +
+   `open-questions.md` + the relevant spec file(s)
+3. Ask before overwriting: show a summary of the change, wait for
+   explicit OK before committing
+4. One spec = one file (no megadocument)
+5. YAML frontmatter mandatory on every file
+6. Spec sections: Context / Goals / Scope (in & out) / Expected
+   behaviour / Edge cases / Open questions / Decisions
 
-## Format de commit specs
+## Spec commit format
 
 ```
-specs(<slug>): <verbe> — <description courte>
+specs(<slug>): <verb> — <short description>
 ```
 
-Exemples :
+Examples:
 - `specs(dark-mode): add — initial draft of dark mode handling`
 - `specs(data-model): update — clarify backgrounds field per Q-2026-05-04`
 - `specs: resolve Q-2026-05-04 (backgrounds priority)`
 
-Commit sur la branche par défaut directement (sauf si plusieurs
-contributeurs actifs ou demande explicite de PR).
+Commit on the default branch directly (unless multiple active
+contributors or explicit PR request).
 
-## Ressources externes
+## External resources
 
-- Documentation Lit : https://lit.dev
-- Custom Cards in HA : https://developers.home-assistant.io/docs/frontend/custom-ui/custom-card/
-- HACS publishing guide : https://hacs.xyz/docs/publish/start
-- custom-card-helpers : https://github.com/custom-cards/custom-card-helpers
-- Card de référence (Mushroom) : https://github.com/piitaya/lovelace-mushroom
-- Workflow `HA_LOCAL_DIR` (custom-sonos-card) : https://github.com/punxaphil/custom-sonos-card
-- Workflow `TARGET_DIRECTORY` (streamline-card) : https://github.com/brunosabot/streamline-card
+- Lit docs: https://lit.dev
+- Custom Cards in HA: https://developers.home-assistant.io/docs/frontend/custom-ui/custom-card/
+- HACS publishing guide: https://hacs.xyz/docs/publish/start
+- custom-card-helpers: https://github.com/custom-cards/custom-card-helpers
+- Reference card (Mushroom): https://github.com/piitaya/lovelace-mushroom
+- `HA_LOCAL_DIR` workflow (custom-sonos-card): https://github.com/punxaphil/custom-sonos-card
+- `TARGET_DIRECTORY` workflow (streamline-card): https://github.com/brunosabot/streamline-card
