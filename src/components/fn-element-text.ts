@@ -15,7 +15,7 @@ import type { HomeAssistant } from '../types/ha.js';
  * - Per-element reactive granularity isn't critical here : text rendering
  *   is cheap, the whole layer can re-render on hass changes
  *
- * Display rules (SPEC §3.3.7) :
+ * Display rules (specs/features/data-model.md, "Element type `text`"):
  * - value : numeric → `toFixed(precision)` (default 1)
  *           non-numeric → raw state string
  *           unavailable / unknown → "—" placeholder

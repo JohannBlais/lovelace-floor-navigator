@@ -9,7 +9,8 @@ import type { DarkModeSetting, Floor, Overlay, TransitionMode } from '../types/c
 import type { HomeAssistant } from '../types/ha.js';
 
 /**
- * Stacks all floors in the same coordinate space (CSS strategy 3 from SPEC §4.3).
+ * Stacks all floors in the same coordinate space (CSS strategy 3 from
+ * specs/architecture/rendering-strategy.md).
  *
  * - Every floor is rendered in the DOM at all times.
  * - Floors are absolutely positioned at the same origin (`inset: 0`).
@@ -153,7 +154,7 @@ export class FnFloorStack extends LitElement {
       pointer-events: none;
     }
 
-    /* --- Bounce animation at edges (SPEC §4.6.3) --- */
+    /* --- Bounce animation at edges (specs/architecture/navigation.md) --- */
     .fn-bouncing-top {
       animation: fn-bounce-top 150ms cubic-bezier(0.34, 1.56, 0.64, 1);
     }

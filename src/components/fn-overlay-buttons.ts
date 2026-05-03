@@ -8,12 +8,12 @@ import type { Overlay } from '../types/config.js';
  * Bar of toggle buttons (one per overlay) that lives next to the floor
  * stack — sibling of `<fn-floor-stack>` inside `<fn-navigation-controller>`,
  * positioned `top` or `bottom` per the `overlay_buttons_position` setting
- * (SPEC §3.3.2).
+ * (see specs/features/data-model.md, Settings table).
  *
  * State (which overlays are currently visible) lives in `floor-navigator-card`
- * (SPEC §4.5 mécanisme A). Clicking a button dispatches an `overlay-toggle`
- * CustomEvent with `{ id }` that bubbles up to the card, which mutates its
- * `_visibleOverlayIds` Set.
+ * (specs/features/overlays-toggle.md — local non-persisted state). Clicking
+ * a button dispatches an `overlay-toggle` CustomEvent with `{ id }` that
+ * bubbles up to the card, which mutates its `_visibleOverlayIds` Set.
  */
 @customElement('fn-overlay-buttons')
 export class FnOverlayButtons extends LitElement {

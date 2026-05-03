@@ -18,10 +18,10 @@ export interface CardSettings {
   show_floor_indicator?: boolean;
   overlay_buttons_position?: OverlayButtonsPosition;
   /**
-   * v0.1.1 — Pilote l'affichage des dark variants.
-   * - `auto` (défaut) : suit `hass.themes.darkMode` puis `prefers-color-scheme`
-   * - `on`            : force le dark mode
-   * - `off`           : force le light mode + n'émet PAS les <image> dark dans le DOM
+   * v0.1.1 — Drives the display of dark variants.
+   * - `auto` (default): follows `hass.themes.darkMode`, then `prefers-color-scheme`
+   * - `on`:             forces dark mode
+   * - `off`:            forces light mode + does NOT emit the dark <image> in the DOM
    */
   dark_mode?: DarkModeSetting;
 }
@@ -33,14 +33,14 @@ export type OverlayButtonsPosition = 'top' | 'bottom' | 'none';
 export type DarkModeSetting = 'auto' | 'on' | 'off';
 
 /**
- * v0.1.1 — Forme étendue des images de fond d'un floor.
+ * v0.1.1 — Extended form for a floor's background images.
  *
- * `default` est l'image par défaut (mode light + fallback universel).
- * `dark` est l'image alternative en mode dark, optionnelle.
+ * `default` is the fallback image (light mode + universal fallback).
+ * `dark` is the optional alternative in dark mode.
  *
- * La signature index ouvre la porte à des modes futurs
- * (high-contrast, sepia, ambient...) sans breaking change. Toute clé
- * autre que `default` / `dark` est ignorée silencieusement en v0.1.1.
+ * The index signature leaves room for future modes (high-contrast,
+ * sepia, ambient...) without breaking change. Any key other than
+ * `default` / `dark` is silently ignored in v0.1.1.
  */
 export interface Backgrounds {
   default: string;
@@ -52,14 +52,14 @@ export interface Floor {
   id: string;
   name: string;
   /**
-   * Forme courte v0.1.0 (compat backward).
-   * Au moins l'un de `background` ou `backgrounds.default` doit être
-   * présent. Si les deux sont posés, `backgrounds` gagne, `background`
-   * est ignoré silencieusement.
+   * Short form v0.1.0 (backward-compatible).
+   * At least one of `background` or `backgrounds.default` must be
+   * present. If both are set, `backgrounds` wins and `background` is
+   * silently ignored.
    */
   background?: string;
   /**
-   * Forme étendue v0.1.1+ — permet de fournir des variants par mode.
+   * Extended form v0.1.1+ — allows per-mode variants.
    */
   backgrounds?: Backgrounds;
 }

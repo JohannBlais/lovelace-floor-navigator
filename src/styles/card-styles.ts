@@ -35,7 +35,8 @@ export const backgroundCrossfade = css`
 
 /**
  * CSS custom properties exposed on the card root (`floor-navigator-card`).
- * Mirrors SPEC §3.4. Users can override any of these via `card-mod` or via
+ * Mirrors specs/features/color-scheme.md. Users can override any of these
+ * via `card-mod` or via
  * the Lovelace theme.
  *
  * Custom properties cascade across shadow DOM boundaries (down only), so

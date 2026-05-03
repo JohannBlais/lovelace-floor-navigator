@@ -1,5 +1,5 @@
 // Resolves the current theme mode (light/dark) for the card.
-// Mirrors specs/features/dark-mode.md §"Source de la décision (cascade)".
+// Mirrors specs/features/dark-mode.md §"Source of the decision (cascade)".
 
 import type { DarkModeSetting } from '../types/config.js';
 import type { HomeAssistant } from '../types/ha.js';
@@ -7,15 +7,15 @@ import type { HomeAssistant } from '../types/ha.js';
 export type ThemeMode = 'light' | 'dark';
 
 /**
- * Resolves the current theme by walking the SPEC cascade in order :
+ * Resolves the current theme by walking the spec cascade in order:
  *
  *   1. Setting `dark_mode` (when explicit `on` / `off`) — highest priority.
  *   2. `hass.themes.darkMode` — official HA signal, follows the active theme.
  *   3. `window.matchMedia('(prefers-color-scheme: dark)')` — browser fallback.
  *
- * In `auto` mode (or when the setting is not set), the cascade falls through
- * to (2) then (3). When neither HA nor the browser provides a signal, default
- * to `'light'`.
+ * In `auto` mode (or when the setting is not set), the cascade falls
+ * through to (2) then (3). When neither HA nor the browser provides a
+ * signal, default to `'light'`.
  */
 export function resolveTheme(
   hass: HomeAssistant | undefined,

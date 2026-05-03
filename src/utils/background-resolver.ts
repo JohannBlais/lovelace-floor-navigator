@@ -1,28 +1,28 @@
 // Resolves the background image paths for a floor.
-// Mirrors specs/features/dark-mode.md §"Algorithme de résolution du path d'image".
+// Mirrors specs/features/dark-mode.md §"Image-path resolution algorithm".
 
 import type { Floor } from '../types/config.js';
 
 export interface ResolvedBackgrounds {
-  /** Image par défaut (mode light + fallback universel). Toujours définie. */
+  /** Default image (light mode + universal fallback). Always defined. */
   default: string;
-  /** Variant pour le mode dark, optionnel. */
+  /** Variant for dark mode, optional. */
   dark?: string;
 }
 
 /**
  * Returns the resolved `{ default, dark? }` paths for a floor.
  *
- * - Si `floor.backgrounds` est défini, il prend la priorité (v0.1.1).
- * - Sinon on retombe sur la forme courte `floor.background` (v0.1.0
- *   compat backward) — `default` = `background`, pas de `dark`.
- * - Si les deux sont présents, `backgrounds` gagne, `background` est
- *   ignoré silencieusement (situation transitoire de migration).
+ * - If `floor.backgrounds` is defined, it takes priority (v0.1.1).
+ * - Otherwise we fall back to the short form `floor.background`
+ *   (v0.1.0 backward compat) — `default` = `background`, no `dark`.
+ * - If both are present, `backgrounds` wins, `background` is silently
+ *   ignored (acceptable transitory migration state).
  *
- * Hypothèse : `setConfig` a déjà validé qu'au moins l'un des deux
- * champs est présent. En cas d'incohérence (les deux absents), on
- * retourne une chaîne vide pour ne pas crasher — le browser affichera
- * une image cassée, ce qui est diagnosticable visuellement.
+ * Assumption: `setConfig` has already validated that at least one of
+ * the two fields is present. If both are absent (inconsistent), we
+ * return an empty string rather than crash — the browser will display
+ * a broken image, which is easy to diagnose visually.
  */
 export function resolveBackgrounds(floor: Floor): ResolvedBackgrounds {
   if (floor.backgrounds) {

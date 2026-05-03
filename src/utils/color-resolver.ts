@@ -1,7 +1,8 @@
 /**
  * Resolves the CSS color value for an entity based on its domain and state.
  * Returns a `var(...)` chain that prefers domain-specific overrides and
- * falls back to the generic on/off/unavailable variables (SPEC §3.4.1).
+ * falls back to the generic on/off/unavailable variables
+ * (specs/features/color-scheme.md).
  */
 
 /**

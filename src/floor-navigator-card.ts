@@ -50,9 +50,9 @@ export class FloorNavigatorCard extends LitElement {
 
   @state() private _config?: CardConfig;
   /**
-   * Set of overlay ids currently visible. Initialized from each overlay's
-   * `default_visible` (SPEC §4.5 mécanisme A — local state, non-persisted).
-   * Will be mutated by `<fn-overlay-buttons>` at step 7.
+   * Set of overlay ids currently visible. Initialised from each overlay's
+   * `default_visible` (specs/features/overlays-toggle.md — local
+   * non-persisted state). Mutated by `<fn-overlay-buttons>` at step 7.
    */
   @state() private _visibleOverlayIds: Set<string> = new Set();
   /**
@@ -122,8 +122,8 @@ export class FloorNavigatorCard extends LitElement {
           `Invalid floor: \`id\` and \`name\` are required (got ${JSON.stringify(floor)})`,
         );
       }
-      // v0.1.1 — au moins l'un de `background` (forme courte) ou
-      // `backgrounds.default` (forme étendue) doit être présent.
+      // v0.1.1 — at least one of `background` (short form) or
+      // `backgrounds.default` (extended form) must be present.
       if (!floor.background && !floor.backgrounds) {
         throw new Error(
           `Floor "${floor.id}" requires either 'background' or 'backgrounds.default'`,

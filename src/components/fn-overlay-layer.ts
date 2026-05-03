@@ -8,16 +8,17 @@ import type { HomeAssistant } from '../types/ha.js';
 /**
  * Renders an overlay layer for a given floor.
  *
- * SPEC §4.1 lists `<fn-overlay-layer>` as a custom element, but a LitElement
- * (HTML namespace) placed directly inside an `<svg>` does not reliably
- * render its shadow DOM into the SVG viewport. We instead expose a render
- * helper that inlines the layer as an SVG `<g>` directly inside the parent
- * `<svg>` template — this preserves the SPEC §4.2 ID convention
- * (`fn-floor-{floor_id}-overlay-{overlay_id}`) while staying browser-safe.
+ * specs/architecture/component-tree.md lists `<fn-overlay-layer>` as a
+ * custom element, but a LitElement (HTML namespace) placed directly inside
+ * an `<svg>` does not reliably render its shadow DOM into the SVG viewport.
+ * We instead expose a render helper that inlines the layer as an SVG
+ * `<g>` directly inside the parent `<svg>` template — this preserves the
+ * SVG ID convention (`fn-floor-{floor_id}-overlay-{overlay_id}`) while
+ * staying browser-safe.
  *
- * Per-element reactive updates (SPEC §4.4) live in `<fn-element-icon>`,
- * which is a real LitElement used inside `<foreignObject>` (HTML rendering,
- * fully reliable across browsers).
+ * Per-element reactive updates (specs/architecture/rendering-strategy.md)
+ * live in `<fn-element-icon>`, which is a real LitElement used inside
+ * `<foreignObject>` (HTML rendering, fully reliable across browsers).
  */
 export function renderOverlayLayer(
   overlay: Overlay,

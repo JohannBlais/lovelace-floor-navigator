@@ -15,26 +15,27 @@ import type { HomeAssistant } from '../types/ha.js';
  *
  * Visual = circular pastille (state color) + white halo + centered glyph.
  *
- * Reactive granularity (SPEC §4.4 approche B) : `shouldUpdate` short-circuits
- * re-renders to entities whose state actually changed.
+ * Reactive granularity (specs/architecture/rendering-strategy.md, "reactive
+ * properties per element"): `shouldUpdate` short-circuits re-renders to
+ * entities whose state actually changed.
  *
- * Tap actions (SPEC §3.3.8) : delegated to `handleAction` from
- * custom-card-helpers, which covers toggle / more-info / navigate /
- * call-service / url / none. The lib defaults to "more-info" when no
- * tap_action is configured. We normalize the YAML short form
- * (`tap_action: toggle`) into the object form (`{ action: 'toggle' }`) the
- * lib expects.
+ * Tap actions (specs/features/data-model.md, "Tap actions"): delegated to
+ * `handleAction` from custom-card-helpers, which covers toggle / more-info
+ * / navigate / call-service / url / none. The lib defaults to "more-info"
+ * when no tap_action is configured. We normalise the YAML short form
+ * (`tap_action: toggle`) into the object form (`{ action: 'toggle' }`)
+ * the lib expects.
  */
 @customElement('fn-element-icon')
 export class FnElementIcon extends LitElement {
   @property({ attribute: false }) hass?: HomeAssistant;
   @property({ attribute: false }) element!: IconElement;
   /**
-   * Icon name configured at the parent overlay level. Used as fallback
-   * when the element doesn't override it explicitly. Resolution chain :
+   * Icon name configured at the parent overlay level. Used as a fallback
+   * when the element does not override it explicitly. Resolution chain:
    *   element.icon → overlayIcon → resolveIcon(entity domain)
-   * This way an overlay like "Prises" with `icon: mdi:power-socket` can
-   * propagate that icon to all its switch elements without needing to
+   * This way an overlay like "Power outlets" with `icon: mdi:power-socket`
+   * can propagate that icon to all its switch elements without needing to
    * repeat it on every element.
    */
   @property({ attribute: false }) overlayIcon?: string;
@@ -63,10 +64,11 @@ export class FnElementIcon extends LitElement {
   }
 
   /**
-   * Coerces the SPEC §3.3.8 short form (`tap_action: 'toggle'`) into the
-   * object form (`{ action: 'toggle' }`) expected by `handleAction`.
-   * Returns `undefined` when no tap_action was set — `handleAction` will
-   * fall back to its built-in `{ action: 'more-info' }` default in that case.
+   * Coerces the short form (`tap_action: 'toggle'`) into the object form
+   * (`{ action: 'toggle' }`) expected by `handleAction`. Returns
+   * `undefined` when no tap_action was set — `handleAction` then falls
+   * back to its built-in `{ action: 'more-info' }` default.
+   * See specs/features/data-model.md, "Tap actions".
    */
   private _normalizedTapAction(): ActionConfig | undefined {
     const ta: TapAction | undefined = this.element.tap_action;

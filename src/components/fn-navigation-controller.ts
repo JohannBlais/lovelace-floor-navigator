@@ -25,7 +25,7 @@ const BOUNCE_DURATION_MS = 150;
 /**
  * Owns the navigation state (current floor index) and gesture handlers.
  *
- * SPEC §4.6 :
+ * specs/architecture/navigation.md:
  * - Wheel : `deltaY > 0` → next floor, throttle 400ms.
  * - Touch swipe : 50px threshold, 0.3px/ms minimum velocity, scroll-aligned
  *   convention (finger moves up → next floor, like the wheel).
@@ -51,7 +51,8 @@ export class FnNavigationController extends LitElement {
   @property({ attribute: false }) allOverlays: Overlay[] = [];
   /** Set of overlay ids currently visible — for the active button styling. */
   @property({ attribute: false }) visibleOverlayIds: Set<string> = new Set();
-  /** Position of the overlay buttons bar. SPEC §3.3.2 default = bottom. */
+  /** Position of the overlay buttons bar. Default = bottom (see
+   *  specs/features/data-model.md, Settings table). */
   @property({ type: String, attribute: false }) overlayButtonsPosition: OverlayButtonsPosition = 'bottom';
   @property({ attribute: false }) hass?: HomeAssistant;
   /** v0.1.1 — forwarded to fn-floor-stack → fn-floor for the dark-mode crossfade. */

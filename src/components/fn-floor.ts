@@ -10,32 +10,35 @@ import type { DarkModeSetting, Floor, Overlay } from '../types/config.js';
 import type { HomeAssistant } from '../types/ha.js';
 
 /**
- * Renders a single floor: an SVG with the configured viewBox, one or two
- * background `<image>` elements (depending on whether a dark variant is
- * configured), and one `<g class="fn-overlay-layer">` per overlay (filtered
- * to the elements that live on this floor).
+ * Renders a single floor: an SVG with the configured viewBox, one or
+ * two background `<image>` elements (depending on whether a dark
+ * variant is configured), and one `<g class="fn-overlay-layer">` per
+ * overlay (filtered to the elements that live on this floor).
  *
- * Dark-mode rendering (specs/features/dark-mode.md) :
- * - 2 `<image>` superposées si le floor a un dark variant ET si
- *   `darkModeSetting !== 'off'`. Classes `fn-bg-default` + `fn-bg-dark`,
- *   le toggle d'opacité est piloté par la classe `fn-theme-{light|dark}`
- *   sur le `<svg>` et les règles CSS de `backgroundCrossfade`.
- * - Sinon une seule `<image>` sans classe `fn-bg-*`, donc toujours
- *   visible quel que soit le thème (= fallback gracieux).
+ * Dark-mode rendering (specs/features/dark-mode.md):
+ * - Two stacked `<image>` elements if the floor has a dark variant
+ *   AND `darkModeSetting !== 'off'`. Classes `fn-bg-default` +
+ *   `fn-bg-dark`, the opacity toggle is driven by the
+ *   `fn-theme-{light|dark}` class on the `<svg>` and the
+ *   `backgroundCrossfade` CSS rules.
+ * - Otherwise a single `<image>` without an `fn-bg-*` class, so it
+ *   stays fully visible regardless of theme (= graceful fallback).
  *
  * GOTCHA — DO NOT split the SVG body into nested html`` templates.
- * lit-html parses each template as HTML in isolation; nested templates
- * inside `<svg>` are parsed without an SVG ancestor and the HTML parser
- * auto-corrects `<image>` into `<img>` (which has no `href` attribute →
- * image never loads). Use the `svg` tagged template for any conditional
- * sub-fragment, like `_renderBackgrounds()` below.
+ * lit-html parses each template as HTML in isolation; nested
+ * templates inside `<svg>` are parsed without an SVG ancestor and the
+ * HTML parser auto-corrects `<image>` into `<img>` (which has no
+ * `href` attribute → image never loads). Use the `svg` tagged
+ * template for any conditional sub-fragment, like
+ * `_renderBackgrounds()` below.
  */
 @customElement('fn-floor')
 export class FnFloor extends LitElement {
   /** SVG viewBox string, e.g. "0 0 1920 1080". */
   @property({ type: String }) viewbox = '';
 
-  /** The floor object — used for the SPEC §4.2 group id `fn-floor-{id}`. */
+  /** The floor object — used for the SVG group id `fn-floor-{id}`
+   * (see specs/architecture/component-tree.md). */
   @property({ attribute: false }) floor!: Floor;
 
   /** Overlays the user has configured (already filtered by visibility). */
@@ -74,8 +77,8 @@ export class FnFloor extends LitElement {
 
   protected override updated(_changed: PropertyValues<this>): void {
     // Warn once per instance when the current theme is dark but we have
-    // no dark variant for this floor. Cf. SPEC §"Floor sans dark variant
-    // en mode dark".
+    // no dark variant for this floor. See specs/features/dark-mode.md
+    // §"Floor without dark variant in dark mode".
     if (this._hasWarnedNoDarkVariant) return;
     if (this.currentTheme !== 'dark') return;
     const bg = resolveBackgrounds(this.floor);
@@ -116,8 +119,8 @@ export class FnFloor extends LitElement {
     emitDark: boolean,
   ): SVGTemplateResult {
     if (emitDark) {
-      // 2 images superposées dans le DOM, toggle par opacité via
-      // backgroundCrossfade rules + `fn-theme-{light|dark}` sur le <svg>.
+      // Two images stacked in the DOM, opacity-toggled via the
+      // backgroundCrossfade rules + `fn-theme-{light|dark}` on the <svg>.
       return svg`
         <image
           id="fn-floor-${floorId}-bg-default"
@@ -141,10 +144,10 @@ export class FnFloor extends LitElement {
         />
       `;
     }
-    // 1 image sans classe `fn-bg-*` → aucune règle d'opacité ne s'applique,
-    // l'image reste pleinement visible quel que soit `fn-theme-*`. C'est
-    // le fallback gracieux pour les floors en forme courte ou quand
-    // dark_mode === 'off'.
+    // Single image without an `fn-bg-*` class → no opacity rule
+    // applies, the image stays fully visible regardless of
+    // `fn-theme-*`. This is the graceful fallback for floors in
+    // short form or when `dark_mode === 'off'`.
     return svg`
       <image
         id="fn-floor-${floorId}-bg"
