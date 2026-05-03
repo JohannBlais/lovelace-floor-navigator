@@ -172,21 +172,6 @@ GitHub Actions runs `npm run build` without `.env.local` → fallback to
 `dist/` (see [`tech-stack.md`](tech-stack.md)). The bundle is attached
 to the release by `release.yml`.
 
-## Notes specific to Johann's environment
-
-Off-spec but useful for bootstrap:
-
-- Johann's HAOS is at `192.168.1.61`. The Samba share is therefore
-  `\\192.168.1.61\config\`.
-- The main dev machine is "Fatboy" (Bureau L2). The `Z:` mapping is
-  set up there.
-- The main HA repo `JohannBlais/homeassistant-config` is private and
-  uses a Git Pull add-on. The `lovelace-floor-navigator` repo is
-  separate, private until v0.3.0 (publish-polished strategy).
-- Personal preference: `transition_duration: 300` (instead of the
-  default 400) — reduces motion sickness with repeated use. To note in
-  Johann's config only, not as a default change in the spec.
-
 ## Open questions
 
 None.
