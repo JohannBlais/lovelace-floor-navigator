@@ -48,6 +48,7 @@ Floorplan HACS) : navigation native multi-niveaux + overlays modulaires.
 | [`features/data-model.md`](features/data-model.md) | Schéma YAML, champs, tap_actions | implemented |
 | [`features/color-scheme.md`](features/color-scheme.md) | Couleurs CSS variables, override | implemented |
 | [`features/overlays-toggle.md`](features/overlays-toggle.md) | État local visibleOverlays | implemented |
+| [`features/dark-mode.md`](features/dark-mode.md) | Backgrounds light/dark + crossfade | **draft** |
 
 ### Transverses (vivants)
 
@@ -70,8 +71,10 @@ Voir [`decisions.md`](decisions.md) pour les ADRs de la v0.1.0.
 
 ### v0.1.1 — En préparation
 
-Dark mode pour les images de fond. Spec en cours de rédaction
-(`features/dark-mode.md` à venir, statut `draft`).
+Dark mode pour les images de fond. Spec rédigée et figée pour
+implémentation : voir [`features/dark-mode.md`](features/dark-mode.md)
+(statut `draft`, à passer en `implemented` après merge de la PR
+`feature/dark-mode`).
 
 ### v0.2.0 — Confort utilisateur (date non fixée)
 
