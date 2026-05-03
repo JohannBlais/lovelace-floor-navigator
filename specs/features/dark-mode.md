@@ -335,30 +335,44 @@ settled in the Claude Opus design session.
   identical between light and dark. If the user wants different
   colours, they can define them in a dark HA theme.
 
-## Implementation — to be detailed by Claude Code
+## Implementation status
 
-This spec is `draft` until validation post-implementation. Claude
-Code, following this spec, must:
+Shipped in v0.1.1 on 2026-05-04. Final files delivered:
 
-1. Create `src/utils/theme-resolver.ts` — current mode resolution
-2. Create `src/utils/background-resolver.ts` — image-path resolution
-3. Extend `src/types/config.ts` — types `Backgrounds`, `dark_mode`
-4. Modify `src/components/fn-floor.ts` — emit 2 `<image>` per
-   context
-5. Modify `src/floor-navigator-card.ts` — reactive `currentTheme`
-   + matchMedia subscription + `fn-theme-*` class
-6. Extend `src/styles/card-styles.ts` — crossfade CSS rules
-7. Update `dev/mock-hass.ts` — `themes.darkMode` toggle
-8. Create `docs/examples/dark-mode.yaml` — full example
-9. Bump `CARD_VERSION` to `0.1.1` in `floor-navigator-card.ts`
-10. Update the repo `README.md` — configuration section
+1. `src/utils/theme-resolver.ts` — current-mode resolution with the
+   3-step cascade (`setting` > `hass.themes.darkMode` >
+   `prefers-color-scheme`)
+2. `src/utils/background-resolver.ts` — image-path resolution and
+   short/extended form normalisation
+3. `src/types/config.ts` — `Backgrounds` type with open index
+   signature (`[key: string]: string`) for future modes, plus
+   `dark_mode` on `CardSettings`
+4. `src/components/fn-floor.ts` — emits 1 or 2 `<image>` depending on
+   the dark variant and `dark_mode` setting; one-time `console.warn`
+   per instance via the `_hasWarned` flag
+5. `src/floor-navigator-card.ts` — reactive `currentTheme` +
+   matchMedia subscription with cleanup; the `fn-theme-{light|dark}`
+   class is placed on the `<svg>` of each `<fn-floor>` (not on the
+   card root) to stay within the shadow DOM where the targeted
+   `<image>` elements live (see ADR-005 for the rationale)
+6. `src/styles/card-styles.ts` — 200ms opacity crossfade rules
+7. `dev/mock-hass.ts` — togglable `themes.darkMode` for the quick
+   dev mode
+8. `docs/examples/dark-mode.yaml` — full example covering the 3
+   `dark_mode` values and short/extended form
+9. `CARD_VERSION` bumped to `0.1.1` in `floor-navigator-card.ts`
+10. Repo `README.md` configuration section updated
 
-Once implemented and validated:
+Final bundle: **49.7 KiB** (50877 bytes), 323-byte margin under the
+build CI 50 KiB threshold. Tight; the BACKLOG mentions vendoring
+`custom-card-helpers` (~3 KiB gain) if more headroom is needed in
+v0.2+.
 
-- Status of this spec moves to `implemented`
-- The new fields (`backgrounds`, `dark_mode`) are merged into
+Post-implementation updates already applied:
+
+- This file's status moved from `draft` to `implemented`
+- The new fields (`backgrounds`, `dark_mode`) merged into
   [`data-model.md`](data-model.md)
-- An ADR-005 is added in [`../decisions.md`](../decisions.md)
-  recording the structuring choices
-- A new changelog item appears in
-  [`../README.md`](../README.md) under v0.1.1
+- ADR-005 added in [`../decisions.md`](../decisions.md) recording the
+  structuring choices
+- New changelog item in [`../README.md`](../README.md) under v0.1.1
