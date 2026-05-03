@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -113,28 +113,28 @@
     <div class="container">
       <header>
         <h1>Floor Navigator — Dev Sandbox</h1>
-        <p>v0.1.1 — toutes les features + dark mode pour les backgrounds.</p>
+        <p>v0.1.1 — every feature + dark-mode backgrounds.</p>
       </header>
 
       <div class="controls">
         <label>
           Transition
           <select id="transition-select">
-            <option value="crossfade">crossfade (défaut)</option>
+            <option value="crossfade">crossfade (default)</option>
             <option value="slide">slide</option>
             <option value="slide-scale">slide-scale</option>
           </select>
         </label>
         <label>
-          Edge behavior
+          Edge behaviour
           <select id="edge-select">
-            <option value="bounce">bounce (défaut)</option>
+            <option value="bounce">bounce (default)</option>
             <option value="none">none</option>
             <option value="loop">loop</option>
           </select>
         </label>
         <label>
-          Durée (ms)
+          Duration (ms)
           <select id="duration-select">
             <option value="200">200</option>
             <option value="400" selected>400</option>
@@ -149,7 +149,7 @@
         <label>
           overlay_buttons_position
           <select id="buttons-position-select">
-            <option value="bottom" selected>bottom (défaut)</option>
+            <option value="bottom" selected>bottom (default)</option>
             <option value="top">top</option>
             <option value="none">none</option>
           </select>
@@ -157,7 +157,7 @@
         <label>
           dark_mode (setting)
           <select id="dark-mode-select">
-            <option value="auto" selected>auto (défaut)</option>
+            <option value="auto" selected>auto (default)</option>
             <option value="on">on</option>
             <option value="off">off</option>
           </select>
@@ -167,7 +167,7 @@
           hass.themes.darkMode
         </label>
         <label>
-          Toggle entité
+          Toggle entity
           <button id="toggle-salon" type="button">light.salon</button>
         </label>
       </div>
@@ -175,16 +175,18 @@
       <floor-navigator-card id="card"></floor-navigator-card>
 
       <div class="legend">
-        <kbd>Scroll</kbd> vertical → bascule entre L0/L1/L2.<br />
-        <strong>Dark mode v0.1.1</strong> :
-        L0 et L1 ont un dark variant (forme étendue <code>backgrounds</code>),
-        L2 reste en forme courte → warning console une fois en mode dark.
-        Toggle <code>dark_mode</code> ou <code>hass.themes.darkMode</code> ci-dessus
-        pour voir le crossfade 200ms.<br />
-        Lights : <strong>salon</strong> (toggle), <strong>cuisine</strong> (more-info),
-        <strong>entrée</strong> (call-service), <strong>terrasse</strong> (none).<br />
-        Températures : valeurs <code>°C</code> rendues en SVG <code>&lt;text&gt;</code>
-        avec outline noir.
+        <kbd>Scroll</kbd> vertically → switch between L0/L1/L2.<br />
+        <strong>Dark mode v0.1.1</strong>:
+        L0 and L1 have a dark variant (extended <code>backgrounds</code>
+        form), L2 stays in the short form → one console warning when in
+        dark mode. Toggle <code>dark_mode</code> or
+        <code>hass.themes.darkMode</code> above to see the 200 ms
+        crossfade.<br />
+        Lights: <strong>salon</strong> (toggle), <strong>cuisine</strong>
+        (more-info), <strong>entrée</strong> (call-service),
+        <strong>terrasse</strong> (none).<br />
+        Temperatures: <code>°C</code> values rendered as SVG
+        <code>&lt;text&gt;</code> with a black outline.
       </div>
     </div>
 
@@ -217,36 +219,36 @@
             dark_mode: darkModeSelect.value,
           },
           floors: [
-            // L0 — forme étendue avec dark variant
+            // L0 — extended form with a dark variant
             {
               id: 'L0',
-              name: 'Rez-de-chaussée',
+              name: 'Ground floor',
               backgrounds: {
                 default: 'test-floors/L0.svg',
                 dark: 'test-floors/L0-dark.svg',
               },
             },
-            // L1 — idem
+            // L1 — same
             {
               id: 'L1',
-              name: 'Étage 1',
+              name: 'First floor',
               backgrounds: {
                 default: 'test-floors/L1.svg',
                 dark: 'test-floors/L1-dark.svg',
               },
             },
-            // L2 — forme courte (compat backward) → fallback gracieux
-            // en mode dark + warning console une fois
-            { id: 'L2', name: 'Bureau et combles', background: 'test-floors/L2.svg' },
+            // L2 — short form (backward-compatible) → graceful fallback
+            // in dark mode + a one-time console warning
+            { id: 'L2', name: 'Office and attic', background: 'test-floors/L2.svg' },
           ],
           overlays: [
             {
               id: 'lights',
-              name: 'Éclairage',
+              name: 'Lights',
               icon: 'mdi:lightbulb',
               default_visible: true,
               elements: [
-                // tap = toggle (forme courte, SPEC §3.3.8)
+                // tap = toggle (short form, see specs/features/data-model.md)
                 {
                   floor: 'L0',
                   entity: 'light.salon',
@@ -254,14 +256,14 @@
                   type: 'icon',
                   tap_action: 'toggle',
                 },
-                // pas de tap_action → handleAction default = more-info
+                // no tap_action → handleAction default = more-info
                 {
                   floor: 'L0',
                   entity: 'light.cuisine',
                   position: { x: 1200, y: 380 },
                   type: 'icon',
                 },
-                // tap = call-service (forme longue, allume sans condition)
+                // tap = call-service (long form, unconditional turn_on)
                 {
                   floor: 'L0',
                   entity: 'light.entree',
@@ -273,7 +275,7 @@
                     service_data: { entity_id: 'light.entree' },
                   },
                 },
-                // tap = none → pas de cursor pointer, click ignoré
+                // tap = none → no pointer cursor, click ignored
                 {
                   floor: 'L0',
                   entity: 'light.terrasse',
@@ -291,7 +293,7 @@
             },
             {
               id: 'temperature',
-              name: 'Températures',
+              name: 'Temperatures',
               icon: 'mdi:thermometer',
               default_visible: false,
               elements: [
@@ -309,7 +311,7 @@
                   entity: 'sensor.cuisine_temperature',
                   position: { x: 1300, y: 470 },
                   type: 'text',
-                  // pas de unit explicite → fallback sur attribute.unit_of_measurement
+                  // no explicit unit → fallback to attribute.unit_of_measurement
                   precision: 1,
                   font_size: 36,
                 },
