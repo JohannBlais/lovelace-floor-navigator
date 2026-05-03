@@ -113,7 +113,7 @@
     <div class="container">
       <header>
         <h1>Floor Navigator — Dev Sandbox</h1>
-        <p>Étape 5 : overlays statiques (icônes) + couleurs dérivées de l'état des entités.</p>
+        <p>v0.1.1 — toutes les features + dark mode pour les backgrounds.</p>
       </header>
 
       <div class="controls">
@@ -155,6 +155,18 @@
           </select>
         </label>
         <label>
+          dark_mode (setting)
+          <select id="dark-mode-select">
+            <option value="auto" selected>auto (défaut)</option>
+            <option value="on">on</option>
+            <option value="off">off</option>
+          </select>
+        </label>
+        <label class="checkbox">
+          <input type="checkbox" id="ha-dark-toggle" />
+          hass.themes.darkMode
+        </label>
+        <label>
           Toggle entité
           <button id="toggle-salon" type="button">light.salon</button>
         </label>
@@ -164,12 +176,15 @@
 
       <div class="legend">
         <kbd>Scroll</kbd> vertical → bascule entre L0/L1/L2.<br />
-        Boutons d'overlay (en bas par défaut) : "Éclairage" (visible) et "Températures"
-        (caché). Click pour toggle l'un et l'autre.<br />
+        <strong>Dark mode v0.1.1</strong> :
+        L0 et L1 ont un dark variant (forme étendue <code>backgrounds</code>),
+        L2 reste en forme courte → warning console une fois en mode dark.
+        Toggle <code>dark_mode</code> ou <code>hass.themes.darkMode</code> ci-dessus
+        pour voir le crossfade 200ms.<br />
         Lights : <strong>salon</strong> (toggle), <strong>cuisine</strong> (more-info),
         <strong>entrée</strong> (call-service), <strong>terrasse</strong> (none).<br />
-        Températures : valeurs `°C` rendues en SVG &lt;text&gt; avec outline noir
-        — visibles sur n'importe quel fond.
+        Températures : valeurs <code>°C</code> rendues en SVG <code>&lt;text&gt;</code>
+        avec outline noir.
       </div>
     </div>
 
@@ -183,6 +198,8 @@
       const durationSelect = document.getElementById('duration-select');
       const indicatorToggle = document.getElementById('indicator-toggle');
       const buttonsPositionSelect = document.getElementById('buttons-position-select');
+      const darkModeSelect = document.getElementById('dark-mode-select');
+      const haDarkToggle = document.getElementById('ha-dark-toggle');
       const toggleSalonBtn = document.getElementById('toggle-salon');
 
       function applyConfig() {
@@ -197,10 +214,29 @@
             start_floor: 'L0',
             show_floor_indicator: indicatorToggle.checked,
             overlay_buttons_position: buttonsPositionSelect.value,
+            dark_mode: darkModeSelect.value,
           },
           floors: [
-            { id: 'L0', name: 'Rez-de-chaussée', background: 'test-floors/L0.svg' },
-            { id: 'L1', name: 'Étage 1', background: 'test-floors/L1.svg' },
+            // L0 — forme étendue avec dark variant
+            {
+              id: 'L0',
+              name: 'Rez-de-chaussée',
+              backgrounds: {
+                default: 'test-floors/L0.svg',
+                dark: 'test-floors/L0-dark.svg',
+              },
+            },
+            // L1 — idem
+            {
+              id: 'L1',
+              name: 'Étage 1',
+              backgrounds: {
+                default: 'test-floors/L1.svg',
+                dark: 'test-floors/L1-dark.svg',
+              },
+            },
+            // L2 — forme courte (compat backward) → fallback gracieux
+            // en mode dark + warning console une fois
             { id: 'L2', name: 'Bureau et combles', background: 'test-floors/L2.svg' },
           ],
           overlays: [
@@ -299,8 +335,16 @@
         durationSelect,
         indicatorToggle,
         buttonsPositionSelect,
+        darkModeSelect,
       ].forEach((el) => {
         el.addEventListener('change', applyConfig);
+      });
+
+      // Toggle hass.themes.darkMode in the mock — simulates HA's dark-mode
+      // signal change. The card's theme-resolver picks it up via the
+      // hass-changed reactivity (no need for a custom event channel).
+      haDarkToggle.addEventListener('change', () => {
+        mockHass.setDarkMode(haDarkToggle.checked);
       });
 
       // Push a fresh hass reference to the card after every state mutation.

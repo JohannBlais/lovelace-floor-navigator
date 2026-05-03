@@ -94,8 +94,15 @@ That's the bare minimum : one floor, no overlays. The image must exist under
 | `edge_behavior` | enum | `bounce` | `bounce`, `none`, `loop` |
 | `show_floor_indicator` | boolean | `true` | — |
 | `overlay_buttons_position` | enum | `bottom` | `top`, `bottom`, `none` |
+| `dark_mode` | enum | `auto` | `auto`, `on`, `off` — see [Dark mode](#dark-mode) |
 
 ### Floor
+
+A floor must declare its background image in **one** of two forms — short or
+extended. Both are valid; the extended form opens the door to a dark variant
+(see [Dark mode](#dark-mode) below).
+
+**Short form** (v0.1.0, compat backward) :
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
@@ -103,8 +110,52 @@ That's the bare minimum : one floor, no overlays. The image must exist under
 | `name` | string | ✅ | Shown in the floor indicator |
 | `background` | string | ✅ | Path/URL to PNG, JPG, or SVG |
 
+**Extended form** (v0.1.1+) :
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `id` | string | ✅ | Unique among floors |
+| `name` | string | ✅ | Shown in the floor indicator |
+| `backgrounds` | object | ✅ | `{ default: string, dark?: string }` |
+| `backgrounds.default` | string | ✅ | Path used in light mode + universal fallback |
+| `backgrounds.dark` | string | ❌ | Path used in dark mode (see [Dark mode](#dark-mode)) |
+
+If both `background` and `backgrounds` are set, `backgrounds` wins and
+`background` is ignored silently — useful for staged migration.
+
 The order of `floors[]` is the navigation order : scrolling down advances to
 the next item in the list.
+
+### Dark mode
+
+The card can swap each floor's background image when HA is in dark mode.
+Declare a `backgrounds.dark` per floor and the card crossfades between
+`default` and `dark` automatically.
+
+```yaml
+floors:
+  - id: L0
+    name: Rez-de-chaussée
+    backgrounds:
+      default: /local/floor-plans/L0-day.png
+      dark: /local/floor-plans/L0-night.png
+```
+
+The current theme is resolved by walking this cascade :
+
+1. `settings.dark_mode: on` / `off` — explicit override (highest priority)
+2. `hass.themes.darkMode` — the official HA signal, follows your active theme
+3. `prefers-color-scheme: dark` from the browser (fallback)
+
+If a floor has no `backgrounds.dark` (short form, or extended form without
+`dark`), the card falls back to the default image when in dark mode and emits
+a one-time `console.warn` per floor instance. No broken-image flash.
+
+When `settings.dark_mode: off`, the dark `<image>` is **not** emitted in the
+DOM at all — no inert image to download or hold in memory.
+
+See [`docs/examples/dark-mode.yaml`](docs/examples/dark-mode.yaml) for a
+complete example.
 
 ### Overlay
 

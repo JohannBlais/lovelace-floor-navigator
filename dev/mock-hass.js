@@ -67,6 +67,15 @@ export const mockHass = {
   // handleActionConfig() reads `hass.user.id` when a confirmation dialog is
   // configured. Provide a stub user so confirmations don't crash.
   user: { id: 'dev-mock-user', name: 'Dev', is_admin: true },
+  // v0.1.1 — Dark-mode signal exposed by the HA frontend on `hass.themes`.
+  // The card's theme-resolver reads `hass.themes.darkMode` first when the
+  // user has `dark_mode: auto`. Toggle via mockHass.setDarkMode(bool).
+  themes: { darkMode: false },
+  /** Toggle the mock HA dark-mode signal and notify subscribers. */
+  setDarkMode(value) {
+    this.themes = { ...this.themes, darkMode: !!value };
+    notify();
+  },
   /**
    * Subscribe to state mutations. Returns an unsubscribe function.
    */

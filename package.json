@@ -1,6 +1,6 @@
 {
   "name": "lovelace-floor-navigator",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Lovelace card for Home Assistant: navigate between stacked floor plans and overlay entities on SVG.",
   "author": "Johann Blais",
   "license": "MIT",

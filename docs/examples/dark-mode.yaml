@@ -1,0 +1,83 @@
+# Dark-mode example — v0.1.1.
+#
+# Demonstrates the optional `backgrounds: { default, dark }` form and the
+# `settings.dark_mode` switch. Mix of floors with and without dark variants
+# to illustrate the graceful fallback (image par défaut + warning console
+# émis une fois pour le floor sans variant).
+#
+# Place your floor plan files under `<config>/www/floor-plans/`.
+
+type: custom:floor-navigator-card
+viewbox: "0 0 1920 1080"
+
+settings:
+  # auto = follow HA theme via hass.themes.darkMode, or
+  #        prefers-color-scheme as fallback (default)
+  # on   = force dark
+  # off  = force light + don't even render the dark <image> in the DOM
+  dark_mode: auto
+  transition: crossfade
+  transition_duration: 400
+  edge_behavior: bounce
+  show_floor_indicator: true
+  overlay_buttons_position: bottom
+
+floors:
+  # Forme étendue : default + dark
+  - id: L0
+    name: "Rez-de-chaussée"
+    backgrounds:
+      default: /local/floor-plans/L0-day.png
+      dark: /local/floor-plans/L0-night.png
+
+  # Forme étendue avec un seul mode → pas de fallback warning :
+  # `default` est utilisé en light ET en dark (équivalent à la forme
+  # courte mais avec la structure étendue déjà en place pour ajouter
+  # un dark plus tard).
+  - id: L1
+    name: "Étage 1"
+    backgrounds:
+      default: /local/floor-plans/L1-day.png
+      # dark variant à venir → le mode dark utilise l'image default
+      # et un warning console est émis une fois au montage
+
+  # Forme courte v0.1.0 → 100% compat backward, fallback identique
+  # à L1 ci-dessus
+  - id: L2
+    name: "Bureau et combles"
+    background: /local/floor-plans/L2.png
+
+overlays:
+  - id: lights
+    name: Éclairage
+    icon: mdi:lightbulb
+    default_visible: true
+    elements:
+      - floor: L0
+        entity: light.salon
+        position: { x: 600, y: 450 }
+        type: icon
+        tap_action: toggle
+      - floor: L1
+        entity: light.chambre
+        position: { x: 800, y: 350 }
+        type: icon
+        tap_action: toggle
+
+  - id: temperature
+    name: Températures
+    icon: mdi:thermometer
+    default_visible: false
+    elements:
+      - floor: L0
+        entity: sensor.salon_temperature
+        position: { x: 700, y: 540 }
+        type: text
+        precision: 1
+        font_size: 32
+      - floor: L1
+        entity: sensor.chambre_temperature
+        position: { x: 850, y: 380 }
+        type: text
+        precision: 1
+        font_size: 32

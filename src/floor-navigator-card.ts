@@ -10,7 +10,7 @@ import type { HomeAssistant } from './types/ha.js';
 // Bump in lockstep with package.json on every release. Surfaced via
 // console.info on bundle load so we can verify in HA's DevTools that
 // Lovelace is serving the version we expect (cache busting check).
-const CARD_VERSION = '0.1.0';
+const CARD_VERSION = '0.1.1';
 
 declare global {
   interface Window {
