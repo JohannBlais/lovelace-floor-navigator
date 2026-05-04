@@ -99,6 +99,54 @@ Captured during dev:
   min ago" instead of the raw value. Detection via
   `device_class: timestamp` or `unit_of_measurement === 'min'`.
 
+- **"Edit positions" lightweight authoring mode.**
+  Authoring overlays today requires guessing `(x, y)` coordinates
+  by trial and error, then refining via `Ctrl+Shift+R` cycles or
+  with an external image viewer (Photopea, GIMP) to read pixel
+  coordinates manually. Painful at scale (one user reported ~22
+  elements in a fresh dashboard).
+  Candidate: a card-level toggle (e.g. `settings.edit_mode: true`)
+  that overlays a coordinate grid on the active floor and displays
+  the cursor's `(x, y)` in viewBox units in a corner pill. Click on
+  the plan to copy the coordinates to clipboard. Lightweight,
+  read-only — no DOM mutation, no YAML rewrite. Aim is to make the
+  manual positioning workflow ~3× faster, not to replace it.
+  This entry is a v0.2.x stepping-stone toward the full visual
+  editor planned for v0.3.x (see
+  [`specs/README.md`](specs/README.md) v0.3.0:
+  `getConfigElement` + `getStubConfig` for HACS submission). The
+  v0.2.x version validates the placement UX before committing to
+  full editor architecture.
+
+- **Overlay groups with mutual exclusion.**
+  Some overlay pairs are visually redundant or conflicting when
+  shown together. Typical case: `temperature` and `humidity` for
+  the same rooms — their text labels share the same coordinates and
+  overlap into unreadable mush when both are active. Currently the
+  user has to remember to toggle one off before toggling the other
+  on, which doesn't scale beyond two or three overlay pairs.
+  Candidate: an optional `group` field on the overlay declaration,
+  with an opt-in `mutually_exclusive` semantic at the group level.
+  Activating one overlay in the group automatically deactivates
+  the others in the same group. Sketch:
+  ```yaml
+  overlay_groups:
+    - id: env-readings
+      mutually_exclusive: true
+  overlays:
+    - id: temperature
+      group: env-readings
+      ...
+    - id: humidity
+      group: env-readings
+      ...
+  ```
+  Backward-compatible: overlays without `group` keep current
+  independent toggle behaviour. Could also be modelled as a simple
+  per-overlay `radio_group: <name>` shorthand without a top-level
+  `overlay_groups` declaration — to be settled in a small design
+  spec when implementing.
+
 ---
 
 ## ⚡ Performance / bundle
