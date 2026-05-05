@@ -1,7 +1,7 @@
 ---
 status: validated
 owner: Johann Blais
-last_updated: 2026-05-04
+last_updated: 2026-05-06
 related: []
 ---
 
@@ -48,6 +48,9 @@ Floorplan): native multi-level navigation + modular overlays.
 | [`features/color-scheme.md`](features/color-scheme.md) | Colour CSS variables, override | implemented |
 | [`features/overlays-toggle.md`](features/overlays-toggle.md) | Local visibleOverlays state | implemented |
 | [`features/dark-mode.md`](features/dark-mode.md) | Light/dark backgrounds + crossfade | implemented |
+| [`features/mobile-fullscreen-mode.md`](features/mobile-fullscreen-mode.md) | Explicit-button fullscreen, viewport escape | draft |
+| [`features/pan-zoom-interactions.md`](features/pan-zoom-interactions.md) | Unified zoom and pan engine, multi-source input | draft |
+| [`features/overlay-readability.md`](features/overlay-readability.md) | Screen-space overlay sizing, viewBox-relative defaults | draft |
 
 ### Transverse (living)
 
@@ -81,12 +84,34 @@ v0.1.0 short `background`. See
 `implemented`) and ADR-005 in [`decisions.md`](decisions.md).
 Bundle 49.7 KiB.
 
-### v0.2.0 — User comfort (date TBD)
+### v0.2.0 — Mobile UX overhaul (date TBD)
 
-Tooltip on hover, `badge` type, overlay binding to HA entities,
-overlay state persistence (localStorage), optional CSS animations,
-keyboard shortcuts. See also [`BACKLOG.md`](../BACKLOG.md) at the
-repo root for irritants spotted during use.
+Three mutually-supportive features targeting mobile (and benefiting
+desktop), see ADR-006 in [`decisions.md`](decisions.md):
+
+- **Mobile fullscreen mode** via explicit button — CSS-based
+  `position: fixed`, multi-exit-path (close button, Escape, browser
+  back), state preservation across enter/exit. See
+  [`features/mobile-fullscreen-mode.md`](features/mobile-fullscreen-mode.md).
+- **Pan-zoom interactions** — unified transform engine across pinch,
+  Ctrl+wheel, double-tap, vertical slider. Rewrite of
+  `<fn-navigation-controller>` from `touchstart/move/end` +
+  `touch-action: none` to PointerEvents. Reset on floor change. See
+  [`features/pan-zoom-interactions.md`](features/pan-zoom-interactions.md).
+- **Overlay readability** — screen-space sizing (`overlay_size_unit:
+  px`) with inverse-scale compensation, viewBox-relative defaults,
+  `min_icon_px` / `min_text_px` floors. Resolves the BACKLOG bug on
+  hard-coded sizes. Single ResizeObserver shared with pan-zoom. See
+  [`features/overlay-readability.md`](features/overlay-readability.md).
+
+Recommended implementation order: overlay-readability →
+pan-zoom-interactions → mobile-fullscreen-mode (per ADR-006).
+
+Other v0.2.x candidates from the original roadmap (hover tooltip,
+`badge` type, overlay binding to HA entities, overlay state
+persistence via localStorage, optional CSS animations, keyboard
+shortcuts) — see [`BACKLOG.md`](../BACKLOG.md) at the repo root for
+the living candidate list.
 
 ### v0.3.0 — Maturity & HACS publication
 
