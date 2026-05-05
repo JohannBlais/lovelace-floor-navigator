@@ -1,8 +1,8 @@
 ---
 status: implemented
 owner: Johann Blais
-last_updated: 2026-05-04
-related: [color-scheme.md, overlays-toggle.md, dark-mode.md, ../architecture/component-tree.md]
+last_updated: 2026-05-06
+related: [color-scheme.md, overlays-toggle.md, dark-mode.md, overlay-readability.md, ../architecture/component-tree.md]
 ---
 
 # Data Model
@@ -87,6 +87,9 @@ settings:
   show_floor_indicator: true
   overlay_buttons_position: bottom # top | bottom | none
   dark_mode: auto                  # auto | on | off  (v0.1.1+, see dark-mode.md)
+  overlay_size_unit: viewbox       # viewbox | px      (v0.2.0+, see overlay-readability.md)
+  min_icon_px: 24                  # screen-pixel clamp for icons (v0.2.0+)
+  min_text_px: 14                  # screen-pixel clamp for text  (v0.2.0+)
 
 # Floor list (ORDER = TOP to BOTTOM in the house)
 # Scrolling down moves through this list: L0 → L1 → L2
@@ -158,6 +161,9 @@ overlays:
 | `show_floor_indicator` | bool | `true` | — |
 | `overlay_buttons_position` | enum | `bottom` | `top`, `bottom`, `none` |
 | `dark_mode` | enum | `auto` | `auto`, `on`, `off` (v0.1.1+, see [`dark-mode.md`](dark-mode.md)) |
+| `overlay_size_unit` | enum | `viewbox` | `viewbox`, `px` (v0.2.0+, see [`overlay-readability.md`](overlay-readability.md)) |
+| `min_icon_px` | number | `24` | Minimum rendered icon size in screen pixels — clamp (v0.2.0+) |
+| `min_text_px` | number | `14` | Minimum rendered text font size in screen pixels — clamp (v0.2.0+) |
 
 ### Floor
 
@@ -213,7 +219,14 @@ state).
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
 | `icon` | string (MDI) | ❌ | derived from the entity domain | MDI icon to display |
-| `size` | int (viewBox units) | ❌ | `48` | Icon square size |
+| `size` | int | ❌ | mode-dependent (see below) | Icon square size. Unit follows `settings.overlay_size_unit` (v0.2.0+). |
+
+Default for `size` (v0.2.0+):
+- `overlay_size_unit: viewbox` (default): `viewBoxWidth / 40` viewBox units
+  (= 48 for the typical 1920×1080 viewBox — matches v0.1.x exactly).
+- `overlay_size_unit: px`: 32 screen pixels (compensated against the
+  viewBox-to-screen ratio and pan-zoom scale; see
+  [`overlay-readability.md`](overlay-readability.md)).
 
 ### Element type `text`
 
@@ -221,7 +234,13 @@ state).
 |---|---|---|---|---|
 | `unit` | string | ❌ | entity's `unit_of_measurement` | Suffix shown |
 | `precision` | int | ❌ | `1` | Number of decimals |
-| `font_size` | int | ❌ | `24` | Font size in viewBox units |
+| `font_size` | int | ❌ | mode-dependent (see below) | Font size. Unit follows `settings.overlay_size_unit` (v0.2.0+). |
+
+Default for `font_size` (v0.2.0+):
+- `overlay_size_unit: viewbox` (default): `viewBoxWidth / 80` viewBox units
+  (= 24 for the typical 1920×1080 viewBox — matches v0.1.x exactly).
+- `overlay_size_unit: px`: 14 screen pixels (compensated; same logic as
+  icon `size`).
 
 ## Expected behaviour — Tap actions
 

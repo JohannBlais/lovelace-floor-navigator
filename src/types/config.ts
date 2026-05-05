@@ -24,6 +24,26 @@ export interface CardSettings {
    * - `off`:            forces light mode + does NOT emit the dark <image> in the DOM
    */
   dark_mode?: DarkModeSetting;
+  /**
+   * v0.2.0 — Sizing semantics for overlay icons and text. See
+   * specs/features/overlay-readability.md.
+   * - `viewbox` (default): `size` / `font_size` are viewBox units; defaults
+   *   derived from viewBox dimensions (viewBoxWidth/40 for icons,
+   *   viewBoxWidth/80 for text). Backward-compatible with v0.1.x.
+   * - `px`: `size` / `font_size` are screen pixels; inverse-compensated
+   *   against the viewBox-to-screen ratio and (eventually) pan-zoom scale.
+   */
+  overlay_size_unit?: OverlaySizeUnit;
+  /**
+   * v0.2.0 — Minimum rendered icon size in screen pixels. Acts as a clamp:
+   * if the rendered size would otherwise fall below this floor, the SVG
+   * size is bumped up to meet it. Default 24.
+   */
+  min_icon_px?: number;
+  /**
+   * v0.2.0 — Same idea as `min_icon_px` for text font size. Default 14.
+   */
+  min_text_px?: number;
 }
 
 export type TransitionMode = 'crossfade' | 'slide' | 'slide-scale';
@@ -31,6 +51,7 @@ export type NavigationMode = 'wheel' | 'swipe' | 'both' | 'none';
 export type EdgeBehavior = 'bounce' | 'none' | 'loop';
 export type OverlayButtonsPosition = 'top' | 'bottom' | 'none';
 export type DarkModeSetting = 'auto' | 'on' | 'off';
+export type OverlaySizeUnit = 'viewbox' | 'px';
 
 /**
  * v0.1.1 — Extended form for a floor's background images.

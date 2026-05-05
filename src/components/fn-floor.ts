@@ -6,7 +6,8 @@ import { renderOverlayLayer } from './fn-overlay-layer.js';
 import { backgroundCrossfade } from '../styles/card-styles.js';
 import { resolveBackgrounds, type ResolvedBackgrounds } from '../utils/background-resolver.js';
 import type { ThemeMode } from '../utils/theme-resolver.js';
-import type { DarkModeSetting, Floor, Overlay } from '../types/config.js';
+import type { SizingContext } from '../utils/overlay-sizing.js';
+import type { DarkModeSetting, Floor, Overlay, OverlaySizeUnit } from '../types/config.js';
 import type { HomeAssistant } from '../types/ha.js';
 
 /**
@@ -60,6 +61,14 @@ export class FnFloor extends LitElement {
    */
   @property({ type: String, attribute: false }) darkModeSetting: DarkModeSetting = 'auto';
 
+  /** v0.2.0 — overlay-readability sizing context (see overlay-readability.md). */
+  @property({ type: Number, attribute: false }) viewBoxWidth = 0;
+  @property({ type: Number, attribute: false }) viewBoxToScreenRatio = 1;
+  @property({ type: Number, attribute: false }) zoomScale = 1;
+  @property({ type: String, attribute: false }) sizeUnit: OverlaySizeUnit = 'viewbox';
+  @property({ type: Number, attribute: false }) minIconPx = 24;
+  @property({ type: Number, attribute: false }) minTextPx = 14;
+
   /**
    * Set the first time we warn about a missing dark variant for this
    * floor instance. Prevents spamming the console on every re-render.
@@ -98,6 +107,15 @@ export class FnFloor extends LitElement {
     const floorId = this.floor?.id ?? '';
     const bg = resolveBackgrounds(this.floor);
     const emitDark = !!bg.dark && this.darkModeSetting !== 'off';
+    const sizingCtx: SizingContext = {
+      // Prefer the prop (computed once at the card root) but fall back to
+      // the parsed viewBox here so default sizing still works if the prop
+      // is somehow missing (e.g. dev harness mounting fn-floor directly).
+      viewBoxWidth: this.viewBoxWidth > 0 ? this.viewBoxWidth : rect.width,
+      viewBoxToScreenRatio: this.viewBoxToScreenRatio,
+      zoomScale: this.zoomScale,
+      sizeUnit: this.sizeUnit,
+    };
 
     return html`
       <svg
@@ -107,7 +125,12 @@ export class FnFloor extends LitElement {
         class=${classMap({ [`fn-theme-${this.currentTheme}`]: true })}
       >
         ${this._renderBackgrounds(floorId, bg, rect, emitDark)}
-        ${this.overlays.map((overlay) => renderOverlayLayer(overlay, floorId, this.hass))}
+        ${this.overlays.map((overlay) =>
+          renderOverlayLayer(overlay, floorId, this.hass, sizingCtx, {
+            minIconPx: this.minIconPx,
+            minTextPx: this.minTextPx,
+          }),
+        )}
       </svg>
     `;
   }

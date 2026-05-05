@@ -1,5 +1,5 @@
 ---
-status: draft
+status: implemented
 owner: Johann Blais
 last_updated: 2026-05-06
 related: [data-model.md, color-scheme.md, mobile-fullscreen-mode.md, pan-zoom-interactions.md, ../architecture/rendering-strategy.md, ../architecture/component-tree.md]
@@ -375,12 +375,15 @@ works in browsers same as in HA. No special handling.
 - **Per-element `overlay_size_unit` override**: should an element
   be able to opt out of the global mode? Current proposal: no, keep
   it simple. Revisit if user feedback warrants. Could be added as
-  a non-breaking extension.
+  a non-breaking extension. **Status: deferred** — kept global-only
+  in v0.2.0 implementation.
 - **`min_*_px` floors in viewBox mode**: should they always apply,
   or only when the rendered size would otherwise fall below the
-  floor? Current proposal: always check, apply only when violated
-  (i.e., act as a clamp, not as a forced minimum). To confirm at
-  implementation.
+  floor? **Status: confirmed at implementation (2026-05-06)** —
+  acts as a clamp (only when the rendered size would otherwise fall
+  below the floor), not as a forced minimum. Same semantics in both
+  modes for consistency. Implementation in
+  [`src/utils/overlay-sizing.ts`](../../src/utils/overlay-sizing.ts).
 - **Default for `overlay_size_unit` in v0.2.0+ scaffolded examples**:
   `px` is recommended in the YAML examples and README, but the
   implicit default for a config without the field stays `viewbox`
@@ -389,8 +392,10 @@ works in browsers same as in HA. No special handling.
   minor breaking change at that point).
 - **Stroke width of icon paths**: MDI icons use stroke-based and
   fill-based paths. Stroke width currently scales with `size`.
-  When in px mode at high zoom, strokes may become too thin. Test
-  at implementation; may need a minimum stroke width.
+  When in px mode at high zoom, strokes may become too thin.
+  **Status: deferred to spec 2** — at scale=1 (spec 1) the question
+  doesn't surface; revisit when pan-zoom transform engine ships and
+  high-scale rendering is observable in dev / on Pixel 9 Pro XL.
 
 ## Decisions
 

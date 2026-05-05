@@ -5,7 +5,13 @@ import { styleMap } from 'lit/directives/style-map.js';
 
 import './fn-floor.js';
 import type { ThemeMode } from '../utils/theme-resolver.js';
-import type { DarkModeSetting, Floor, Overlay, TransitionMode } from '../types/config.js';
+import type {
+  DarkModeSetting,
+  Floor,
+  Overlay,
+  OverlaySizeUnit,
+  TransitionMode,
+} from '../types/config.js';
 import type { HomeAssistant } from '../types/ha.js';
 
 /**
@@ -35,6 +41,13 @@ export class FnFloorStack extends LitElement {
   /** v0.1.1 — forwarded to each fn-floor for the dark-mode crossfade. */
   @property({ type: String, attribute: false }) currentTheme: ThemeMode = 'light';
   @property({ type: String, attribute: false }) darkModeSetting: DarkModeSetting = 'auto';
+  /** v0.2.0 — overlay-readability sizing context. Pass-through to fn-floor. */
+  @property({ type: Number, attribute: false }) viewBoxWidth = 0;
+  @property({ type: Number, attribute: false }) viewBoxToScreenRatio = 1;
+  @property({ type: Number, attribute: false }) zoomScale = 1;
+  @property({ type: String, attribute: false }) sizeUnit: OverlaySizeUnit = 'viewbox';
+  @property({ type: Number, attribute: false }) minIconPx = 24;
+  @property({ type: Number, attribute: false }) minTextPx = 14;
 
   private get _aspectRatio(): string {
     const parts = this.viewbox.trim().split(/\s+/).map(Number);
@@ -73,6 +86,12 @@ export class FnFloorStack extends LitElement {
                 .hass=${this.hass}
                 .currentTheme=${this.currentTheme}
                 .darkModeSetting=${this.darkModeSetting}
+                .viewBoxWidth=${this.viewBoxWidth}
+                .viewBoxToScreenRatio=${this.viewBoxToScreenRatio}
+                .zoomScale=${this.zoomScale}
+                .sizeUnit=${this.sizeUnit}
+                .minIconPx=${this.minIconPx}
+                .minTextPx=${this.minTextPx}
               ></fn-floor>
             </div>
           `;

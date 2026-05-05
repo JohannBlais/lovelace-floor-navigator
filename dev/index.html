@@ -113,7 +113,7 @@
     <div class="container">
       <header>
         <h1>Floor Navigator — Dev Sandbox</h1>
-        <p>v0.1.1 — every feature + dark-mode backgrounds.</p>
+        <p>v0.2.0 — overlay-readability + dark-mode backgrounds.</p>
       </header>
 
       <div class="controls">
@@ -167,6 +167,29 @@
           hass.themes.darkMode
         </label>
         <label>
+          overlay_size_unit (v0.2.0)
+          <select id="size-unit-select">
+            <option value="viewbox" selected>viewbox (default)</option>
+            <option value="px">px (recommended v0.2.0+)</option>
+          </select>
+        </label>
+        <label>
+          min_icon_px
+          <input type="number" id="min-icon-px" value="24" min="0" step="1" style="width: 64px;" />
+        </label>
+        <label>
+          min_text_px
+          <input type="number" id="min-text-px" value="14" min="0" step="1" style="width: 64px;" />
+        </label>
+        <label>
+          viewBox (resize bug check)
+          <select id="viewbox-select">
+            <option value="0 0 1920 1080" selected>0 0 1920 1080 (typical)</option>
+            <option value="0 0 200 100">0 0 200 100 (BACKLOG bug)</option>
+            <option value="0 0 4000 3000">0 0 4000 3000 (large)</option>
+          </select>
+        </label>
+        <label>
           Toggle entity
           <button id="toggle-salon" type="button">light.salon</button>
         </label>
@@ -202,12 +225,16 @@
       const buttonsPositionSelect = document.getElementById('buttons-position-select');
       const darkModeSelect = document.getElementById('dark-mode-select');
       const haDarkToggle = document.getElementById('ha-dark-toggle');
+      const sizeUnitSelect = document.getElementById('size-unit-select');
+      const minIconPxInput = document.getElementById('min-icon-px');
+      const minTextPxInput = document.getElementById('min-text-px');
+      const viewboxSelect = document.getElementById('viewbox-select');
       const toggleSalonBtn = document.getElementById('toggle-salon');
 
       function applyConfig() {
         card.setConfig({
           type: 'custom:floor-navigator-card',
-          viewbox: '0 0 1920 1080',
+          viewbox: viewboxSelect.value,
           settings: {
             transition: transitionSelect.value,
             transition_duration: Number(durationSelect.value),
@@ -217,6 +244,9 @@
             show_floor_indicator: indicatorToggle.checked,
             overlay_buttons_position: buttonsPositionSelect.value,
             dark_mode: darkModeSelect.value,
+            overlay_size_unit: sizeUnitSelect.value,
+            min_icon_px: Number(minIconPxInput.value),
+            min_text_px: Number(minTextPxInput.value),
           },
           floors: [
             // L0 — extended form with a dark variant
@@ -338,8 +368,14 @@
         indicatorToggle,
         buttonsPositionSelect,
         darkModeSelect,
+        sizeUnitSelect,
+        minIconPxInput,
+        minTextPxInput,
+        viewboxSelect,
       ].forEach((el) => {
-        el.addEventListener('change', applyConfig);
+        // 'change' for selects/checkbox, 'input' for number inputs (live).
+        const evt = el.tagName === 'INPUT' && el.type === 'number' ? 'input' : 'change';
+        el.addEventListener(evt, applyConfig);
       });
 
       // Toggle hass.themes.darkMode in the mock — simulates HA's dark-mode

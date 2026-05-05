@@ -13,6 +13,7 @@ import type {
   NavigationMode,
   Overlay,
   OverlayButtonsPosition,
+  OverlaySizeUnit,
   TransitionMode,
 } from '../types/config.js';
 import type { HomeAssistant } from '../types/ha.js';
@@ -58,6 +59,15 @@ export class FnNavigationController extends LitElement {
   /** v0.1.1 — forwarded to fn-floor-stack → fn-floor for the dark-mode crossfade. */
   @property({ type: String, attribute: false }) currentTheme: ThemeMode = 'light';
   @property({ type: String, attribute: false }) darkModeSetting: DarkModeSetting = 'auto';
+  /** v0.2.0 — overlay-readability sizing context, threaded down to the
+   * elements. Computed at the card root, single source of truth. See
+   * specs/features/overlay-readability.md. */
+  @property({ type: Number, attribute: false }) viewBoxWidth = 0;
+  @property({ type: Number, attribute: false }) viewBoxToScreenRatio = 1;
+  @property({ type: Number, attribute: false }) zoomScale = 1;
+  @property({ type: String, attribute: false }) sizeUnit: OverlaySizeUnit = 'viewbox';
+  @property({ type: Number, attribute: false }) minIconPx = 24;
+  @property({ type: Number, attribute: false }) minTextPx = 14;
 
   @state() private _currentIndex = 0;
   @state() private _bounceDirection: BounceDirection = null;
@@ -207,6 +217,12 @@ export class FnNavigationController extends LitElement {
           .hass=${this.hass}
           .currentTheme=${this.currentTheme}
           .darkModeSetting=${this.darkModeSetting}
+          .viewBoxWidth=${this.viewBoxWidth}
+          .viewBoxToScreenRatio=${this.viewBoxToScreenRatio}
+          .zoomScale=${this.zoomScale}
+          .sizeUnit=${this.sizeUnit}
+          .minIconPx=${this.minIconPx}
+          .minTextPx=${this.minTextPx}
         ></fn-floor-stack>
         ${this.showFloorIndicator && currentFloor
           ? html`<fn-floor-indicator .floor=${currentFloor}></fn-floor-indicator>`

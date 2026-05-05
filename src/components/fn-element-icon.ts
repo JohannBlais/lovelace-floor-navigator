@@ -40,6 +40,19 @@ export class FnElementIcon extends LitElement {
    */
   @property({ attribute: false }) overlayIcon?: string;
 
+  /**
+   * v0.2.0 — Effective size in viewBox units, already resolved by the
+   * parent overlay-layer using the shared `SizingContext` (sizing mode +
+   * viewBox-to-screen ratio + zoom + min-floor). The element pegs its
+   * inner glyph to this so the visual stays consistent with the
+   * surrounding `<foreignObject>` width/height, regardless of mode.
+   *
+   * Falls back to the v0.1.x default (48 viewBox units) when the prop is
+   * not provided — covers a hypothetical caller mounting the element
+   * outside the normal tree (e.g. dev harness).
+   */
+  @property({ type: Number, attribute: false }) effectiveSize = 48;
+
   override connectedCallback(): void {
     super.connectedCallback();
     this.addEventListener('click', this._onClick);
@@ -52,6 +65,12 @@ export class FnElementIcon extends LitElement {
 
   protected override shouldUpdate(changed: PropertyValues<this>): boolean {
     if (changed.has('element')) return true;
+    // v0.2.0 — overlay-readability: a resize / mode toggle changes the
+    // effective size on every element of the floor, and we want them to
+    // re-render together. `overlayIcon` is included for symmetry with
+    // `element.icon` (resolution chain).
+    if (changed.has('effectiveSize')) return true;
+    if (changed.has('overlayIcon')) return true;
     if (changed.has('hass')) {
       const oldHass = changed.get('hass') as HomeAssistant | undefined;
       const oldStateObj = oldHass?.states?.[this.element.entity];
@@ -106,9 +125,10 @@ export class FnElementIcon extends LitElement {
       this.element.icon ?? this.overlayIcon ?? resolveIcon(this.element.entity);
     const color = resolveColorVar(this.element.entity, state);
     // Inside foreignObject CSS lengths are interpreted in user (viewBox)
-    // units, so a 48-unit element gets a ~31-unit glyph. Proportional to
-    // the user-configured `size`.
-    const size = this.element.size ?? 48;
+    // units, so the inner glyph is sized in viewBox units relative to the
+    // already-compensated `effectiveSize` (resolved upstream from the
+    // sizing context — see specs/features/overlay-readability.md).
+    const size = this.effectiveSize;
     const iconSizePx = size * 0.65;
     const interactive = this._isInteractive();
 

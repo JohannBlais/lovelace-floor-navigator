@@ -4,8 +4,11 @@ import { customElement, property, state } from 'lit/decorators.js';
 import './components/fn-navigation-controller.js';
 import { cardVariables } from './styles/card-styles.js';
 import { resolveTheme, type ThemeMode } from './utils/theme-resolver.js';
-import type { CardConfig, Overlay, OverlayElement } from './types/config.js';
+import type { CardConfig, Overlay, OverlayElement, OverlaySizeUnit } from './types/config.js';
 import type { HomeAssistant } from './types/ha.js';
+
+const DEFAULT_MIN_ICON_PX = 24;
+const DEFAULT_MIN_TEXT_PX = 14;
 
 // Bump in lockstep with package.json on every release. Surfaced via
 // console.info on bundle load so we can verify in HA's DevTools that
@@ -63,10 +66,36 @@ export class FloorNavigatorCard extends LitElement {
    */
   @state() private _currentTheme: ThemeMode = 'light';
 
+  /**
+   * v0.2.0 — viewBoxWidth / cardWidthPx, the single source of truth shared
+   * with overlay-readability sizing and (later) pan-zoom transform. Defaults
+   * to 1 so that on the very first paint (before ResizeObserver fires) sizes
+   * fall back to no compensation, matching v0.1.x behaviour. See
+   * specs/features/overlay-readability.md §"Reactive recomputation".
+   */
+  @state() private _viewBoxToScreenRatio = 1;
+
   /** Browser-level dark-mode preference watcher, populated in connectedCallback. */
   private _matchMedia?: MediaQueryList;
   private _matchMediaListener = (): void => {
     this._recomputeTheme();
+  };
+
+  /**
+   * v0.2.0 — Watches the host's box. Recomputes `_viewBoxToScreenRatio`
+   * whenever the card resizes (sidebar toggle, fullscreen entry, viewport
+   * rotation...). Single ResizeObserver shared with future pan-zoom code.
+   */
+  private _resizeObserver?: ResizeObserver;
+  /** Last known card width in CSS pixels (0 → not yet measured / hidden). */
+  private _cardWidthPx = 0;
+  /**
+   * Fallback path for browsers without ResizeObserver (very old). The
+   * `window.resize` listener is only registered when the observer is
+   * unavailable.
+   */
+  private _windowResizeListener = (): void => {
+    this._measureAndUpdateRatio();
   };
 
   override connectedCallback(): void {
@@ -76,6 +105,30 @@ export class FloorNavigatorCard extends LitElement {
       this._matchMedia.addEventListener('change', this._matchMediaListener);
     }
     this._recomputeTheme();
+
+    if (typeof ResizeObserver !== 'undefined') {
+      this._resizeObserver = new ResizeObserver((entries) => {
+        const entry = entries[0];
+        if (!entry) return;
+        // contentBoxSize is the modern shape; fall back to contentRect for
+        // older Safari that supports ResizeObserver but not the new array.
+        let width = 0;
+        const boxes = entry.contentBoxSize as
+          | ReadonlyArray<ResizeObserverSize>
+          | undefined;
+        if (boxes && boxes.length > 0) {
+          width = boxes[0].inlineSize;
+        } else {
+          width = entry.contentRect.width;
+        }
+        this._applyMeasuredWidth(width);
+      });
+      this._resizeObserver.observe(this);
+    } else if (typeof window !== 'undefined') {
+      window.addEventListener('resize', this._windowResizeListener);
+      // Defer one frame so the host has a layout box.
+      requestAnimationFrame(() => this._measureAndUpdateRatio());
+    }
   }
 
   override disconnectedCallback(): void {
@@ -84,6 +137,42 @@ export class FloorNavigatorCard extends LitElement {
       this._matchMedia.removeEventListener('change', this._matchMediaListener);
       this._matchMedia = undefined;
     }
+    if (this._resizeObserver) {
+      this._resizeObserver.disconnect();
+      this._resizeObserver = undefined;
+    } else if (typeof window !== 'undefined') {
+      window.removeEventListener('resize', this._windowResizeListener);
+    }
+  }
+
+  private _measureAndUpdateRatio(): void {
+    const rect = this.getBoundingClientRect();
+    this._applyMeasuredWidth(rect.width);
+  }
+
+  private _applyMeasuredWidth(width: number): void {
+    // Skip when hidden by parent layout (display:none, visibility:hidden,
+    // detached). Avoids division by zero and keeps the last known good
+    // ratio. Per spec §"Card width === 0".
+    if (!Number.isFinite(width) || width <= 0) return;
+    this._cardWidthPx = width;
+    this._recomputeRatio();
+  }
+
+  private _recomputeRatio(): void {
+    const vbWidth = this._viewBoxWidth;
+    if (this._cardWidthPx <= 0 || vbWidth <= 0) return;
+    const next = vbWidth / this._cardWidthPx;
+    if (next !== this._viewBoxToScreenRatio) {
+      this._viewBoxToScreenRatio = next;
+    }
+  }
+
+  private get _viewBoxWidth(): number {
+    if (!this._config?.viewbox) return 0;
+    const parts = this._config.viewbox.trim().split(/\s+/).map(Number);
+    if (parts.length !== 4 || parts.some((n) => Number.isNaN(n))) return 0;
+    return parts[2];
   }
 
   protected override willUpdate(changed: PropertyValues): void {
@@ -94,6 +183,10 @@ export class FloorNavigatorCard extends LitElement {
     // allows any string key.
     if (changed.has('hass') || changed.has('_config')) {
       this._recomputeTheme();
+    }
+    if (changed.has('_config')) {
+      // viewBox may have changed → recompute ratio with the new viewBoxWidth.
+      this._recomputeRatio();
     }
   }
 
@@ -148,6 +241,28 @@ export class FloorNavigatorCard extends LitElement {
       }
     }
 
+    // v0.2.0 — soft-validate the new sizing fields. Bad values warn and
+    // fall back to defaults; we do not throw, to keep YAML mistakes from
+    // bricking the card.
+    const sizeUnit = config.settings?.overlay_size_unit;
+    if (sizeUnit !== undefined && sizeUnit !== 'viewbox' && sizeUnit !== 'px') {
+      console.warn(
+        `[floor-navigator-card] settings.overlay_size_unit "${String(sizeUnit)}" is not "viewbox" | "px"; falling back to "viewbox".`,
+      );
+    }
+    const minIcon = config.settings?.min_icon_px;
+    if (minIcon !== undefined && (typeof minIcon !== 'number' || minIcon < 0)) {
+      console.warn(
+        `[floor-navigator-card] settings.min_icon_px must be a non-negative number; falling back to ${DEFAULT_MIN_ICON_PX}.`,
+      );
+    }
+    const minText = config.settings?.min_text_px;
+    if (minText !== undefined && (typeof minText !== 'number' || minText < 0)) {
+      console.warn(
+        `[floor-navigator-card] settings.min_text_px must be a non-negative number; falling back to ${DEFAULT_MIN_TEXT_PX}.`,
+      );
+    }
+
     this._config = config;
     this._visibleOverlayIds = new Set(
       (config.overlays ?? []).filter((o) => o.default_visible).map((o) => o.id),
@@ -175,11 +290,27 @@ export class FloorNavigatorCard extends LitElement {
     const settings = this._config.settings ?? {};
     const allOverlays = this._config.overlays ?? [];
     const visibleOverlays = allOverlays.filter((o) => this._visibleOverlayIds.has(o.id));
+    const sizeUnit: OverlaySizeUnit =
+      settings.overlay_size_unit === 'px' ? 'px' : 'viewbox';
+    const minIconPx =
+      typeof settings.min_icon_px === 'number' && settings.min_icon_px >= 0
+        ? settings.min_icon_px
+        : DEFAULT_MIN_ICON_PX;
+    const minTextPx =
+      typeof settings.min_text_px === 'number' && settings.min_text_px >= 0
+        ? settings.min_text_px
+        : DEFAULT_MIN_TEXT_PX;
     return html`
       <ha-card>
         <fn-navigation-controller
           .floors=${this._config.floors}
           .viewbox=${this._config.viewbox}
+          .viewBoxWidth=${this._viewBoxWidth}
+          .viewBoxToScreenRatio=${this._viewBoxToScreenRatio}
+          .zoomScale=${1}
+          .sizeUnit=${sizeUnit}
+          .minIconPx=${minIconPx}
+          .minTextPx=${minTextPx}
           .transition=${settings.transition ?? 'crossfade'}
           .transitionDuration=${settings.transition_duration ?? 400}
           .edgeBehavior=${settings.edge_behavior ?? 'bounce'}

@@ -26,11 +26,18 @@ jobs:
       - name: Build production bundle
         run: npm run build
 
-      - name: Check bundle size (target < 50 KB per SPEC §9.3)
+      # Bundle threshold history:
+      # - v0.1.0/v0.1.1: 50 KiB (51200) — ADR-003 anti-bloat discipline
+      # - v0.2.0 spec 1 (overlay-readability): bumped to 58 KiB (59392) as a
+      #   temporary value. ADR-006 already anticipated the raise (proposed
+      #   60 KiB for v0.2.0). To be formalised in ADR-007 at end of v0.2.0
+      #   once the full bundle (specs 1+2+3) is measured and any claw-back
+      #   (vendoring custom-card-helpers, ~3 KiB) is decided.
+      - name: Check bundle size (temporary 58 KiB, see ADR-006)
         run: |
           SIZE=$(stat -c%s dist/floor-navigator.js)
-          echo "Bundle size: $SIZE bytes ($(awk "BEGIN { printf \"%.1f\", $SIZE / 1024 }") KB)"
-          if [ "$SIZE" -gt 51200 ]; then
-            echo "::error::Bundle exceeds 50 KB target ($SIZE bytes > 51200)"
+          echo "Bundle size: $SIZE bytes ($(awk "BEGIN { printf \"%.1f\", $SIZE / 1024 }") KiB)"
+          if [ "$SIZE" -gt 59392 ]; then
+            echo "::error::Bundle exceeds 58 KiB temporary v0.2.0 threshold ($SIZE bytes > 59392)"
             exit 1
           fi

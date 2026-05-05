@@ -1,5 +1,10 @@
 import { svg, type SVGTemplateResult } from 'lit';
 
+import {
+  computeEffectiveSize,
+  TEXT_DEFAULTS,
+  type SizingContext,
+} from '../utils/overlay-sizing.js';
 import type { TextElement } from '../types/config.js';
 import type { HomeAssistant } from '../types/ha.js';
 
@@ -21,17 +26,23 @@ import type { HomeAssistant } from '../types/ha.js';
  *           unavailable / unknown → "—" placeholder
  * - unit  : explicit `unit` config, or fallback to entity's
  *           `unit_of_measurement` attribute, or empty string
- * - font-size : `font_size` (default 24) in viewBox units
+ * - font-size : resolved by `computeEffectiveSize` from the user's
+ *               `font_size` (or the viewBox-relative default) compensated
+ *               against viewBox-to-screen ratio + zoom in `px` mode. See
+ *               specs/features/overlay-readability.md.
  *
  * Outline-on-text rendering : we paint a thick stroke first, then the fill
- * on top (`paint-order: stroke fill`). Stroke width scales with font-size
- * so the outline stays proportional regardless of the user's chosen size.
+ * on top (`paint-order: stroke fill`). Stroke width scales with the
+ * resolved font-size so the outline stays proportional regardless of
+ * mode or zoom level.
  */
 const UNAVAILABLE_PLACEHOLDER = '—';
 
 export function renderTextElement(
   element: TextElement,
   hass: HomeAssistant | undefined,
+  sizingCtx: SizingContext,
+  minTextPx: number,
 ): SVGTemplateResult {
   const stateObj = hass?.states?.[element.entity];
   const rawState = stateObj?.state;
@@ -61,7 +72,12 @@ export function renderTextElement(
   const unit = explicitUnit ?? attrUnit ?? '';
   const label = unit ? `${displayValue} ${unit}` : displayValue;
 
-  const fontSize = element.font_size ?? 24;
+  const fontSize = computeEffectiveSize(
+    element.font_size,
+    sizingCtx,
+    TEXT_DEFAULTS,
+    minTextPx,
+  );
   // Stroke ~14% of font size — visible enough to outline against busy
   // backgrounds, thin enough to not eat the glyph fill.
   const strokeWidth = fontSize * 0.14;
