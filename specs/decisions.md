@@ -1,7 +1,7 @@
 ---
 status: validated
 owner: Johann Blais
-last_updated: 2026-05-04
+last_updated: 2026-05-06
 related: []
 ---
 
@@ -219,8 +219,153 @@ choices:
 
 ---
 
+## [2026-05-06] ADR-006 — Mobile UX strategy (v0.2.0)
+
+**Context**: v0.1.x ships with desktop-first UX assumptions. The
+card respects the Lovelace grid sizing (no escape to fullscreen),
+overlay sizes are hard-coded in viewBox units (illegible on mobile,
+broken on unusual viewBoxes — see BACKLOG.md pre-promotion), and
+there is no zoom support (the controller blocks it via
+`touch-action: none` and a multi-finger guard, see
+[`architecture/navigation.md`](architecture/navigation.md) "Pinch-to-
+zoom gesture" edge case).
+
+Concrete pain points reported on a Pixel 9 Pro XL:
+- Portrait: card occupies the upper third of the screen, overlay
+  icons and text shrink to a few screen pixels, illegible
+- Landscape: the card is height-clipped by the surrounding row,
+  hiding the overlay button bar at the bottom
+- No way to zoom into a corner of the plan to inspect a small
+  element
+
+A multi-pronged UX overhaul targeting mobile (and benefiting desktop)
+was discussed on 2026-05-05/06, with Johann arbitrating four
+structuring choices. Three v0.2.0 specs result, mutually supportive
+but each independently valuable.
+
+**Decision**: ship three features in v0.2.0:
+- [`features/mobile-fullscreen-mode.md`](features/mobile-fullscreen-mode.md)
+  — explicit-button fullscreen, CSS-based, multi-exit-path, state
+  preservation across enter/exit
+- [`features/pan-zoom-interactions.md`](features/pan-zoom-interactions.md)
+  — unified transform engine across pinch / Ctrl+wheel / double-tap
+  / vertical slider; rewrite `<fn-navigation-controller>` from
+  `touchstart/move/end` + `touch-action: none` to PointerEvents
+- [`features/overlay-readability.md`](features/overlay-readability.md)
+  — screen-space sizing for icons and text, viewBox-relative
+  defaults, minimum-size floors, single ResizeObserver shared with
+  pan-zoom
+
+The four arbitrations made by Johann:
+
+1. **Fullscreen activation**: explicit button rather than
+   auto-on-tap. Avoids false triggers when interacting with overlay
+   elements; lets the user keep the embedded view as the default.
+
+2. **Zoom engine unified across desktop and mobile** rather than
+   mobile-only pinch. All input sources converge to the same
+   `Transform` state. The vertical zoom slider on the side is
+   included, always visible on both desktop and mobile, to be
+   validated at implementation review (can be removed if the UX
+   turns out to be redundant).
+
+3. **Overlay text always visible** with a screen-pixel minimum size,
+   rather than hidden behind a zoom threshold or revealed via tap-
+   to-detail. Spatial overview at a glance is preferred over
+   zoom-to-read.
+
+4. **Tablet treated as desktop** by default. Breakpoint heuristic:
+   `(max-width: 768px) and (pointer: coarse)`. iPads and Android
+   tablets land in desktop mode, where the embedded view + zoom
+   slider already cover their needs. To validate at usage,
+   adjustable without spec change if hybrid devices misbehave.
+
+**Rejected alternatives**:
+
+- **Auto-fullscreen on mobile load**: surprising default, breaks the
+  Lovelace convention of cards staying in the grid. Rejected at
+  arbitration #1.
+- **Mobile-only pinch (no desktop zoom)**: leaves desktop users with
+  detailed plans without inspection capability; misses the
+  discoverability win of the always-visible slider. Rejected at
+  arbitration #2.
+- **Hidden text below a zoom threshold OR tap-to-reveal popover**:
+  optimises for clean visuals over information density, contrary
+  to the user's preferred mental model of the dashboard. Rejected
+  at arbitration #3.
+- **Three separate ADRs (one per feature)**: features share a
+  unified motivation (mobile UX) and architectural touchpoints
+  (`<fn-navigation-controller>` rewrite, single transform engine,
+  shared ResizeObserver). Single ADR captures the strategy;
+  per-feature specs hold the details. Same pattern as ADR-005
+  (dark mode bundled 7 structuring choices).
+
+**Consequences**:
+
+- `<fn-navigation-controller>` rewritten: `touch-action: none`
+  replaced with PointerEvents-based gesture handling. Pinch + pan +
+  swipe + wheel coexist within a single state machine. Affected
+  spec: [`architecture/navigation.md`](architecture/navigation.md)
+  — to update post-implementation (the "Pinch-to-zoom gesture" edge
+  case becomes obsolete; the controller's gesture state machine
+  needs a fresh description).
+- A new `Transform` state (`scale`, `x`, `y`) lives on the card
+  root, applied via CSS transform on the `<fn-floor-stack>`
+  wrapper. Reset on floor change. Affected spec:
+  [`architecture/rendering-strategy.md`](architecture/rendering-strategy.md)
+  — to update post-implementation (the transform layer between
+  viewBox and screen coordinates is a new concept).
+- A single ResizeObserver on the card root drives reactive
+  recomputation of `viewBox_to_screen_ratio`. Source of truth
+  shared between pan-zoom (for transform conversion) and
+  overlay-readability (for screen-space sizing).
+- Bundle impact: estimated +6 to +10 KiB before optimisation. The
+  current build CI threshold of 50 KiB has only 0.3 KiB margin
+  (49.7 KiB at v0.1.1). The threshold needs raising for v0.2.0 —
+  propose 60 KiB. Vendoring `custom-card-helpers` (BACKLOG ⚡
+  candidate, ~3 KiB gain) becomes more attractive. Threshold
+  decision deferred to a follow-up entry once v0.2.0 bundle is
+  measured.
+- Two BACKLOG entries promoted to specs and removed from
+  `BACKLOG.md`:
+  - 🔮 "Pinch-zoom on the plan" → `pan-zoom-interactions.md`
+  - 🐛 "Default sizes for icons / text are hard-coded" →
+    `overlay-readability.md`
+- Backward compatibility:
+  - Fullscreen: pure addition (opt-in via explicit button)
+  - Pan-zoom: pure addition (default state is identity transform,
+    no visible change)
+  - Overlay readability: backward-compatible config; the implicit
+    default for `overlay_size_unit` stays `viewbox` for v0.1.x
+    configs (no behaviour change on upgrade). New v0.2.0 configs
+    use `px` per the recommended baseline. Migration documented.
+- v0.2.0 SemVer minor bump (additive features, no breaking
+  changes).
+
+**Recommended implementation order** (independent, but with one
+dependency):
+
+1. **`overlay-readability.md` first**: independent, smallest risk,
+   improves the experience even before the other two ship. Resolves
+   the BACKLOG hard-coded sizes bug. Establishes the
+   `viewBox_to_screen_ratio` ResizeObserver that pan-zoom will
+   reuse.
+2. **`pan-zoom-interactions.md`**: depends on the controller
+   rewrite, the largest-surface change. Reuses the
+   `viewBox_to_screen_ratio` from step 1. Once shipped, overlay
+   sizes in px mode also compensate against zoom (they are no-op
+   compensated at scale 1 from step 1).
+3. **`mobile-fullscreen-mode.md`**: depends on (2) for state
+   preservation across enter/exit (zoom transform must survive the
+   transition). Smallest of the three, ships last to round out the
+   v0.2.0 experience.
+
+**Status**: accepted
+
+---
+
 ## Template for future decisions
 
 Copy-paste at the top of the list, just under the main separator.
 Number `ADR-NNN` continuing the sequence (the latest one is
-`ADR-005`).
+`ADR-006`).
