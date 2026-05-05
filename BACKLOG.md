@@ -22,6 +22,11 @@ When you pick up an item, mark it with `✅` and link the PR or commit.
 When an item ships, move it to a "Released in vX.Y.Z" section near the
 top so it stays visible as a history trail.
 
+When an item is **promoted to a spec** (not yet shipped), remove it
+from this file — the spec's frontmatter and the relevant ADR in
+[`specs/decisions.md`](specs/decisions.md) become the canonical
+record.
+
 ---
 
 ## Released in v0.1.1
@@ -43,12 +48,6 @@ top so it stays visible as a history trail.
   Candidate fix: skip swipe tracking in `_onTouchStart` when
   `e.target` is inside `<fn-overlay-buttons>` (filter via
   `closest()`).
-
-- **Default sizes for icons / text are hard-coded (48 / 24 viewBox
-  units).** Sized for a 1920×1080 viewBox. For very different
-  viewBoxes (e.g. `0 0 200 100`) the defaults produce huge elements.
-  Candidate fix: defaults relative to the viewBox (e.g.
-  `viewBoxWidth / 40`).
 
 - **Bounce + slide-scale: the scale is temporarily lost during the
   bounce.** The animation keyframe overrides the full `transform`,
@@ -147,6 +146,36 @@ Captured during dev:
   `overlay_groups` declaration — to be settled in a small design
   spec when implementing.
 
+- **Elements without an entity (decorative / navigation).**
+  The `entity` field is currently mandatory on every element. This
+  works for control overlays (lights, plugs) and sensor overlays
+  (presence, temperature) where each element ties to an HA entity,
+  but breaks down for a third use case discovered in dogfooding:
+  **navigation overlays** that act as a visual map of a network /
+  infrastructure. Typical case: an `infra` overlay with icons for
+  Freebox, switch, NAS, AP, that tap to open admin URLs (Freebox
+  portal, Synology DSM, Omada controller, etc.). These devices
+  have no HA entity — yet they belong on the floor map.
+  Workaround used today: pick an unrelated "always-on" placeholder
+  entity (e.g. a Proxmox status binary_sensor) so the icon renders
+  with a stable color. Works but lies semantically and forces all
+  decorative pastilles to inherit the placeholder's color, which
+  also prevents using `tap_action` types like `more-info`
+  meaningfully (would open a modal for the wrong entity).
+  Candidate: make `entity` optional on elements. When absent:
+  - Pastille uses a neutral color (`--fn-color-decorative`,
+    new CSS variable) instead of resolving from a state
+  - `more-info` tap_action is rejected at config validation time
+    (since there's no entity to display)
+  - `toggle` and `call-service` likewise rejected without entity
+  - `url` and `navigate` tap_actions remain valid (the typical
+    use case for this category)
+  Backward-compatible: elements with `entity` keep current
+  behaviour unchanged. Naturally pairs with the **"navigation
+  overlays"** category emerging from real usage — may justify a
+  documented overlay typology in the data model (control / sensor
+  / navigation) when implementing.
+
 ---
 
 ## ⚡ Performance / bundle
@@ -158,6 +187,8 @@ Captured during dev:
   KB minified for ~150 lines of real logic. Reimplementing the 5–6
   helpers locally would save ~3 KB and remove the Rollup warning
   `"this" has been rewritten to "undefined"` from `@formatjs`.
+  Becomes more attractive in v0.2.0, where ADR-006 anticipates
+  +6 to +10 KiB of bundle growth and a threshold raise to ~60 KiB.
 
 - **Per-element reactivity for `fn-element-text`.**
   At present the whole overlay layer re-renders when any entity
@@ -197,12 +228,6 @@ Captured during dev:
 ---
 
 ## 🔮 Speculative / longer term
-
-- **Pinch-zoom on the plan.**
-  Currently blocked by `touch-action: none` on the controller. For
-  very detailed plans, zoom would be useful. Implies new state
-  (zoom level + pan offset) and reconciling with the viewBox
-  system.
 
 - **Drag-and-drop element positioning.**
   Edit-mode only (gated by a toggle). Sync with the YAML config.
