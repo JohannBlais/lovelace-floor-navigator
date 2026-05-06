@@ -94,7 +94,6 @@ settings:
   zoom_max: 4                      # max scale factor             (v0.2.0+)
   zoom_step: 0.1                   # Ctrl+wheel notch increment   (v0.2.0+)
   zoom_double_tap_scale: 2         # target scale on double-tap   (v0.2.0+)
-  zoom_slider: right               # right | left | none          (v0.2.0+)
   fullscreen_button: auto          # auto | always | never        (v0.2.0+, see mobile-fullscreen-mode.md)
   fullscreen_button_position: top-right
                                    # top-right | top-left | bottom-right | bottom-left  (v0.2.0+)
@@ -176,7 +175,6 @@ overlays:
 | `zoom_max` | number | `4` | Maximum scale factor (v0.2.0+) |
 | `zoom_step` | number | `0.1` | Scale increment per Ctrl+wheel notch (v0.2.0+) |
 | `zoom_double_tap_scale` | number | `2` | Target scale on double-tap toggle (v0.2.0+) |
-| `zoom_slider` | enum | `right` | `right`, `left`, `none` — vertical slider position (v0.2.0+) |
 | `fullscreen_button` | enum | `auto` | `auto`, `always`, `never` — `auto`/`always` aliased (v0.2.0+, see [`mobile-fullscreen-mode.md`](mobile-fullscreen-mode.md)) |
 | `fullscreen_button_position` | enum | `top-right` | `top-right`, `top-left`, `bottom-right`, `bottom-left` (v0.2.0+) |
 

@@ -1,11 +1,9 @@
 import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
-import { classMap } from 'lit/directives/class-map.js';
 
 import './fn-floor-indicator.js';
 import './fn-floor-stack.js';
 import './fn-overlay-buttons.js';
-import './fn-zoom-slider.js';
 import type { BounceDirection } from './fn-floor-stack.js';
 import type { ThemeMode } from '../utils/theme-resolver.js';
 import {
@@ -30,7 +28,6 @@ import type {
   OverlayButtonsPosition,
   OverlaySizeUnit,
   TransitionMode,
-  ZoomSliderPosition,
 } from '../types/config.js';
 import type { HomeAssistant } from '../types/ha.js';
 
@@ -138,7 +135,6 @@ export class FnNavigationController extends LitElement {
   @property({ type: Number, attribute: false }) zoomMax = 4;
   @property({ type: Number, attribute: false }) zoomStep = 0.1;
   @property({ type: Number, attribute: false }) zoomDoubleTapScale = 2;
-  @property({ type: String, attribute: false }) zoomSlider: ZoomSliderPosition = 'right';
   /**
    * v0.2.0 — Fullscreen flag forwarded from the card root. Toggles a
    * `fullscreen` class on the host (in `updated()`) so CSS can switch
@@ -552,27 +548,6 @@ export class FnNavigationController extends LitElement {
     this._pinchInitial = undefined;
   }
 
-  // ────────────────────── slider ──────────────────────
-
-  private _onSliderScale = (e: CustomEvent<{ scale: number }>): void => {
-    const newScale = clampScale(e.detail.scale, this.zoomMin, this.zoomMax);
-    if (newScale === this._transform.scale) return;
-    // Anchor at card centre.
-    const rect = this._gestureRect();
-    const centre: Point = { x: rect.width / 2, y: rect.height / 2 };
-    this._gestureLive = true;
-    this._zoomAroundLocal(newScale, centre);
-  };
-
-  private _onSliderRelease = (): void => {
-    this._gestureLive = false;
-  };
-
-  private _onSliderReset = (): void => {
-    this._gestureLive = false;
-    this._setTransform(IDENTITY);
-  };
-
   // ────────────────────── transform helpers ──────────────────────
 
   /** Set transform after pan-clamping. Uses identity-equality short-
@@ -669,15 +644,10 @@ export class FnNavigationController extends LitElement {
         `
       : nothing;
 
-    const showSlider = this.zoomSlider !== 'none';
-
     return html`
       ${this.overlayButtonsPosition === 'top' ? buttons : nothing}
       <div
-        class=${classMap({
-          'gesture-area': true,
-          [`slider-${this.zoomSlider}`]: showSlider,
-        })}
+        class="gesture-area"
         @pointerdown=${this._onPointerDown}
         @pointermove=${this._onPointerMove}
         @pointerup=${this._onPointerUp}
@@ -708,19 +678,6 @@ export class FnNavigationController extends LitElement {
         ${this.showFloorIndicator && currentFloor
           ? html`<fn-floor-indicator .floor=${currentFloor}></fn-floor-indicator>`
           : nothing}
-        ${showSlider
-          ? html`
-              <fn-zoom-slider
-                .scale=${this._transform.scale}
-                .zoomMin=${this.zoomMin}
-                .zoomMax=${this.zoomMax}
-                .position=${this.zoomSlider}
-                @slider-scale=${this._onSliderScale}
-                @slider-release=${this._onSliderRelease}
-                @slider-reset=${this._onSliderReset}
-              ></fn-zoom-slider>
-            `
-          : nothing}
       </div>
       ${this.overlayButtonsPosition === 'bottom' ? buttons : nothing}
     `;
@@ -735,9 +692,9 @@ export class FnNavigationController extends LitElement {
       user-select: none;
     }
     .gesture-area {
-      /* Anchor for the absolutely-positioned <fn-floor-indicator> and
-         <fn-zoom-slider> overlays, so they stay inside the floor area
-         and never overlap the buttons bar. */
+      /* Anchor for the absolutely-positioned <fn-floor-indicator>
+         overlay so it stays inside the floor area and never overlaps
+         the buttons bar. */
       position: relative;
     }
 

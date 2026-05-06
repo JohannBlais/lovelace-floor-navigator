@@ -8,8 +8,17 @@ related: [mobile-fullscreen-mode.md, overlay-readability.md, data-model.md, ../a
 # Pan-Zoom Interactions
 
 Unified zoom and pan engine for the active floor. Multi-source input:
-pinch (mobile), Ctrl+wheel (desktop), double-tap, vertical slider.
-Spec for **v0.2.0**.
+pinch (mobile), Ctrl+wheel (desktop), double-tap. Spec for **v0.2.0**.
+
+> **Implementation note (2026-05-06)** — a vertical zoom slider was
+> originally part of this spec (per ADR-006 arbitration #2 "to be
+> validated at implementation review"). It was prototyped, then removed
+> at review: pinch / Ctrl+wheel / double-tap cover all use cases, the
+> always-visible slider added permanent visual clutter without unique
+> functionality (reset is just double-tap when zoomed). The decision
+> is recorded in `specs/decisions.md` as a follow-up note on ADR-006
+> and in `specs/open-questions.md`. Sections about the slider have
+> been struck from this spec; `zoom_slider` is no longer a setting.
 
 ## Context
 
@@ -25,9 +34,8 @@ design.
 
 This spec introduces a transform engine that supports zoom and pan
 on the active floor while preserving the existing floor-navigation
-behaviour. The 4 input sources (pinch, Ctrl+wheel, double-tap,
-slider) all converge to the same `Transform` state, per ADR-006
-arbitration #2.
+behaviour. The 3 input sources (pinch, Ctrl+wheel, double-tap) all
+converge to the same `Transform` state, per ADR-006 arbitration #2.
 
 The transform is applied via CSS `transform: translate(x, y) scale(z)`
 on a wrapper around `<fn-floor-stack>`. The viewBox stays the
@@ -42,7 +50,7 @@ viewBox.
 1. Unified `Transform` state across all input sources
 2. Preserve existing wheel-based floor navigation (wheel without
    modifier = navigate, Ctrl+wheel = zoom)
-3. Pinch on mobile, Ctrl+wheel on desktop, double-tap, slider — all
+3. Pinch on mobile, Ctrl+wheel on desktop, double-tap — all
    converge to the same state machine
 4. Don't break tap_action on overlay elements (multi-finger gesture
    does not trigger element clicks)
@@ -55,18 +63,15 @@ viewBox.
 ### In
 
 - `Transform` state at the controller level: `{ scale, x, y }`
-- 4 input sources: pinch, Ctrl+wheel, double-tap, slider
+- 3 input sources: pinch, Ctrl+wheel, double-tap
 - Single-finger drag for pan when `scale > 1` (single-finger drag
   for floor swipe when `scale === 1` — existing behaviour preserved)
-- Vertical zoom slider on the side of the card, always visible
-  (per ADR-006)
-- Configurable slider position (`right`, `left`, `none`)
 - CSS transform applied to `<fn-floor-stack>` wrapper
 - `<fn-navigation-controller>` rewrite from `touchstart/move/end`
   with `touch-action: none` to PointerEvents with manual gesture
   handling
 - Reset to identity transform on floor change (animated 200ms)
-- New configuration fields for zoom limits and slider visibility
+- New configuration fields for zoom limits
 
 ### Out
 
@@ -223,26 +228,6 @@ The 300ms threshold is intentional, slightly longer than the
 browser's 250ms native double-tap detection — gives the user a bit
 more leeway, and we override the native handling anyway.
 
-### Input source: zoom slider
-
-Vertical slider rendered as an SVG overlay on the card.
-
-- Position: configurable via `settings.zoom_slider`
-  (`right` default, `left`, `none`)
-- Always visible regardless of viewport size or current scale
-  (per ADR-006). Even at `scale === 1` it shows the position at
-  minimum, indicating the feature exists.
-- Range: `zoom_min` to `zoom_max`, linear mapping
-- Drag interaction: pointerdown on the slider thumb, pointermove
-  updates scale, pointerup releases
-- Bidirectional: slider thumb position reflects current scale, and
-  changes via other inputs update the thumb
-- Zoom anchor when slider is the input source: card centre (no
-  cursor / touch position to anchor to)
-- Reset button (small `mdi:fit-to-page-outline` icon) at the bottom
-  of the slider — tap to reset to identity transform with 200ms
-  animation
-
 ### Input source: single-finger drag (mobile)
 
 Behaviour depends on current scale:
@@ -258,7 +243,7 @@ state machine. Threshold for swipe vs pan: same 50px / 0.3 px/ms
 as v0.1.0.
 
 When transitioning from `scale > 1` back to `scale === 1` (e.g.
-via slider or double-tap), single-finger drag reverts to swipe.
+via double-tap or pinch-out), single-finger drag reverts to swipe.
 
 ### `touch-action` and PointerEvents
 
@@ -313,19 +298,6 @@ Pinch starting on an overlay element does **not** fire the
 element's tap_action: the browser does not synthesise a click event
 when multiple pointers are active.
 
-### Slider visual
-
-- Vertical bar with rounded ends, ~6px wide, 70% of card height,
-  margin 12px from the edge
-- Thumb: 24×24 px circle, `var(--fn-button-bg)` background, scales
-  to 32×32 on active drag
-- Track: semi-transparent
-  (`background: rgba(255, 255, 255, 0.15)`)
-- Track-fill below the thumb: `var(--fn-color-on)`
-- Reset button at the bottom: 32×32, same style as expand button
-- Optional numeric percentage label on the thumb during active
-  drag (e.g. "150%") — to validate at implementation review
-
 ## Configuration
 
 New fields in `settings`:
@@ -336,10 +308,10 @@ New fields in `settings`:
 | `zoom_max` | number | `4` | Maximum scale factor (≤ 8 recommended) |
 | `zoom_step` | number | `0.1` | Scale increment per Ctrl+wheel notch |
 | `zoom_double_tap_scale` | number | `2` | Target scale for double-tap toggle |
-| `zoom_slider` | enum | `right` | `right`, `left`, `none` |
 
 To be merged into [`data-model.md`](data-model.md) at implementation
-time.
+time. (No `zoom_slider` field — see implementation note at the top of
+this spec.)
 
 ## Edge cases
 
@@ -397,15 +369,6 @@ User has a tiny viewBox (e.g. `0 0 200 100`) rendered in a wide card.
 `scale === 1` already shows everything. Pan is disabled (clamped to
 `{ x: 0, y: 0 }`). Single-finger drag goes to swipe-navigate.
 
-### Slider drag during pinch
-
-Unlikely simultaneous gesture (slider is on the side, pinch happens
-on the floor area). If it occurs (multi-touch device with the user
-deliberately doing both), the last input wins on a per-frame basis
-— no explicit lock. The transform state has only one source of
-truth, the `Transform` object, written by whichever handler fires
-last. Acceptable for v0.2.0.
-
 ### Floor change while pinching
 
 Wheel or swipe triggers floor change while pinch is active.
@@ -423,11 +386,10 @@ positioned anywhere) within the larger empty space. Algorithm: at
 inside the viewport rather than 50% inside the plan. To finalise at
 implementation.
 
-### Slider position `none` and pinch unavailable on the device
+### Pinch unavailable on the device
 
-Desktop user without a touch screen, with `zoom_slider: none`
-configured. They still have Ctrl+wheel and double-click to zoom.
-Acceptable. Document the keyboard pattern in the YAML examples.
+Desktop user without a touch screen. Ctrl+wheel and double-click
+provide zoom. Acceptable.
 
 ### Reset transform on theme change (dark mode toggle)
 
@@ -449,12 +411,12 @@ back in the embedded card at `scale: 2`. Acceptable.
   **Status: kept Ctrl-required at implementation (2026-05-06)**.
   `e.metaKey` (Cmd on macOS) is also accepted. Revisit if user
   feedback suggests otherwise.
-- **Slider visual style**: traditional thumb-and-track, or
-  pinch-style numeric indicator (e.g. "150%" floating bubble)?
-  **Status: shipped as thumb-and-track at implementation (2026-05-06)**.
-  24×24 thumb (32×32 active), 6px-wide track, reset button at the
-  bottom with `mdi:fit-to-page-outline`. Numeric overlay deferred
-  to UX review.
+- **Slider visual style** (originally "thumb-and-track vs numeric
+  bubble"): **superseded by the slider removal at implementation
+  review (2026-05-06)**. The slider was prototyped as thumb-and-track
+  in spec 2's commit, then deleted before v0.2.0 ship — pinch /
+  Ctrl+wheel / double-tap proved sufficient. See ADR-006 follow-up
+  in `specs/decisions.md` and `specs/open-questions.md`.
 - **Zoom limits per-floor**: a complex floor (cellar with technical
   rooms) might warrant a higher `zoom_max` than a simple floor.
   Currently global. Per-floor override deferred to v0.2.x if user
@@ -496,12 +458,17 @@ back in the embedded card at `scale: 2`. Acceptable.
   surprise users. Consistent reset is the safe default. Per
   ADR-006.
 - **Single transform engine across all input sources**: pinch,
-  Ctrl+wheel, double-tap, slider all converge to the same
-  `Transform` state. No mode-specific quirks. Per ADR-006
-  arbitration #2.
-- **Always-visible slider**: discoverability over minimal UI. Low
-  cost on desktop, useful on mobile when the user does not
-  attempt pinch. Per ADR-006 arbitration #2.
+  Ctrl+wheel, double-tap converge to the same `Transform` state. No
+  mode-specific quirks. Per ADR-006 arbitration #2.
+- **Vertical zoom slider removed at implementation review**:
+  ADR-006 arbitration #2 included an always-visible slider "to be
+  validated at implementation review". Validation outcome: removed
+  before v0.2.0 ship. Pinch + Ctrl+wheel + double-tap cover all use
+  cases, and the always-visible thumb/track was permanent visual
+  clutter without unique functionality (reset = double-tap when
+  zoomed). Bundle gain: ~3 KiB raw / ~1 KiB gzipped, putting the
+  build back under the ADR-003 secondary 20 KiB gzipped target.
+  ADR-006 follow-up note in `specs/decisions.md`.
 - **PointerEvents instead of `touchstart/move/end` +
   `touch-action: none`**: better support for hybrid devices
   (Surface, iPad with Magic Keyboard), unifies pinch and

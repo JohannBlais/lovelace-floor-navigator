@@ -50,13 +50,18 @@ export interface CardSettings {
    * - `zoom_max`: maximum scale factor (default 4; ≤ 8 recommended)
    * - `zoom_step`: scale increment per Ctrl+wheel notch (default 0.1)
    * - `zoom_double_tap_scale`: target scale for double-tap toggle (default 2)
-   * - `zoom_slider`: vertical slider position (`right` default | `left` | `none`)
+   *
+   * No `zoom_slider` field: a vertical slider was prototyped in spec 2
+   * but removed at implementation review (2026-05-06) — pinch /
+   * Ctrl+wheel / double-tap cover all the use cases without the
+   * always-visible UI clutter. See ADR-006 follow-up note in
+   * specs/decisions.md and resolved entry in
+   * specs/open-questions.md.
    */
   zoom_min?: number;
   zoom_max?: number;
   zoom_step?: number;
   zoom_double_tap_scale?: number;
-  zoom_slider?: ZoomSliderPosition;
   /**
    * v0.2.0 — Mobile-fullscreen-mode settings. See
    * specs/features/mobile-fullscreen-mode.md.
@@ -76,7 +81,6 @@ export type EdgeBehavior = 'bounce' | 'none' | 'loop';
 export type OverlayButtonsPosition = 'top' | 'bottom' | 'none';
 export type DarkModeSetting = 'auto' | 'on' | 'off';
 export type OverlaySizeUnit = 'viewbox' | 'px';
-export type ZoomSliderPosition = 'right' | 'left' | 'none';
 export type FullscreenButtonVisibility = 'auto' | 'always' | 'never';
 export type FullscreenButtonPosition =
   | 'top-right'

@@ -56,7 +56,6 @@ concerns. The SVG naming conventions exist to make DOM debugging
       │   │   ├── <fn-floor>
       │   │   └── <fn-floor>
       │   ├── <fn-floor-indicator>    # label "L0 — Ground floor"
-      │   ├── <fn-zoom-slider>        # v0.2.0+ vertical zoom slider (right/left/none)
       │   └── <fn-overlay-buttons>    # toggle button bar (dark bg in fullscreen, v0.2.0+)
       └── <button class="fn-fullscreen-button">  # v0.2.0+ corner expand/exit toggle
 ```

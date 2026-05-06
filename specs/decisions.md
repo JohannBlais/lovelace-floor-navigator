@@ -277,8 +277,9 @@ The four arbitrations made by Johann:
 4. **Tablet treated as desktop** by default. Breakpoint heuristic:
    `(max-width: 768px) and (pointer: coarse)`. iPads and Android
    tablets land in desktop mode, where the embedded view + zoom
-   slider already cover their needs. To validate at usage,
-   adjustable without spec change if hybrid devices misbehave.
+   already cover their needs (Ctrl/Cmd+wheel via Magic Keyboard,
+   plus pinch on the screen). To validate at usage, adjustable
+   without spec change if hybrid devices misbehave.
 
 **Rejected alternatives**:
 
@@ -286,9 +287,9 @@ The four arbitrations made by Johann:
   Lovelace convention of cards staying in the grid. Rejected at
   arbitration #1.
 - **Mobile-only pinch (no desktop zoom)**: leaves desktop users with
-  detailed plans without inspection capability; misses the
-  discoverability win of the always-visible slider. Rejected at
-  arbitration #2.
+  detailed plans without inspection capability. Rejected at
+  arbitration #2 — Ctrl+wheel and double-tap are the desktop
+  primitives.
 - **Hidden text below a zoom threshold OR tap-to-reveal popover**:
   optimises for clean visuals over information density, contrary
   to the user's preferred mental model of the dashboard. Rejected
@@ -360,7 +361,40 @@ dependency):
    transition). Smallest of the three, ships last to round out the
    v0.2.0 experience.
 
-**Status**: accepted
+**Status**: accepted (with the 2026-05-06 follow-up note below on
+arbitration #2 — the always-visible vertical zoom slider was
+prototyped, then removed at implementation review.)
+
+**Follow-up [2026-05-06] — slider removed at implementation review**:
+ADR-006 arbitration #2 hedged the always-visible slider as "to be
+validated at implementation review (can be removed if the UX turns
+out to be redundant)". After spec 2 ship, the slider was tested side
+by side with pinch / Ctrl+wheel / double-tap. Verdict: redundant.
+Pinch (mobile) + Ctrl-wheel (desktop) + double-tap (toggle / reset
+when zoomed) cover all interaction needs. The slider was permanent
+visual clutter without unique function.
+
+The slider was deleted before v0.2.0 ship. Affected files / specs:
+
+- `src/components/fn-zoom-slider.ts` removed
+- `zoom_slider` setting + `ZoomSliderPosition` type removed from
+  `src/types/config.ts` and the card-root validation
+- `pan-zoom-interactions.md` Input source / Slider visual / Edge case
+  sections struck; "Always-visible slider" decision marked as
+  superseded; an implementation note + this follow-up entry record
+  the rationale
+- `data-model.md` and `architecture/component-tree.md` cleaned up
+- Bundle reclaimed ~3 KiB raw / ~1 KiB gzipped — puts the build back
+  under the ADR-003 secondary 20 KiB gzipped target
+
+The "minor mode-specific quirks" worry that justified the slider
+(mobile users not aware of pinch) is partially compensated by spec
+3's fullscreen button, which gives a discoverable affordance. Pinch
+itself is universal across iOS / Android touch.
+
+The slider can always be re-introduced as an opt-in setting
+(`zoom_slider: right | left | none`, default `none`) in a future
+patch release if user feedback warrants. Not a one-way door.
 
 ---
 

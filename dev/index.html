@@ -202,14 +202,6 @@
           <input type="number" id="zoom-double-tap" value="2" min="1" step="0.5" style="width: 64px;" />
         </label>
         <label>
-          zoom_slider
-          <select id="zoom-slider-select">
-            <option value="right" selected>right (default)</option>
-            <option value="left">left</option>
-            <option value="none">none</option>
-          </select>
-        </label>
-        <label>
           fullscreen_button
           <select id="fullscreen-button-select">
             <option value="auto" selected>auto (default)</option>
@@ -236,8 +228,9 @@
       <div class="legend">
         <kbd>Scroll</kbd> vertically → switch between L0/L1/L2.<br />
         <kbd>Ctrl</kbd>+scroll (or <kbd>Cmd</kbd>+scroll on macOS) → zoom around cursor.
-        Double-click → toggle zoom. Drag the right slider thumb. At
-        zoom &gt; 1, single-finger drag pans (instead of swipes).<br />
+        Double-click → toggle zoom (and reset when zoomed). On mobile,
+        pinch in / out for zoom. At zoom &gt; 1, single-finger drag pans
+        (instead of swiping between floors).<br />
         Fullscreen button (top-right corner): tap to escape the embedded
         view; <kbd>Esc</kbd> or browser-back to exit.<br />
         <strong>Dark mode v0.1.1</strong>:
@@ -273,7 +266,6 @@
       const zoomMinInput = document.getElementById('zoom-min');
       const zoomMaxInput = document.getElementById('zoom-max');
       const zoomDoubleTapInput = document.getElementById('zoom-double-tap');
-      const zoomSliderSelect = document.getElementById('zoom-slider-select');
       const fullscreenButtonSelect = document.getElementById('fullscreen-button-select');
       const fullscreenButtonPositionSelect = document.getElementById('fullscreen-button-position-select');
       const toggleSalonBtn = document.getElementById('toggle-salon');
@@ -297,7 +289,6 @@
             zoom_min: Number(zoomMinInput.value),
             zoom_max: Number(zoomMaxInput.value),
             zoom_double_tap_scale: Number(zoomDoubleTapInput.value),
-            zoom_slider: zoomSliderSelect.value,
             fullscreen_button: fullscreenButtonSelect.value,
             fullscreen_button_position: fullscreenButtonPositionSelect.value,
           },
@@ -428,7 +419,6 @@
         zoomMinInput,
         zoomMaxInput,
         zoomDoubleTapInput,
-        zoomSliderSelect,
         fullscreenButtonSelect,
         fullscreenButtonPositionSelect,
       ].forEach((el) => {

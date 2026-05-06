@@ -64,6 +64,30 @@ archived) for institutional memory.
 
 ## Resolved entries (cont'd)
 
+## [2026-05-06] pan-zoom-interactions — Vertical zoom slider: keep or remove?
+- Context: ADR-006 arbitration #2 added an always-visible vertical
+  zoom slider "to be validated at implementation review (can be
+  removed if the UX turns out to be redundant)". The slider shipped
+  in spec 2's commit. Spec 2's open question §"Slider visual style"
+  also flagged the option of full removal.
+- Question (Johann, 2026-05-06): standard interactions
+  (Ctrl/Cmd+wheel desktop, pinch mobile, double-tap toggle) cover
+  zoom — is the slider necessary?
+- Resolution: **remove entirely**. Three independent input sources
+  (pinch, Ctrl+wheel, double-tap) cover all use cases without the
+  always-visible UI clutter. Reset is just double-tap when zoomed
+  (or pinch-out / wheel-out toward `zoom_min`). Bundle gain ~3 KiB
+  raw / ~1 KiB gzipped puts the build back under the ADR-003
+  secondary 20 KiB gzipped target. The slider can be re-introduced
+  as an opt-in setting (`zoom_slider: right | left | none`, default
+  `none`) in a future patch release if user feedback warrants —
+  not a one-way door.
+- Spec(s) affected: `specs/features/pan-zoom-interactions.md`,
+  `specs/features/data-model.md`,
+  `specs/architecture/component-tree.md`,
+  `specs/decisions.md` (ADR-006 follow-up)
+- Status: resolved (slider-removal commit on main)
+
 ## [2026-05-06] pan-zoom-interactions — Pan clamp inversion when scale < 1
 - Context: spec line 397 ("zoom_min < 1") flags "the constraint flips —
   the plan stays at least 50% inside the viewport rather than 50%

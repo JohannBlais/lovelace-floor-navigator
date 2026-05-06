@@ -11,7 +11,6 @@ import type {
   Overlay,
   OverlayElement,
   OverlaySizeUnit,
-  ZoomSliderPosition,
 } from './types/config.js';
 import type { HomeAssistant } from './types/ha.js';
 
@@ -426,17 +425,6 @@ export class FloorNavigatorCard extends LitElement {
         `[floor-navigator-card] settings.zoom_double_tap_scale must be a positive number; falling back to ${DEFAULT_DOUBLE_TAP_SCALE}.`,
       );
     }
-    const slider = config.settings?.zoom_slider;
-    if (
-      slider !== undefined &&
-      slider !== 'right' &&
-      slider !== 'left' &&
-      slider !== 'none'
-    ) {
-      console.warn(
-        `[floor-navigator-card] settings.zoom_slider "${String(slider)}" is not "right" | "left" | "none"; falling back to "right".`,
-      );
-    }
     // v0.2.0 — fullscreen mode settings.
     const fsButton = config.settings?.fullscreen_button;
     if (
@@ -516,10 +504,6 @@ export class FloorNavigatorCard extends LitElement {
       settings.zoom_double_tap_scale > 0
         ? settings.zoom_double_tap_scale
         : DEFAULT_DOUBLE_TAP_SCALE;
-    const zoomSlider: ZoomSliderPosition =
-      settings.zoom_slider === 'left' || settings.zoom_slider === 'none'
-        ? settings.zoom_slider
-        : 'right';
     const fullscreenVisibility: FullscreenButtonVisibility =
       settings.fullscreen_button === 'never' || settings.fullscreen_button === 'always'
         ? settings.fullscreen_button
@@ -546,7 +530,6 @@ export class FloorNavigatorCard extends LitElement {
           .zoomMax=${zoomMax}
           .zoomStep=${zoomStep}
           .zoomDoubleTapScale=${zoomDoubleTapScale}
-          .zoomSlider=${zoomSlider}
           .transition=${settings.transition ?? 'crossfade'}
           .transitionDuration=${settings.transition_duration ?? 400}
           .edgeBehavior=${settings.edge_behavior ?? 'bounce'}
