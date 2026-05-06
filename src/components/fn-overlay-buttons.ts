@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 
@@ -21,6 +21,21 @@ export class FnOverlayButtons extends LitElement {
   @property({ attribute: false }) overlays: Overlay[] = [];
   /** Set of overlay ids currently visible (for the active styling). */
   @property({ attribute: false }) visibleOverlayIds: Set<string> = new Set();
+  /**
+   * v0.2.0 — Fullscreen flag forwarded from the controller. Adds a
+   * semi-transparent dark background to the bar so it stays readable
+   * over varied plan colours when the bar overlays the floor stack at
+   * the viewport edge in fullscreen. See
+   * specs/features/mobile-fullscreen-mode.md §"Overlay buttons in
+   * fullscreen".
+   */
+  @property({ type: Boolean, attribute: false }) fullscreen = false;
+
+  protected override updated(changed: PropertyValues<this>): void {
+    if (changed.has('fullscreen')) {
+      this.classList.toggle('fullscreen', this.fullscreen);
+    }
+  }
 
   private _toggle(id: string): void {
     this.dispatchEvent(
@@ -99,6 +114,13 @@ export class FnOverlayButtons extends LitElement {
       width: 22px;
       height: 22px;
       display: block;
+    }
+    /* v0.2.0 — fullscreen styling: semi-transparent dark background so
+       the bar stays readable over the plan content at the viewport edge. */
+    :host(.fullscreen) .bar {
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
     }
   `;
 }

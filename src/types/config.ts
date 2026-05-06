@@ -57,6 +57,17 @@ export interface CardSettings {
   zoom_step?: number;
   zoom_double_tap_scale?: number;
   zoom_slider?: ZoomSliderPosition;
+  /**
+   * v0.2.0 — Mobile-fullscreen-mode settings. See
+   * specs/features/mobile-fullscreen-mode.md.
+   * - `fullscreen_button`: visibility of the expand button.
+   *   `auto` (default) and `always` are aliases (always visible). `never`
+   *   hides the button entirely.
+   * - `fullscreen_button_position`: corner anchor of the button (default
+   *   `top-right`).
+   */
+  fullscreen_button?: FullscreenButtonVisibility;
+  fullscreen_button_position?: FullscreenButtonPosition;
 }
 
 export type TransitionMode = 'crossfade' | 'slide' | 'slide-scale';
@@ -66,6 +77,12 @@ export type OverlayButtonsPosition = 'top' | 'bottom' | 'none';
 export type DarkModeSetting = 'auto' | 'on' | 'off';
 export type OverlaySizeUnit = 'viewbox' | 'px';
 export type ZoomSliderPosition = 'right' | 'left' | 'none';
+export type FullscreenButtonVisibility = 'auto' | 'always' | 'never';
+export type FullscreenButtonPosition =
+  | 'top-right'
+  | 'top-left'
+  | 'bottom-right'
+  | 'bottom-left';
 
 /**
  * v0.1.1 — Extended form for a floor's background images.

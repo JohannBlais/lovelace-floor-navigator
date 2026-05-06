@@ -1,4 +1,4 @@
-import { LitElement, css, html } from 'lit';
+import { LitElement, css, html, type PropertyValues } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { styleMap } from 'lit/directives/style-map.js';
@@ -61,6 +61,21 @@ export class FnFloorStack extends LitElement {
    */
   @property({ attribute: false }) transform: Transform = IDENTITY;
   @property({ type: Boolean, attribute: false }) gestureLive = false;
+  /**
+   * v0.2.0 — Fullscreen flag forwarded from the controller. Switches
+   * `.stack` from "width:100% × aspect-ratio height" (which can overflow
+   * a height-constrained parent in landscape mobile) to a fit-within-
+   * parent layout that preserves the aspect ratio. See
+   * specs/features/mobile-fullscreen-mode.md and the parent fullscreen
+   * CSS in fn-navigation-controller.
+   */
+  @property({ type: Boolean, attribute: false }) fullscreen = false;
+
+  protected override updated(changed: PropertyValues<this>): void {
+    if (changed.has('fullscreen')) {
+      this.classList.toggle('fullscreen', this.fullscreen);
+    }
+  }
 
   private get _aspectRatio(): string {
     const parts = this.viewbox.trim().split(/\s+/).map(Number);
@@ -156,6 +171,30 @@ export class FnFloorStack extends LitElement {
     .floor-wrapper {
       position: absolute;
       inset: 0;
+    }
+
+    /* ────────── v0.2.0 — fullscreen aspect-fit ──────────
+       In fullscreen the parent (.gesture-area) is a flex container with
+       a definite height (flex:1 in a fixed-height column). Switch the
+       host + .stack to a height-driven aspect-fit: width derives from
+       height + aspect-ratio, with max-width:100% as a safety clamp for
+       very tall viewports. This avoids the "plan taller than viewport"
+       overflow that hid the overlay buttons in landscape mobile. */
+    :host(.fullscreen) {
+      width: auto;
+      height: 100%;
+      max-width: 100%;
+      max-height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    :host(.fullscreen) .stack {
+      width: auto;
+      height: 100%;
+      max-width: 100%;
+      max-height: 100%;
+      /* aspect-ratio inherited from the inline style on .stack */
     }
 
     /* --- Crossfade transition --- */

@@ -2,7 +2,7 @@
 status: implemented
 owner: Johann Blais
 last_updated: 2026-05-06
-related: [rendering-strategy.md, navigation.md, ../features/data-model.md, ../features/pan-zoom-interactions.md]
+related: [rendering-strategy.md, navigation.md, ../features/data-model.md, ../features/pan-zoom-interactions.md, ../features/mobile-fullscreen-mode.md]
 ---
 
 # Component Tree
@@ -44,19 +44,21 @@ concerns. The SVG naming conventions exist to make DOM debugging
 ## Expected behaviour — Component tree
 
 ```
-<floor-navigator-card>           # root component, owns config + ResizeObserver + theme
-  └── <fn-navigation-controller>  # owns wheel/swipe/transition state + Transform (v0.2.0)
-      ├── <fn-floor-stack>        # container of stacked floors, applies CSS transform
-      │   ├── <fn-floor>          # one per declared floor
-      │   │   ├── <svg>           # background + overlays
-      │   │   │   ├── <image>     # floor background (PNG/JPG/SVG)
-      │   │   │   ├── <fn-overlay-layer> (×N)
-      │   │   │   │   └── <fn-element-icon> or <fn-element-text> (×M)
-      │   ├── <fn-floor>
-      │   └── <fn-floor>
-      ├── <fn-floor-indicator>    # label "L0 — Ground floor"
-      ├── <fn-zoom-slider>        # v0.2.0+ vertical zoom slider (right/left/none)
-      └── <fn-overlay-buttons>    # toggle button bar
+<floor-navigator-card>             # root component (v0.2.0+: + ResizeObserver, theme, fullscreen state)
+  └── <ha-card>
+      ├── <fn-navigation-controller>  # owns floor index + Transform state (v0.2.0)
+      │   ├── <fn-floor-stack>        # container of stacked floors, applies CSS transform
+      │   │   ├── <fn-floor>          # one per declared floor
+      │   │   │   ├── <svg>           # background + overlays
+      │   │   │   │   ├── <image>     # floor background (PNG/JPG/SVG)
+      │   │   │   │   ├── <fn-overlay-layer> (×N)
+      │   │   │   │   │   └── <fn-element-icon> or <fn-element-text> (×M)
+      │   │   ├── <fn-floor>
+      │   │   └── <fn-floor>
+      │   ├── <fn-floor-indicator>    # label "L0 — Ground floor"
+      │   ├── <fn-zoom-slider>        # v0.2.0+ vertical zoom slider (right/left/none)
+      │   └── <fn-overlay-buttons>    # toggle button bar (dark bg in fullscreen, v0.2.0+)
+      └── <button class="fn-fullscreen-button">  # v0.2.0+ corner expand/exit toggle
 ```
 
 ## Expected behaviour — SVG naming conventions

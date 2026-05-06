@@ -139,6 +139,13 @@ export class FnNavigationController extends LitElement {
   @property({ type: Number, attribute: false }) zoomStep = 0.1;
   @property({ type: Number, attribute: false }) zoomDoubleTapScale = 2;
   @property({ type: String, attribute: false }) zoomSlider: ZoomSliderPosition = 'right';
+  /**
+   * v0.2.0 — Fullscreen flag forwarded from the card root. Toggles a
+   * `fullscreen` class on the host (in `updated()`) so CSS can switch
+   * the layout to a flex column (gesture-area flex:1, aspect-fit
+   * floor stack). See specs/features/mobile-fullscreen-mode.md.
+   */
+  @property({ type: Boolean, attribute: false }) fullscreen = false;
 
   @state() private _currentIndex = 0;
   @state() private _bounceDirection: BounceDirection = null;
@@ -202,7 +209,13 @@ export class FnNavigationController extends LitElement {
     }
   }
 
-  protected override updated(_changed: PropertyValues<this>): void {
+  protected override updated(changed: PropertyValues<this>): void {
+    // v0.2.0 — Sync the `fullscreen` class on the host so CSS sees the
+    // current state. `:host(.fullscreen)` selectors gate the fullscreen
+    // layout (flex column, gesture-area flex:1, aspect-fit floor-stack).
+    if (changed.has('fullscreen')) {
+      this.classList.toggle('fullscreen', this.fullscreen);
+    }
     // v0.2.0 — Reset transform to identity (animated) on floor change.
     // The CSS `transition: transform 200ms` on the floor-stack's `.stack`
     // handles the animation; we just write a new transform value.
@@ -651,6 +664,7 @@ export class FnNavigationController extends LitElement {
           <fn-overlay-buttons
             .overlays=${this.allOverlays}
             .visibleOverlayIds=${this.visibleOverlayIds}
+            .fullscreen=${this.fullscreen}
           ></fn-overlay-buttons>
         `
       : nothing;
@@ -689,6 +703,7 @@ export class FnNavigationController extends LitElement {
           .minTextPx=${this.minTextPx}
           .transform=${this._transform}
           .gestureLive=${this._gestureLive}
+          .fullscreen=${this.fullscreen}
         ></fn-floor-stack>
         ${this.showFloorIndicator && currentFloor
           ? html`<fn-floor-indicator .floor=${currentFloor}></fn-floor-indicator>`
@@ -724,6 +739,28 @@ export class FnNavigationController extends LitElement {
          <fn-zoom-slider> overlays, so they stay inside the floor area
          and never overlap the buttons bar. */
       position: relative;
+    }
+
+    /* ────────── v0.2.0 — fullscreen layout ──────────
+       Card root applies position:fixed/inset:0; here we reflow to a
+       flex column so buttons stay at the viewport edges and the
+       gesture-area takes the remaining height. The floor-stack inside
+       switches to aspect-fit (see fn-floor-stack :host(.fullscreen)). */
+    :host(.fullscreen) {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      height: 100%;
+      min-height: 0;
+    }
+    :host(.fullscreen) .gesture-area {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      /* The slider and the indicator are absolutely positioned against
+         this box; flex layout doesn't break absolute positioning. */
     }
   `;
 }

@@ -6,6 +6,8 @@ import { cardVariables } from './styles/card-styles.js';
 import { resolveTheme, type ThemeMode } from './utils/theme-resolver.js';
 import type {
   CardConfig,
+  FullscreenButtonPosition,
+  FullscreenButtonVisibility,
   Overlay,
   OverlayElement,
   OverlaySizeUnit,
@@ -84,6 +86,38 @@ export class FloorNavigatorCard extends LitElement {
    * specs/features/overlay-readability.md §"Reactive recomputation".
    */
   @state() private _viewBoxToScreenRatio = 1;
+  /**
+   * v0.2.0 — Mobile fullscreen mode (specs/features/mobile-fullscreen-mode.md).
+   * Toggled by the expand button. Drives:
+   * - the `fn-fullscreen` class on the host (CSS position: fixed; inset: 0;
+   *   z-index: 9999) and the layout reflow inside the controller,
+   * - the body scroll lock,
+   * - the history-state push (browser-back exits fullscreen),
+   * - the Escape key listener (desktop exit).
+   */
+  @state() private _isFullscreen = false;
+
+  /**
+   * Saved value of `document.body.style.overflow` before fullscreen entry,
+   * restored on exit. Per-instance so multiple cards don't trample each
+   * other (last-out wins on overlapping fullscreens, see spec edge case).
+   */
+  private _previousBodyOverflow = '';
+  /** True if the current entry pushed a history state we still own. */
+  private _ownsHistoryState = false;
+  private _onPopState = (e: PopStateEvent): void => {
+    void e;
+    // Browser back / forward while we own the state → exit fullscreen.
+    if (this._isFullscreen) {
+      this._exitFullscreen({ fromPopState: true });
+    }
+  };
+  private _onKeyDownEscape = (e: KeyboardEvent): void => {
+    if (e.key === 'Escape' && this._isFullscreen) {
+      e.preventDefault();
+      this._exitFullscreen();
+    }
+  };
 
   /** Browser-level dark-mode preference watcher, populated in connectedCallback. */
   private _matchMedia?: MediaQueryList;
@@ -153,6 +187,80 @@ export class FloorNavigatorCard extends LitElement {
     } else if (typeof window !== 'undefined') {
       window.removeEventListener('resize', this._windowResizeListener);
     }
+    // v0.2.0 — clean up fullscreen side effects if torn down mid-flight
+    // (e.g., the user navigates away from the dashboard while fullscreen).
+    if (this._isFullscreen) {
+      this._exitFullscreen({ skipHistoryBack: true });
+    }
+  }
+
+  // ────────────────────── fullscreen ──────────────────────
+  // v0.2.0 — see specs/features/mobile-fullscreen-mode.md.
+
+  private _toggleFullscreen = (): void => {
+    if (this._isFullscreen) {
+      this._exitFullscreen();
+    } else {
+      this._enterFullscreen();
+    }
+  };
+
+  private _enterFullscreen(): void {
+    if (this._isFullscreen) return;
+    this._isFullscreen = true;
+    this.classList.add('fn-fullscreen');
+    // Body scroll lock — saved + restored on exit.
+    if (typeof document !== 'undefined' && document.body) {
+      this._previousBodyOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+    }
+    // History state push so Android/iOS back-gesture exits fullscreen
+    // rather than leaving the dashboard. Pattern shared with HA's
+    // more-info dialog and Mushroom popups.
+    if (typeof history !== 'undefined') {
+      try {
+        history.pushState({ fnFullscreen: true }, '');
+        this._ownsHistoryState = true;
+      } catch {
+        this._ownsHistoryState = false;
+      }
+    }
+    if (typeof window !== 'undefined') {
+      window.addEventListener('popstate', this._onPopState);
+    }
+    if (typeof document !== 'undefined') {
+      document.addEventListener('keydown', this._onKeyDownEscape);
+    }
+  }
+
+  private _exitFullscreen(opts: { fromPopState?: boolean; skipHistoryBack?: boolean } = {}): void {
+    if (!this._isFullscreen) return;
+    this._isFullscreen = false;
+    this.classList.remove('fn-fullscreen');
+    if (typeof document !== 'undefined' && document.body) {
+      document.body.style.overflow = this._previousBodyOverflow;
+    }
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('popstate', this._onPopState);
+    }
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('keydown', this._onKeyDownEscape);
+    }
+    // Pop our history entry if we still own it AND the exit did not come
+    // from the popstate event itself (which already consumed the state).
+    if (
+      this._ownsHistoryState &&
+      !opts.fromPopState &&
+      !opts.skipHistoryBack &&
+      typeof history !== 'undefined'
+    ) {
+      try {
+        history.back();
+      } catch {
+        /* ignore */
+      }
+    }
+    this._ownsHistoryState = false;
   }
 
   private _measureAndUpdateRatio(): void {
@@ -329,6 +437,25 @@ export class FloorNavigatorCard extends LitElement {
         `[floor-navigator-card] settings.zoom_slider "${String(slider)}" is not "right" | "left" | "none"; falling back to "right".`,
       );
     }
+    // v0.2.0 — fullscreen mode settings.
+    const fsButton = config.settings?.fullscreen_button;
+    if (
+      fsButton !== undefined &&
+      fsButton !== 'auto' &&
+      fsButton !== 'always' &&
+      fsButton !== 'never'
+    ) {
+      console.warn(
+        `[floor-navigator-card] settings.fullscreen_button "${String(fsButton)}" is not "auto" | "always" | "never"; falling back to "auto".`,
+      );
+    }
+    const fsPos = config.settings?.fullscreen_button_position;
+    const fsValid = ['top-right', 'top-left', 'bottom-right', 'bottom-left'];
+    if (fsPos !== undefined && !fsValid.includes(fsPos)) {
+      console.warn(
+        `[floor-navigator-card] settings.fullscreen_button_position "${String(fsPos)}" is not one of ${fsValid.join(', ')}; falling back to "top-right".`,
+      );
+    }
 
     this._config = config;
     this._visibleOverlayIds = new Set(
@@ -393,6 +520,17 @@ export class FloorNavigatorCard extends LitElement {
       settings.zoom_slider === 'left' || settings.zoom_slider === 'none'
         ? settings.zoom_slider
         : 'right';
+    const fullscreenVisibility: FullscreenButtonVisibility =
+      settings.fullscreen_button === 'never' || settings.fullscreen_button === 'always'
+        ? settings.fullscreen_button
+        : 'auto';
+    const fullscreenPosition: FullscreenButtonPosition =
+      settings.fullscreen_button_position === 'top-left' ||
+      settings.fullscreen_button_position === 'bottom-right' ||
+      settings.fullscreen_button_position === 'bottom-left'
+        ? settings.fullscreen_button_position
+        : 'top-right';
+    const showFullscreenButton = fullscreenVisibility !== 'never';
     return html`
       <ha-card>
         <fn-navigation-controller
@@ -422,8 +560,22 @@ export class FloorNavigatorCard extends LitElement {
           .hass=${this.hass}
           .currentTheme=${this._currentTheme}
           .darkModeSetting=${settings.dark_mode ?? 'auto'}
+          .fullscreen=${this._isFullscreen}
           @overlay-toggle=${this._onOverlayToggle}
         ></fn-navigation-controller>
+        ${showFullscreenButton
+          ? html`<button
+              type="button"
+              class="fn-fullscreen-button pos-${fullscreenPosition}"
+              aria-label=${this._isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+              title=${this._isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+              @click=${this._toggleFullscreen}
+            >
+              <ha-icon
+                icon=${this._isFullscreen ? 'mdi:fullscreen-exit' : 'mdi:fullscreen'}
+              ></ha-icon>
+            </button>`
+          : ''}
       </ha-card>
     `;
   }
@@ -436,12 +588,81 @@ export class FloorNavigatorCard extends LitElement {
       }
       ha-card {
         overflow: hidden;
+        position: relative; /* anchor for the fullscreen button overlay */
       }
       .placeholder {
         padding: 12px;
         color: var(--secondary-text-color, #888);
         font-family: monospace;
         font-size: 12px;
+      }
+
+      /* ────────── v0.2.0 — fullscreen button (always rendered when not "never") ────────── */
+      .fn-fullscreen-button {
+        position: absolute;
+        z-index: 10;
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        border: 0;
+        border-radius: 50%;
+        background: var(--fn-overlay-button-bg, rgba(0, 0, 0, 0.5));
+        color: white;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow:
+          0 0 0 1px rgba(255, 255, 255, 0.4),
+          0 2px 6px rgba(0, 0, 0, 0.4);
+        transition:
+          background 200ms ease,
+          transform 100ms ease;
+      }
+      .fn-fullscreen-button:active {
+        transform: scale(0.92);
+      }
+      .fn-fullscreen-button.pos-top-right {
+        top: 12px;
+        right: 12px;
+      }
+      .fn-fullscreen-button.pos-top-left {
+        top: 12px;
+        left: 12px;
+      }
+      .fn-fullscreen-button.pos-bottom-right {
+        bottom: 12px;
+        right: 12px;
+      }
+      .fn-fullscreen-button.pos-bottom-left {
+        bottom: 12px;
+        left: 12px;
+      }
+      .fn-fullscreen-button ha-icon {
+        --mdc-icon-size: 22px;
+        width: 22px;
+        height: 22px;
+        display: block;
+      }
+
+      /* ────────── v0.2.0 — fullscreen mode CSS ────────── */
+      :host(.fn-fullscreen) {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background: var(--card-background-color, #1e1e1e);
+        display: flex;
+        flex-direction: column;
+      }
+      :host(.fn-fullscreen) ha-card {
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        flex: 1;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
       }
     `,
   ];

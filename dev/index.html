@@ -113,7 +113,7 @@
     <div class="container">
       <header>
         <h1>Floor Navigator — Dev Sandbox</h1>
-        <p>v0.2.0 — overlay-readability + pan-zoom + dark-mode backgrounds.</p>
+        <p>v0.2.0 — overlay-readability + pan-zoom + fullscreen + dark-mode backgrounds.</p>
       </header>
 
       <div class="controls">
@@ -210,6 +210,22 @@
           </select>
         </label>
         <label>
+          fullscreen_button
+          <select id="fullscreen-button-select">
+            <option value="auto" selected>auto (default)</option>
+            <option value="never">never</option>
+          </select>
+        </label>
+        <label>
+          fullscreen_button_position
+          <select id="fullscreen-button-position-select">
+            <option value="top-right" selected>top-right (default)</option>
+            <option value="top-left">top-left</option>
+            <option value="bottom-right">bottom-right</option>
+            <option value="bottom-left">bottom-left</option>
+          </select>
+        </label>
+        <label>
           Toggle entity
           <button id="toggle-salon" type="button">light.salon</button>
         </label>
@@ -222,6 +238,8 @@
         <kbd>Ctrl</kbd>+scroll (or <kbd>Cmd</kbd>+scroll on macOS) → zoom around cursor.
         Double-click → toggle zoom. Drag the right slider thumb. At
         zoom &gt; 1, single-finger drag pans (instead of swipes).<br />
+        Fullscreen button (top-right corner): tap to escape the embedded
+        view; <kbd>Esc</kbd> or browser-back to exit.<br />
         <strong>Dark mode v0.1.1</strong>:
         L0 and L1 have a dark variant (extended <code>backgrounds</code>
         form), L2 stays in the short form → one console warning when in
@@ -256,6 +274,8 @@
       const zoomMaxInput = document.getElementById('zoom-max');
       const zoomDoubleTapInput = document.getElementById('zoom-double-tap');
       const zoomSliderSelect = document.getElementById('zoom-slider-select');
+      const fullscreenButtonSelect = document.getElementById('fullscreen-button-select');
+      const fullscreenButtonPositionSelect = document.getElementById('fullscreen-button-position-select');
       const toggleSalonBtn = document.getElementById('toggle-salon');
 
       function applyConfig() {
@@ -278,6 +298,8 @@
             zoom_max: Number(zoomMaxInput.value),
             zoom_double_tap_scale: Number(zoomDoubleTapInput.value),
             zoom_slider: zoomSliderSelect.value,
+            fullscreen_button: fullscreenButtonSelect.value,
+            fullscreen_button_position: fullscreenButtonPositionSelect.value,
           },
           floors: [
             // L0 — extended form with a dark variant
@@ -407,6 +429,8 @@
         zoomMaxInput,
         zoomDoubleTapInput,
         zoomSliderSelect,
+        fullscreenButtonSelect,
+        fullscreenButtonPositionSelect,
       ].forEach((el) => {
         // 'change' for selects/checkbox, 'input' for number inputs (live).
         const evt = el.tagName === 'INPUT' && el.type === 'number' ? 'input' : 'change';

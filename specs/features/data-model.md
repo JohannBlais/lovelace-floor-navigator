@@ -2,7 +2,7 @@
 status: implemented
 owner: Johann Blais
 last_updated: 2026-05-06
-related: [color-scheme.md, overlays-toggle.md, dark-mode.md, overlay-readability.md, pan-zoom-interactions.md, ../architecture/component-tree.md]
+related: [color-scheme.md, overlays-toggle.md, dark-mode.md, overlay-readability.md, pan-zoom-interactions.md, mobile-fullscreen-mode.md, ../architecture/component-tree.md]
 ---
 
 # Data Model
@@ -95,6 +95,9 @@ settings:
   zoom_step: 0.1                   # Ctrl+wheel notch increment   (v0.2.0+)
   zoom_double_tap_scale: 2         # target scale on double-tap   (v0.2.0+)
   zoom_slider: right               # right | left | none          (v0.2.0+)
+  fullscreen_button: auto          # auto | always | never        (v0.2.0+, see mobile-fullscreen-mode.md)
+  fullscreen_button_position: top-right
+                                   # top-right | top-left | bottom-right | bottom-left  (v0.2.0+)
 
 # Floor list (ORDER = TOP to BOTTOM in the house)
 # Scrolling down moves through this list: L0 → L1 → L2
@@ -174,6 +177,8 @@ overlays:
 | `zoom_step` | number | `0.1` | Scale increment per Ctrl+wheel notch (v0.2.0+) |
 | `zoom_double_tap_scale` | number | `2` | Target scale on double-tap toggle (v0.2.0+) |
 | `zoom_slider` | enum | `right` | `right`, `left`, `none` — vertical slider position (v0.2.0+) |
+| `fullscreen_button` | enum | `auto` | `auto`, `always`, `never` — `auto`/`always` aliased (v0.2.0+, see [`mobile-fullscreen-mode.md`](mobile-fullscreen-mode.md)) |
+| `fullscreen_button_position` | enum | `top-right` | `top-right`, `top-left`, `bottom-right`, `bottom-left` (v0.2.0+) |
 
 ### Floor
 

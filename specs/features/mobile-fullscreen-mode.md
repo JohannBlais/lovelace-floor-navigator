@@ -1,5 +1,5 @@
 ---
-status: draft
+status: implemented
 owner: Johann Blais
 last_updated: 2026-05-06
 related: [overlays-toggle.md, data-model.md, pan-zoom-interactions.md, overlay-readability.md, ../architecture/component-tree.md]
@@ -294,14 +294,23 @@ is synchronous in practice, listener attached in the same tick.
 
 - Should the expand button be hidden when the card is at full
   viewport size already (e.g. user dropped the card in a 12-column
-  Lovelace row, occupying the whole width)? Adds detection
-  complexity. Default: button always visible, the user can disable
-  via `fullscreen_button: never` if they want a clean look. Revisit
-  if user feedback warrants.
-- Animation on entry / exit? Currently spec'd as an instant snap.
-  A 150ms scale animation could be nice but adds complexity around
-  layout reflow during the fixed-positioning switch. Defer to
-  v0.2.x if Johann wants polish.
+  Lovelace row, occupying the whole width)? **Status: deferred at
+  implementation (2026-05-06)** — kept always visible by default;
+  users can disable via `fullscreen_button: never` for a clean look.
+  Detection complexity not justified by current use cases.
+- Animation on entry / exit? **Status: deferred at implementation
+  (2026-05-06)** — instant snap shipped, as spec'd. Animation can
+  be added in v0.2.x if visual feedback turns out to be worth the
+  layout-reflow complexity.
+- Aspect-fit layout for the floor stack inside fullscreen.
+  **Status: confirmed at implementation (2026-05-06)** — without
+  it, in landscape mobile the plan still overflows because
+  `width:100%; aspect-ratio` makes `.stack` taller than the
+  viewport. The fullscreen mode applies `:host(.fullscreen)` CSS
+  on `<fn-floor-stack>` that switches to height-driven sizing
+  (`height:100%`, `width:auto`, aspect preserved via inline
+  `aspect-ratio` attribute), giving an "object-fit: contain"
+  result inside the flex column.
 
 ## Decisions
 
