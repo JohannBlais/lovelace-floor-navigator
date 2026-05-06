@@ -131,6 +131,14 @@ export class FnFloorStack extends LitElement {
     :host {
       display: block;
       width: 100%;
+      /* v0.2.0 — clip the CSS-transformed .stack to the host's box.
+         Without this, scale > 1 makes .stack visually overflow into
+         sibling elements (overlay-buttons bar, surrounding card chrome).
+         The .stack's own overflow: hidden clips its descendants but is
+         itself transformed, so the clip area scales along with the
+         content — useless. The clip has to live on a non-transformed
+         ancestor, which is :host here. */
+      overflow: hidden;
     }
     .stack {
       position: relative;

@@ -123,23 +123,48 @@ Configured via:
 
 Scale clamped to `[zoom_min, zoom_max]`.
 
-Pan clamped so that the **scaled plan never leaves more than 50%
-of its area outside the viewport**. Algorithm: at any scale, compute
-the visible plan bounds in screen coordinates, ensure 50% of the
-plan area remains inside the card viewport. Equivalent constraint
-in viewBox units depends on scale:
+Pan clamped with a two-branch rule depending on scale (per
+implementation in `src/utils/transform.ts`, post-2026-05-06 fix):
 
-```
-visibleViewBoxWidth = viewBoxWidth / scale
-maxPanX = viewBoxWidth - visibleViewBoxWidth / 2
-minPanX = -visibleViewBoxWidth / 2
-```
+- **scale > 1** — the visible portion of the plan must fill **≥ 50%
+  of the viewport area**. Equivalent phrasing: "the scaled plan never
+  leaves more than 50% of the viewport empty". This formulation
+  degrades gracefully at high zoom: at `scale: 4` the user sees at
+  most ~25% of the plan at a time but the viewport is always
+  half-filled by plan content.
 
-(symmetric for Y)
+  In viewBox-translation units (`tx = transform.x`):
+  ```
+  tx ∈ [W·(0.5 − scale), W·0.5]
+  ```
+  Equivalently in `panX = "viewBox X-coord at viewport's left" =
+  −tx/scale`:
+  ```
+  visibleViewBoxWidth = viewBoxWidth / scale
+  maxPanX = viewBoxWidth − visibleViewBoxWidth/2
+  minPanX = −visibleViewBoxWidth/2
+  ```
+  (the two formulas are mathematically identical; the viewBox-tx
+  form is what `clampPan` uses).
 
-When `scale === 1`, pan is forced to `{ x: 0, y: 0 }` (no point
-panning a plan that already fits — single-finger drag falls through
-to floor swipe).
+- **scale < 1** (`zoom_min < 1` configurations) — the plan is
+  smaller than the viewport. Keep ≥ 50% of the plan inside the
+  viewport. Range:
+  ```
+  tx ∈ [−W·scale/2, W·(1 − scale/2)]
+  ```
+
+- **scale === 1** — pan forced to `{ x: 0, y: 0 }` (no point
+  panning a plan that already fits, and single-finger drag falls
+  through to floor swipe at this scale).
+
+(symmetric for Y in both branches).
+
+Note: the v0.2.0 spec draft phrased the rule as "50% of the plan
+outside" / "50% of plan stays in view", which collapses at
+`scale ≥ 2` (the plan can geometrically only show ≤ 50% of itself
+at a time). The "50% viewport filled" phrasing above is what was
+actually intended and what ships.
 
 ### Input source: pinch (mobile, 2 fingers)
 
@@ -488,7 +513,10 @@ back in the embedded card at `scale: 2`. Acceptable.
 - **Single-finger drag dispatch by current scale**: at `scale: 1`,
   drag = swipe (existing UX); at `scale > 1`, drag = pan. The user
   can always pan once zoomed. Predictable.
-- **Pan clamping at "50% of plan stays in view"**: prevents
-  infinite drift while allowing the user to focus on edges. The
-  exact threshold is calibrated empirically; adjustable without
+- **Pan clamping at "50% viewport filled by plan" (scale > 1)**:
+  prevents infinite drift while letting the user focus on edges.
+  Equivalent to "≤ 50% of viewport empty". Replaces the v0.2.0
+  draft wording "50% of plan in view", which is geometrically
+  unsatisfiable at scale ≥ 2. For scale < 1, the rule flips to
+  "≥ 50% of plan inside viewport". Thresholds adjustable without
   spec change.

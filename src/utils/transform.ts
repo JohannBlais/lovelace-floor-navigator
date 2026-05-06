@@ -34,16 +34,36 @@ export function clampScale(scale: number, zoomMin: number, zoomMax: number): num
 }
 
 /**
- * Clamp pan so the scaled plan does not drift into the void.
+ * Clamp pan so the scaled plan does not drift into the void. The clamp
+ * works directly on `transform.{x,y}` (CSS translate in viewBox units).
  *
- * Two-branch behaviour, see open-question (2026-05-06):
- * - scale ≥ 1: the plan is at least the size of the viewport. Clamp so
- *   that AT LEAST 50% of the plan area stays inside the viewport — the
- *   user can focus on edges but cannot scroll the plan off-screen.
- * - scale < 1: the plan is smaller than the viewport. Clamp so the plan
- *   stays at least 50% inside the viewport (its centre cannot leave a
- *   centred sub-region equal to viewport minus plan/2). Same intent:
- *   prevent the plan from disappearing into the empty space.
+ * Two-branch behaviour:
+ *
+ * - **scale > 1** (plan larger than viewport): the visible portion of
+ *   the plan must fill ≥ 50% of the viewport area. Equivalent to "the
+ *   scaled plan never leaves more than 50% of the viewport empty". This
+ *   formulation degrades gracefully at high zoom (at scale 4 the plan
+ *   shows at most 25% of itself at a time, but the viewport is always
+ *   50%-filled). Range: `tx ∈ [W·(0.5 − s), W·0.5]` per axis.
+ *
+ * - **scale < 1** (plan smaller than viewport): keep ≥ 50% of the plan
+ *   inside the viewport. At scale 1 the plan fits exactly; below 1 the
+ *   plan can drift but its centre stays in a centred sub-region.
+ *   Range: `tx ∈ [−W·s/2, W·(1 − s/2)]` per axis.
+ *
+ * - **scale === 1**: pan forced to identity (per spec — no point
+ *   panning a plan that already fits, single-finger drag is reserved
+ *   for floor swipe at this scale).
+ *
+ * IMPORTANT: spec lines 130–138 of pan-zoom-interactions.md express the
+ * scale > 1 formula in terms of `panX = "viewBox X-coord at viewport's
+ * left"`, which is `−tx/scale`. The version here is the equivalent
+ * direct formula on `tx`, mathematically identical to the spec's intent
+ * ("50% viewport filled"). Updated to match the spec after the
+ * 2026-05-06 bug ("vue se décale vers le haut-gauche au zoom slider"):
+ * the previous code applied the spec's panX-formula to tx directly,
+ * which is too restrictive (tx and panX have a `−s` factor between
+ * them).
  *
  * Returned object is a new instance — caller can compare by reference
  * to detect a change.
@@ -57,35 +77,28 @@ export function clampPan(
   if (scale === 1) return { scale: 1, x: 0, y: 0 };
   if (viewBoxWidth <= 0 || viewBoxHeight <= 0) return transform;
 
-  const visibleW = viewBoxWidth / scale;
-  const visibleH = viewBoxHeight / scale;
-
   let minX: number;
   let maxX: number;
   let minY: number;
   let maxY: number;
 
   if (scale > 1) {
-    // Scaled plan ≥ viewport. Keep ≥ 50% of the plan inside the viewport.
-    // The pan range allows the visible window to scan over the plan.
-    minX = -visibleW / 2;
-    maxX = viewBoxWidth - visibleW / 2;
-    minY = -visibleH / 2;
-    maxY = viewBoxHeight - visibleH / 2;
+    // ≥ 50% viewport filled by scaled plan. tx ∈ [W·(0.5−s), W·0.5].
+    // Centred zoom (tx = −W·(s−1)/2) sits at the midpoint of this
+    // range, so the slider / Ctrl-wheel / pinch all converge to a
+    // visually-symmetric pan range around centred.
+    minX = viewBoxWidth * (0.5 - scale);
+    maxX = viewBoxWidth * 0.5;
+    minY = viewBoxHeight * (0.5 - scale);
+    maxY = viewBoxHeight * 0.5;
   } else {
-    // scale < 1: plan smaller than viewport. The plan's centre can move
-    // around inside a sub-region equal to viewport minus plan/2. In
-    // viewBox units (post-scale), the plan width is viewBoxWidth (the
-    // full canvas), but the visible viewport is `visibleW = viewBoxWidth / scale`,
-    // which is LARGER than the plan. The pan range is the difference,
-    // halved on each side, then we tighten by 50% of the plan to
-    // satisfy "≥ 50% inside the viewport".
-    const slackX = (visibleW - viewBoxWidth) / 2;
-    const slackY = (visibleH - viewBoxHeight) / 2;
-    minX = -slackX - viewBoxWidth / 2;
-    maxX = slackX + viewBoxWidth / 2;
-    minY = -slackY - viewBoxHeight / 2;
-    maxY = slackY + viewBoxHeight / 2;
+    // ≥ 50% of plan visible inside viewport. The plan's smaller than
+    // the viewport at scale<1; the pan range allows the plan to drift
+    // but stay at least half-inside.
+    minX = -(viewBoxWidth * scale) / 2;
+    maxX = viewBoxWidth * (1 - scale / 2);
+    minY = -(viewBoxHeight * scale) / 2;
+    maxY = viewBoxHeight * (1 - scale / 2);
   }
 
   const x = Math.min(maxX, Math.max(minX, transform.x));
