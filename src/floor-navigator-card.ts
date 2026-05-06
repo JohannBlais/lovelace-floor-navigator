@@ -29,7 +29,7 @@ const DEFAULT_DOUBLE_TAP_SCALE = 2;
 // ...) on each notable commit so HA mobile / companion-app users have
 // a visible marker to verify their cache was actually purged. Final
 // `0.2.0` lands on the release commit (specs/README.md "Shipped").
-const CARD_VERSION = '0.2.0-rc2';
+const CARD_VERSION = '0.2.0-rc3';
 
 declare global {
   interface Window {

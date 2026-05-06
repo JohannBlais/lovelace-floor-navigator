@@ -1,5 +1,5 @@
 import { LitElement, css, html, type PropertyValues } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { customElement, property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { styleMap } from 'lit/directives/style-map.js';
 
@@ -71,10 +71,89 @@ export class FnFloorStack extends LitElement {
    */
   @property({ type: Boolean, attribute: false }) fullscreen = false;
 
+  /**
+   * v0.2.0 — Computed `.stack` dimensions in fullscreen, derived in JS
+   * via ResizeObserver on the host. Pure-CSS aspect-fit
+   * (`width: auto + height: auto + max-* + aspect-ratio`) collapses
+   * `.stack` to 0×0 because there is no intrinsic content size to
+   * anchor against (children are `position: absolute; inset: 0`). Other
+   * CSS forms either break aspect (definite W and H) or create
+   * circular dependencies in flex/grid layout that diverge across
+   * Chromium WebView (HA companion app) vs Chrome desktop. JS sizing
+   * is the only robust path. In normal mode these stay `undefined` and
+   * the default `width: 100% + aspect-ratio inline` CSS applies.
+   */
+  @state() private _fitWidthPx?: number;
+  @state() private _fitHeightPx?: number;
+
+  private _resizeObserver?: ResizeObserver;
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    if (typeof ResizeObserver !== 'undefined') {
+      this._resizeObserver = new ResizeObserver(() => this._recomputeFit());
+      this._resizeObserver.observe(this);
+    }
+  }
+
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    if (this._resizeObserver) {
+      this._resizeObserver.disconnect();
+      this._resizeObserver = undefined;
+    }
+  }
+
   protected override updated(changed: PropertyValues<this>): void {
     if (changed.has('fullscreen')) {
       this.classList.toggle('fullscreen', this.fullscreen);
+      this._recomputeFit();
     }
+    if (changed.has('viewbox')) {
+      this._recomputeFit();
+    }
+  }
+
+  /** Aspect-ratio as a number derived from the viewBox string. */
+  private get _aspectNumber(): number {
+    const parts = this.viewbox.trim().split(/\s+/).map(Number);
+    if (parts.length !== 4 || parts.some((n) => Number.isNaN(n)) || parts[3] === 0) {
+      return 16 / 9;
+    }
+    return parts[2] / parts[3];
+  }
+
+  /** Recompute `.stack` dimensions in fullscreen so the box is exactly
+   * aspect-fit (no internal letterbox padding). Without this, transform
+   * scaling + clamping math would diverge from the visual: the SVG
+   * inside relies on `preserveAspectRatio="meet"` and would auto-fit
+   * within a distorted .stack box, which throws the pan-clamp formula
+   * off-axis (see resolved open-question 2026-05-06).
+   *
+   * In normal mode, `_fitWidthPx`/`_fitHeightPx` are cleared so the
+   * default CSS (`width: 100% + aspect-ratio inline`) applies. */
+  private _recomputeFit(): void {
+    if (!this.fullscreen) {
+      if (this._fitWidthPx !== undefined || this._fitHeightPx !== undefined) {
+        this._fitWidthPx = undefined;
+        this._fitHeightPx = undefined;
+      }
+      return;
+    }
+    const rect = this.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
+    const aspect = this._aspectNumber;
+    if (!Number.isFinite(aspect) || aspect <= 0) return;
+    // Try width-driven first.
+    let w = rect.width;
+    let h = w / aspect;
+    if (h > rect.height) {
+      // Height-driven (host narrower-aspect than plan).
+      h = rect.height;
+      w = h * aspect;
+    }
+    if (w !== this._fitWidthPx) this._fitWidthPx = w;
+    if (h !== this._fitHeightPx) this._fitHeightPx = h;
   }
 
   private get _aspectRatio(): string {
@@ -99,14 +178,25 @@ export class FnFloorStack extends LitElement {
   protected override render() {
     const { x, y } = this._translatePx;
     const cssTransform = `translate(${x}px, ${y}px) scale(${this.transform.scale})`;
+    const stackStyle: Record<string, string> = {
+      '--fn-transition-duration': `${this.transitionDuration}ms`,
+      transform: cssTransform,
+    };
+    // Fullscreen path: JS computed an exact aspect-fit size; pin the
+    // .stack box to those dimensions and skip the inline aspect-ratio
+    // (both dims are definite, so aspect-ratio would be redundant).
+    // Normal path: rely on `width: 100% + aspect-ratio inline` from
+    // the .stack base CSS.
+    if (this.fullscreen && this._fitWidthPx && this._fitHeightPx) {
+      stackStyle.width = `${this._fitWidthPx}px`;
+      stackStyle.height = `${this._fitHeightPx}px`;
+    } else {
+      stackStyle['aspect-ratio'] = this._aspectRatio;
+    }
     return html`
       <div
         class=${classMap({ stack: true, 'gesture-live': this.gestureLive })}
-        style=${styleMap({
-          'aspect-ratio': this._aspectRatio,
-          '--fn-transition-duration': `${this.transitionDuration}ms`,
-          transform: cssTransform,
-        })}
+        style=${styleMap(stackStyle)}
       >
         ${this.floors.map((floor, i) => {
           const classes: Record<string, boolean> = {
@@ -174,35 +264,22 @@ export class FnFloorStack extends LitElement {
     }
 
     /* ────────── v0.2.0 — fullscreen aspect-fit ──────────
-       In fullscreen the parent (.gesture-area) gives this host a
-       definite size (1080x2290 on a portrait phone, etc.). The host
-       is a grid container whose only purpose is to centre .stack in
-       both axes; .stack itself uses the canonical object-fit:contain
-       pattern: width:auto, height:auto, max-width/max-height:100%,
-       and the inline aspect-ratio attribute. Browsers compute the
-       largest dimensions that respect all three constraints (both
-       max-*, plus the aspect ratio).
-
-       This replaces an earlier width:auto + height:100% form which
-       was ambiguous on Chromium WebViews (HA companion app): the
-       cross-axis sizing in flex-row created a circular dependency
-       between host width and .stack width via aspect-ratio, leaving
-       the actual rendered .stack height non-deterministic across
-       browsers. The bug surfaced as a too-narrow vertical pan range
-       in fullscreen portrait. See open-question 2026-05-06 for
-       resolution details. */
+       The host fills the parent (.gesture-area) and acts as a grid
+       container that centres .stack in both axes. The .stack
+       dimensions themselves are computed in JS (see _recomputeFit) so
+       the box is exactly aspect-fit with no internal letterbox
+       padding. Pure-CSS aspect-fit was attempted in rc1 / rc2 and
+       failed: width:auto + height:100% created flex circularity on
+       Chromium WebView (rc1, plan stuck in lower 60% of screen);
+       width:auto + height:auto + max-* collapsed .stack to 0×0
+       because there is no intrinsic content size to anchor against
+       (rc2, plan invisible). JS sizing via ResizeObserver is the
+       only robust path. See resolved open-question 2026-05-06. */
     :host(.fullscreen) {
       display: grid;
       place-items: center;
       width: 100%;
       height: 100%;
-    }
-    :host(.fullscreen) .stack {
-      width: auto;
-      height: auto;
-      max-width: 100%;
-      max-height: 100%;
-      /* aspect-ratio inherited from the inline style on .stack */
     }
 
     /* --- Crossfade transition --- */
