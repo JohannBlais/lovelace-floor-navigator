@@ -1,6 +1,15 @@
 # Full house example — 3 floors with multiple overlays demonstrating every
 # v0.1.0 feature: icon and text elements, all tap_action variants, override
 # of the overlay icon, custom transition + edge behaviour.
+#
+# v0.2.0 baseline applied: `overlay_size_unit: px` so icons and text stay
+# at constant screen size across screen widths and zoom levels. The
+# explicit `size` / `font_size` values from the v0.1.x version of this
+# example were dropped — the v0.2.0 defaults (32 px icons, 14 px text)
+# are well-calibrated. Pinch / Ctrl+wheel / double-tap zoom and the
+# corner fullscreen button are enabled with their defaults; see
+# `mobile-ux.yaml` for an example that customises those settings
+# explicitly.
 
 type: custom:floor-navigator-card
 viewbox: "0 0 1920 1080"
@@ -13,6 +22,10 @@ settings:
   edge_behavior: bounce
   show_floor_indicator: true
   overlay_buttons_position: bottom
+
+  # v0.2.0 — screen-space overlay sizing. Drop this line (or set to
+  # `viewbox`) to keep the v0.1.x viewBox-unit semantics.
+  overlay_size_unit: px
 
 # Floors are listed top-of-house → bottom (or whichever order makes sense
 # for your layout). Scrolling DOWN advances to the next item in this list.
@@ -85,18 +98,19 @@ overlays:
     icon: mdi:thermometer
     default_visible: false
     elements:
+      # v0.2.0 — `font_size` omitted: with `overlay_size_unit: px` the
+      # default is 14 screen pixels, well-tuned for legibility on both
+      # mobile and desktop without manual sizing per element.
       - floor: L0
         entity: sensor.salon_temperature
         position: { x: 620, y: 470 }
         type: text
         precision: 1
-        font_size: 32
       - floor: L1
         entity: sensor.chambre_alice_temperature
         position: { x: 850, y: 320 }
         type: text
         precision: 1
-        font_size: 32
 
   # Presence: binary sensors. Tap opens the more-info dialog (default
   # behaviour when `tap_action` is omitted).

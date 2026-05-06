@@ -84,28 +84,48 @@ v0.1.0 short `background`. See
 `implemented`) and ADR-005 in [`decisions.md`](decisions.md).
 Bundle 49.7 KiB.
 
-### v0.2.0 — Mobile UX overhaul (date TBD)
+### v0.2.0 — Shipped (2026-05-06)
 
-Three mutually-supportive features targeting mobile (and benefiting
-desktop), see ADR-006 in [`decisions.md`](decisions.md):
+Mobile UX overhaul: three mutually-supportive features targeting
+mobile (and benefiting desktop), per ADR-006 in
+[`decisions.md`](decisions.md):
 
-- **Mobile fullscreen mode** via explicit button — CSS-based
-  `position: fixed`, multi-exit-path (close button, Escape, browser
-  back), state preservation across enter/exit. See
-  [`features/mobile-fullscreen-mode.md`](features/mobile-fullscreen-mode.md).
-- **Pan-zoom interactions** — unified transform engine across pinch,
-  Ctrl+wheel, double-tap, vertical slider. Rewrite of
-  `<fn-navigation-controller>` from `touchstart/move/end` +
-  `touch-action: none` to PointerEvents. Reset on floor change. See
-  [`features/pan-zoom-interactions.md`](features/pan-zoom-interactions.md).
-- **Overlay readability** — screen-space sizing (`overlay_size_unit:
-  px`) with inverse-scale compensation, viewBox-relative defaults,
-  `min_icon_px` / `min_text_px` floors. Resolves the BACKLOG bug on
-  hard-coded sizes. Single ResizeObserver shared with pan-zoom. See
+- **Overlay readability** —
   [`features/overlay-readability.md`](features/overlay-readability.md).
+  Screen-space sizing (`overlay_size_unit: px`) with inverse
+  viewBox-to-screen ratio + zoom compensation; viewBox-relative
+  defaults that resolve the BACKLOG hard-coded-sizes bug;
+  `min_icon_px` / `min_text_px` clamps. Single ResizeObserver on the
+  card root, shared with pan-zoom.
+- **Pan-zoom interactions** —
+  [`features/pan-zoom-interactions.md`](features/pan-zoom-interactions.md).
+  Unified `Transform { scale, x, y }` state across three input
+  sources: pinch (mobile), Ctrl/Cmd+wheel (desktop), double-tap
+  toggle. `<fn-navigation-controller>` rewritten from
+  `touchstart/move/end` to PointerEvents with a gesture state
+  machine. `clampPan` two-branch (50% viewport filled at scale > 1,
+  50% plan inside at scale < 1). Reset to identity animated on
+  floor change. The "always-visible vertical slider" arbitrated in
+  ADR-006 was prototyped then removed at implementation review —
+  pinch / Ctrl+wheel / double-tap proved sufficient (see ADR-006
+  follow-up note).
+- **Mobile fullscreen mode** —
+  [`features/mobile-fullscreen-mode.md`](features/mobile-fullscreen-mode.md).
+  Explicit-button fullscreen via CSS `position: fixed`. Multiple exit
+  paths: close button + Escape + browser back (history `pushState`
+  + `popstate` listener). State preservation across enter/exit (zoom
+  Transform survives). Body scroll lock. Layout in fullscreen
+  reflows to a flex column with JS-driven aspect-fit on the floor
+  stack (after rc1 / rc2 CSS attempts diverged across Chromium
+  WebView vs Chrome desktop — see resolved open-questions).
 
-Recommended implementation order: overlay-readability →
-pan-zoom-interactions → mobile-fullscreen-mode (per ADR-006).
+Implementation order: overlay-readability → pan-zoom-interactions
+→ mobile-fullscreen-mode, per ADR-006.
+
+Bundle (final): **72.4 KiB raw / 20.6 KiB gzipped**. Under the
+ADR-007 78 KiB raw CI threshold; ~0.6 KiB over the ADR-003 secondary
+20 KiB gzipped target — to be reclaimed in v0.3.0 via
+`custom-card-helpers` vendoring (BACKLOG ⚡ candidate).
 
 Other v0.2.x candidates from the original roadmap (hover tooltip,
 `badge` type, overlay binding to HA entities, overlay state

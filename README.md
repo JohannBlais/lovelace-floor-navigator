@@ -25,6 +25,14 @@ on the plan at the coordinates you choose.
 - **Toggle button bar** to show/hide each overlay
 - **Floor indicator** pill showing the current floor's name
 - **CSS variables** for full theming (per-domain colors, halo, text shadow…)
+- **Pan-zoom** (v0.2.0+) — pinch on mobile, Ctrl/Cmd+wheel on desktop,
+  double-tap to toggle. At zoom > 1, single-finger drag pans.
+- **Fullscreen mode** (v0.2.0+) — corner button promotes the card to
+  the full viewport; Escape, browser back, or the same button to exit.
+  Zoom / floor / overlay state survives enter/exit.
+- **Screen-space overlay sizing** (v0.2.0+) — `overlay_size_unit: px`
+  keeps icons and text at constant pixel size across screen widths
+  and zoom levels.
 
 ---
 
@@ -95,6 +103,15 @@ That's the bare minimum : one floor, no overlays. The image must exist under
 | `show_floor_indicator` | boolean | `true` | — |
 | `overlay_buttons_position` | enum | `bottom` | `top`, `bottom`, `none` |
 | `dark_mode` | enum | `auto` | `auto`, `on`, `off` — see [Dark mode](#dark-mode) |
+| `overlay_size_unit` | enum | `viewbox` | `viewbox`, `px` (v0.2.0+) — see [Overlay readability](#overlay-readability) |
+| `min_icon_px` | number | `24` | Screen-pixel clamp for icons (v0.2.0+) |
+| `min_text_px` | number | `14` | Screen-pixel clamp for text (v0.2.0+) |
+| `zoom_min` | number | `1` | Minimum scale factor (v0.2.0+) — see [Pan-zoom](#pan-zoom) |
+| `zoom_max` | number | `4` | Maximum scale factor (v0.2.0+) |
+| `zoom_step` | number | `0.1` | Increment per Ctrl+wheel notch (v0.2.0+) |
+| `zoom_double_tap_scale` | number | `2` | Target scale on double-tap toggle (v0.2.0+) |
+| `fullscreen_button` | enum | `auto` | `auto`, `always`, `never` (v0.2.0+) — see [Fullscreen mode](#fullscreen-mode) |
+| `fullscreen_button_position` | enum | `top-right` | `top-right`, `top-left`, `bottom-right`, `bottom-left` (v0.2.0+) |
 
 ### Floor
 
@@ -157,6 +174,110 @@ DOM at all — no inert image to download or hold in memory.
 See [`docs/examples/dark-mode.yaml`](docs/examples/dark-mode.yaml) for a
 complete example.
 
+### Pan-zoom
+
+Available from v0.2.0. Three input sources converge to the same
+`Transform { scale, x, y }` state on the active floor:
+
+- **Pinch** (mobile) — two-finger pinch in / out for zoom; single-finger
+  drag pans when zoomed in (and stays a floor swipe at scale 1)
+- **Ctrl/Cmd + wheel** (desktop) — zoom around the cursor position;
+  plain wheel still navigates between floors
+- **Double-tap / double-click** — toggle between identity and
+  `zoom_double_tap_scale`; double-tap on overlay icons / text is
+  reserved for the element's own click handler
+
+The transform is applied as a CSS `translate() scale()` on the floor
+stack; the SVG `viewBox` stays the canonical coordinate system, so
+element positions and sizes remain authored in viewBox units. The
+transform is reset to identity (animated 200 ms ease-out) on every
+floor change.
+
+Pan range is clamped: at `scale > 1` the scaled plan must fill at
+least 50 % of the viewport (you can scan over edges but not push the
+plan into the void); at `scale < 1` (only when `zoom_min` is set
+below 1) at least 50 % of the plan must stay inside the viewport.
+
+See [`docs/examples/mobile-ux.yaml`](docs/examples/mobile-ux.yaml) for
+a complete example, and
+[`specs/features/pan-zoom-interactions.md`](specs/features/pan-zoom-interactions.md)
+for the deeper design.
+
+### Fullscreen mode
+
+Available from v0.2.0. A corner button (default top-right) promotes the
+card to the full viewport via CSS `position: fixed; inset: 0; z-index:
+9999`. Three exit paths:
+
+- The same button (icon flips to `mdi:fullscreen-exit`)
+- The Escape key (desktop)
+- The browser back gesture (a history `pushState` is registered on
+  enter, `popstate` triggers exit — Android back gesture works
+  out of the box without leaving the dashboard)
+
+State preservation is total: visible overlays, current floor, theme,
+and the pan-zoom transform survive both directions of the toggle.
+
+In fullscreen the layout reflows to a flex column — overlay buttons
+stick at the viewport edges (with a semi-transparent dark
+background) and the floor stack uses a JS-driven aspect-fit so it
+never overflows in landscape. The body scroll behind the card is
+locked while fullscreen is active and restored on exit.
+
+Set `fullscreen_button: never` to hide the button entirely. The four
+`*_position` values cover the four corners — pair `bottom-*` with
+`overlay_buttons_position: top` if you don't want a visual collision
+when the bar appears at the bottom.
+
+### Overlay readability
+
+Available from v0.2.0. Two improvements to how icons and text scale
+across screen sizes and zoom levels:
+
+**1. viewBox-relative defaults.** When `overlay_size_unit: viewbox`
+(the default, backward-compatible with v0.1.x), the default icon
+size is `viewBoxWidth / 40` and the default text font size is
+`viewBoxWidth / 80`. For a typical `0 0 1920 1080` viewBox these
+match the v0.1.x hard-coded `48` / `24` exactly — no behaviour
+change. For unusual viewBoxes (e.g. `0 0 200 100`) the defaults now
+produce sensible sizes instead of huge elements covering the plan
+(this fixes a v0.1.x bug, see ADR-006).
+
+**2. Screen-space sizing mode.** `overlay_size_unit: px`
+re-interprets `size` and `font_size` as **screen pixels**. The
+internal SVG units are inverse-compensated against the
+viewBox-to-screen ratio AND the pan-zoom scale, so an icon
+configured at `size: 32` renders at exactly 32 screen pixels
+regardless of the card width or current zoom level. The defaults in
+`px` mode are 32 px for icons and 14 px for text.
+
+Both modes respect a screen-pixel floor: `min_icon_px` and
+`min_text_px`. When the rendered size would otherwise fall below
+the floor (e.g. tiny card width, or `size: 8` in `px` mode), the
+floor wins.
+
+```yaml
+settings:
+  overlay_size_unit: px        # recommended for new v0.2.0+ configs
+  min_icon_px: 24
+  min_text_px: 14
+overlays:
+  - id: lights
+    elements:
+      - floor: L0
+        entity: light.salon
+        position: { x: 600, y: 450 }
+        type: icon
+        # size omitted → 32 screen pixels by default
+```
+
+**Migration note**: when switching from `viewbox` to `px`, existing
+`size` / `font_size` values change semantics (viewBox units → screen
+px). A `size: 48` in viewBox mode becomes `size: 48` in px mode that
+will render way bigger on a typical embedded card. The recommended
+approach is to drop explicit `size` / `font_size` on switch and let
+the new defaults take over.
+
 ### Overlay
 
 | Field | Type | Required | Default | Description |
@@ -182,7 +303,13 @@ complete example.
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `icon` | string (MDI) | overlay's `icon` → domain default | Glyph in the pastille |
-| `size` | number (viewBox units) | `48` | Pastille diameter |
+| `size` | number | mode-dependent (see below) | Pastille diameter. Unit follows `settings.overlay_size_unit` (v0.2.0+) |
+
+Default for `size` (v0.2.0+):
+- `overlay_size_unit: viewbox` (default) — `viewBoxWidth / 40` viewBox
+  units. For a `0 0 1920 1080` viewBox this is `48`, matching v0.1.x.
+- `overlay_size_unit: px` — `32` screen pixels (compensated against
+  viewBox-to-screen ratio and pan-zoom scale).
 
 The icon's color is derived from the entity's domain and state via CSS
 variables (see [Theming](#theming)).
@@ -193,7 +320,13 @@ variables (see [Theming](#theming)).
 |-------|------|---------|-------------|
 | `unit` | string | entity's `unit_of_measurement` | Suffix appended to the value |
 | `precision` | number | `1` | Decimal places (numeric values only) |
-| `font_size` | number (viewBox units) | `24` | — |
+| `font_size` | number | mode-dependent (see below) | Font size. Unit follows `settings.overlay_size_unit` (v0.2.0+) |
+
+Default for `font_size` (v0.2.0+):
+- `overlay_size_unit: viewbox` (default) — `viewBoxWidth / 80` viewBox
+  units. For a `0 0 1920 1080` viewBox this is `24`, matching v0.1.x.
+- `overlay_size_unit: px` — `14` screen pixels (compensated; same logic
+  as icon `size`).
 
 `unavailable` and `unknown` states render as `—`.
 
@@ -218,7 +351,7 @@ tap_action:
     brightness: 200
 ```
 
-Supported actions in v0.1.0 : `toggle`, `more-info`, `navigate`
+Supported actions: `toggle`, `more-info`, `navigate`
 (with `navigation_path`), `call-service` (with `service` + `service_data`),
 `url` (with `url_path`), `none`.
 
@@ -230,7 +363,13 @@ See [`docs/examples/`](docs/examples) for complete configurations :
 
 - **[minimal.yaml](docs/examples/minimal.yaml)** — single floor, no overlays
 - **[full-house.yaml](docs/examples/full-house.yaml)** — 3 floors with lights,
-  temperatures, presence, and infrastructure overlays
+  temperatures, presence, and infrastructure overlays (uses the v0.2.0
+  `overlay_size_unit: px` recommended baseline)
+- **[mobile-ux.yaml](docs/examples/mobile-ux.yaml)** — v0.2.0 mobile UX
+  overhaul: pan-zoom limits, fullscreen button, screen-space overlay
+  sizing
+- **[dark-mode.yaml](docs/examples/dark-mode.yaml)** — v0.1.1 `backgrounds:
+  { default, dark }` per floor + the `dark_mode` cascade
 - **[themed.yaml](docs/examples/themed.yaml)** — using `card-mod` to override
   CSS variables for custom colors
 

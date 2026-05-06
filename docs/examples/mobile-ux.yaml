@@ -1,0 +1,139 @@
+# Mobile UX overhaul example — v0.2.0.
+#
+# Demonstrates the three v0.2.0 features shipped together as the mobile
+# UX overhaul (per ADR-006 in specs/decisions.md):
+#
+#   1. Overlay readability     — overlay_size_unit, min_*_px clamps
+#   2. Pan-zoom interactions   — zoom_min/max/step/double_tap_scale
+#   3. Mobile fullscreen mode  — fullscreen_button*, body scroll lock,
+#                                state preservation
+#
+# The defaults are already well-tuned for most setups — this file
+# spells out every v0.2.0 setting with comments so you can see what the
+# knobs do and copy only what you need into your own config.
+
+type: custom:floor-navigator-card
+viewbox: "0 0 1920 1080"
+
+settings:
+  # ─── Existing v0.1.x settings (unchanged) ────────────────────────
+  transition: crossfade
+  transition_duration: 400
+  start_floor: L0
+  navigation_mode: both
+  edge_behavior: bounce
+  show_floor_indicator: true
+  overlay_buttons_position: bottom
+  dark_mode: auto
+
+  # ─── v0.2.0 — Overlay readability ───────────────────────────────
+  # `viewbox` keeps the v0.1.x semantics (size / font_size in viewBox
+  # units, defaults derived from viewBoxWidth). `px` switches to
+  # screen-pixel sizing with inverse compensation against the
+  # viewBox-to-screen ratio AND the current zoom scale, so icons and
+  # text stay the same screen size whether the card is 360 px wide on
+  # a phone or 1920 px wide on a desktop, and whether the user is
+  # zoomed in to scale 4 or sitting at identity. Recommended for new
+  # configs.
+  overlay_size_unit: px
+  # Floor for the rendered icon size in screen pixels — acts as a
+  # clamp when a small viewBox or low resolution would otherwise make
+  # the icon sub-legible. 24 px is the comfort threshold for a
+  # tappable target on touch devices.
+  min_icon_px: 24
+  # Same idea for text font-size. 14 px is the legibility floor for
+  # secondary information on a 1× DPR display.
+  min_text_px: 14
+
+  # ─── v0.2.0 — Pan-zoom interactions ─────────────────────────────
+  # Inputs: pinch (mobile, 2 fingers) + Ctrl/Cmd+wheel (desktop) +
+  # double-tap (toggle to zoom_double_tap_scale, or back to identity
+  # when already zoomed). At scale > 1, single-finger drag pans;
+  # at scale === 1, single-finger drag remains the floor swipe.
+  zoom_min: 1            # set to e.g. 0.5 to allow zooming OUT below 1
+  zoom_max: 4            # don't go above 8 unless your plan is huge
+  zoom_step: 0.1         # Ctrl+wheel notch increment (10 % per notch)
+  zoom_double_tap_scale: 2
+
+  # ─── v0.2.0 — Mobile fullscreen mode ────────────────────────────
+  # `auto` and `always` are aliases (button always visible). `never`
+  # hides the button entirely if you want a clean look and rely only
+  # on the embedded view.
+  fullscreen_button: auto
+  # Four corners. Pair `bottom-*` with `overlay_buttons_position:
+  # top` (or vice-versa) if you want to avoid the visual collision
+  # when the bar sits at the same edge as the button.
+  fullscreen_button_position: top-right
+
+# Floors are listed top-of-house → bottom. Scrolling DOWN advances to
+# the next item in the list.
+floors:
+  - id: L0
+    name: Ground floor
+    background: /local/floor-plans/L0.png
+  - id: L1
+    name: First floor
+    background: /local/floor-plans/L1.png
+  - id: L2
+    name: Office and attic
+    background: /local/floor-plans/L2.png
+
+overlays:
+  # Lights — `size` omitted everywhere; the v0.2.0 default in `px`
+  # mode is 32 screen pixels, well-tuned for tappable icons on both
+  # mobile and desktop.
+  - id: lights
+    name: Lights
+    icon: mdi:lightbulb
+    default_visible: true
+    elements:
+      - floor: L0
+        entity: light.salon
+        position: { x: 600, y: 450 }
+        type: icon
+        tap_action: toggle
+      - floor: L0
+        entity: light.cuisine
+        position: { x: 1200, y: 380 }
+        type: icon
+        tap_action: toggle
+      - floor: L1
+        entity: light.chambre_alice
+        position: { x: 800, y: 300 }
+        type: icon
+        tap_action: toggle
+
+  # Temperatures — text elements at the v0.2.0 default font size
+  # (14 screen pixels), so the values stay legible regardless of how
+  # zoomed in / out the user is.
+  - id: temperature
+    name: Temperatures
+    icon: mdi:thermometer
+    default_visible: false
+    elements:
+      - floor: L0
+        entity: sensor.salon_temperature
+        position: { x: 700, y: 540 }
+        type: text
+        precision: 1
+      - floor: L1
+        entity: sensor.chambre_alice_temperature
+        position: { x: 850, y: 380 }
+        type: text
+        precision: 1
+
+  # Power outlets — overlay-level icon `mdi:power-socket` is
+  # inherited by the elements; the explicit `size` shown here is in
+  # SCREEN pixels (because `overlay_size_unit: px`). Use this if you
+  # need a specific element to be larger or smaller than the default.
+  - id: outlets
+    name: Power outlets
+    icon: mdi:power-socket
+    default_visible: false
+    elements:
+      - floor: L0
+        entity: switch.prise_salon
+        position: { x: 700, y: 600 }
+        type: icon
+        size: 28              # screen px, slightly smaller than default 32
+        tap_action: toggle

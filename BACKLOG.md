@@ -29,6 +29,34 @@ record.
 
 ---
 
+## Released in v0.2.0 (2026-05-06)
+
+Mobile UX overhaul, per ADR-006 in
+[`specs/decisions.md`](specs/decisions.md). Three specs shipped:
+
+- ✅ **Overlay readability.** Screen-space sizing
+  (`overlay_size_unit: px`) with inverse viewBox-to-screen + zoom
+  compensation; viewBox-relative defaults; `min_icon_px` /
+  `min_text_px` clamps. See
+  [`specs/features/overlay-readability.md`](specs/features/overlay-readability.md).
+- ✅ **Pan-zoom interactions.** Unified `Transform` engine across
+  pinch / Ctrl+wheel / double-tap. `<fn-navigation-controller>`
+  rewritten to PointerEvents with a gesture state machine. New
+  settings: `zoom_min`, `zoom_max`, `zoom_step`,
+  `zoom_double_tap_scale`. See
+  [`specs/features/pan-zoom-interactions.md`](specs/features/pan-zoom-interactions.md).
+- ✅ **Mobile fullscreen mode.** Explicit-button fullscreen with
+  `position: fixed; inset: 0`, multi-exit (button + Escape +
+  browser back), state preservation, JS-driven aspect-fit. New
+  settings: `fullscreen_button`, `fullscreen_button_position`. See
+  [`specs/features/mobile-fullscreen-mode.md`](specs/features/mobile-fullscreen-mode.md).
+
+ADR-007 (`specs/decisions.md`) raises the bundle CI threshold from
+50 KiB to 78 KiB to absorb the v0.2.0 surface; final bundle measured
+72.4 KiB raw / 20.6 KiB gzipped.
+
+---
+
 ## Released in v0.1.1
 
 - ✅ **Dark mode for floor backgrounds.** Optional `backgrounds:
@@ -57,16 +85,20 @@ record.
 
 ---
 
-## ✨ v0.2.x candidates
+## ✨ v0.2.x / v0.3.0 candidates
 
-Items already listed in [`specs/README.md`](specs/README.md) under
-v0.2.0 (reminder):
+Items deferred from the v0.2.0 ship — see
+[`specs/README.md`](specs/README.md) for the staged roadmap:
 - Hover tooltip on elements
 - `badge` element type (icon + value combined)
 - Bind overlays to HA entities (`visible_entity`)
 - Persist overlay state (localStorage)
 - Optional CSS animations (pulse for presence, glow for alerts)
 - Additional transitions (fade-up, zoom, ...)
+- Re-introduce a vertical zoom slider as an opt-in setting
+  (`zoom_slider: right | left | none`, default `none`) if user
+  feedback shows pinch / Ctrl+wheel / double-tap aren't enough — the
+  component was removed at v0.2.0 review (ADR-006 follow-up).
 
 Captured during dev:
 
@@ -185,10 +217,12 @@ Captured during dev:
   `toggle-entity`, `fire-event`, `navigate`, `forwardHaptic`, and
   leaks `@formatjs/intl-utils` via the barrel exports. Total ≈ 3–4
   KB minified for ~150 lines of real logic. Reimplementing the 5–6
-  helpers locally would save ~3 KB and remove the Rollup warning
-  `"this" has been rewritten to "undefined"` from `@formatjs`.
-  Becomes more attractive in v0.2.0, where ADR-006 anticipates
-  +6 to +10 KiB of bundle growth and a threshold raise to ~60 KiB.
+  helpers locally would save ~3 KB raw / ~1 KB gzipped and remove
+  the Rollup warning `"this" has been rewritten to "undefined"`
+  from `@formatjs`. Promoted to v0.3.0 priority candidate after
+  v0.2.0 shipped at 20.6 KiB gzipped (~0.6 KiB over the ADR-003
+  secondary 20 KiB target). Vendoring would put us back under the
+  target with margin and free room for v0.3.0 features.
 
 - **Per-element reactivity for `fn-element-text`.**
   At present the whole overlay layer re-renders when any entity
