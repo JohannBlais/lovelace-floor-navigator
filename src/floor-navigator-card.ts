@@ -24,7 +24,12 @@ const DEFAULT_DOUBLE_TAP_SCALE = 2;
 // Bump in lockstep with package.json on every release. Surfaced via
 // console.info on bundle load so we can verify in HA's DevTools that
 // Lovelace is serving the version we expect (cache busting check).
-const CARD_VERSION = '0.1.1';
+//
+// During v0.2.0 development we use SemVer pre-release tags (rc1, rc2,
+// ...) on each notable commit so HA mobile / companion-app users have
+// a visible marker to verify their cache was actually purged. Final
+// `0.2.0` lands on the release commit (specs/README.md "Shipped").
+const CARD_VERSION = '0.2.0-rc1';
 
 declare global {
   interface Window {
