@@ -5,6 +5,7 @@ import { styleMap } from 'lit/directives/style-map.js';
 
 import './fn-floor.js';
 import type { ThemeMode } from '../utils/theme-resolver.js';
+import { IDENTITY, type Transform } from '../utils/transform.js';
 import type {
   DarkModeSetting,
   Floor,
@@ -48,6 +49,18 @@ export class FnFloorStack extends LitElement {
   @property({ type: String, attribute: false }) sizeUnit: OverlaySizeUnit = 'viewbox';
   @property({ type: Number, attribute: false }) minIconPx = 24;
   @property({ type: Number, attribute: false }) minTextPx = 14;
+  /**
+   * v0.2.0 — Pan-zoom transform applied as a CSS `translate` + `scale` on
+   * the `.stack` wrapper. The viewBox stays the canonical coordinate
+   * system; this transform is purely visual. See
+   * specs/features/pan-zoom-interactions.md.
+   *
+   * `gestureLive` toggles the CSS transition off while a pan / pinch is
+   * in flight (per-frame updates), and back on for animated reset on
+   * floor change or double-tap.
+   */
+  @property({ attribute: false }) transform: Transform = IDENTITY;
+  @property({ type: Boolean, attribute: false }) gestureLive = false;
 
   private get _aspectRatio(): string {
     const parts = this.viewbox.trim().split(/\s+/).map(Number);
@@ -57,13 +70,27 @@ export class FnFloorStack extends LitElement {
     return `${parts[2]} / ${parts[3]}`;
   }
 
+  /** Convert pan offset from viewBox units to screen pixels for CSS. */
+  private get _translatePx(): { x: number; y: number } {
+    const ratio = this.viewBoxToScreenRatio || 1;
+    if (!Number.isFinite(ratio) || ratio === 0) return { x: 0, y: 0 };
+    // viewBox unit → screen px = viewBoxValue / ratio
+    return {
+      x: this.transform.x / ratio,
+      y: this.transform.y / ratio,
+    };
+  }
+
   protected override render() {
+    const { x, y } = this._translatePx;
+    const cssTransform = `translate(${x}px, ${y}px) scale(${this.transform.scale})`;
     return html`
       <div
-        class="stack"
+        class=${classMap({ stack: true, 'gesture-live': this.gestureLive })}
         style=${styleMap({
           'aspect-ratio': this._aspectRatio,
           '--fn-transition-duration': `${this.transitionDuration}ms`,
+          transform: cssTransform,
         })}
       >
         ${this.floors.map((floor, i) => {
@@ -109,6 +136,14 @@ export class FnFloorStack extends LitElement {
       position: relative;
       width: 100%;
       overflow: hidden;
+      /* v0.2.0 — pan-zoom: animate transform on programmatic changes
+         (floor reset, double-tap toggle, slider release). Disabled
+         while a live gesture is in flight via .gesture-live below. */
+      transform-origin: 0 0;
+      transition: transform 200ms ease-out;
+    }
+    .stack.gesture-live {
+      transition: none;
     }
     .floor-wrapper {
       position: absolute;

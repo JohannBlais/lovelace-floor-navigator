@@ -2,7 +2,7 @@
 status: validated
 owner: Johann Blais
 last_updated: 2026-05-06
-related: []
+related: [features/pan-zoom-interactions.md, features/overlay-readability.md]
 ---
 
 # Decisions — chronological ADRs
@@ -364,8 +364,79 @@ dependency):
 
 ---
 
+## [2026-05-06] ADR-007 — Bundle threshold raise to 78 KiB (v0.2.0)
+
+**Context**: at v0.1.1 the build CI gate was `< 50 KiB` (51200 bytes,
+ADR-003), and the bundle measured 49.7 KiB — 323-byte margin. ADR-006
+anticipated a v0.2.0 raise to ~60 KiB based on a `+6 to +10 KiB`
+estimate for the three-spec mobile UX overhaul. The threshold was
+silently bumped to 58 KiB during spec 1 (overlay-readability,
+54.85 KiB measured; resolved entry in `open-questions.md` 2026-05-06)
+with the formal ADR deferred until spec 2 ship.
+
+After spec 2 (pan-zoom-interactions) ships, the actual bundle is
+**71.3 KiB raw / 19.9 KiB gzipped** — significantly above ADR-006's
+prediction. Breakdown of the v0.2.0 series:
+
+- v0.1.1 baseline: 49.7 KiB
+- spec 1 overlay-readability: +5.1 KiB → 54.85 KiB
+- spec 2 pan-zoom-interactions: +14.4 KiB → 71.3 KiB
+- spec 3 mobile-fullscreen-mode (estimated): +3 to +5 KiB → ~74–76 KiB
+
+The variance vs ADR-006's `+6 to +10 KiB` total is driven mostly by
+spec 2: the gesture state machine, pinch math, slider component, and
+prop threading were heavier than estimated. Manual minification by
+Rollup + terser is already on; further claw-back would require
+vendoring `custom-card-helpers` (BACKLOG ⚡, ~3 KiB gain) or
+hand-trimming Lit helpers (uncertain gains, fragility risk).
+
+**Decision**: raise the build CI threshold to **78 KiB**
+(79872 bytes), updated in `.github/workflows/build.yml`. Headroom
+breakdown:
+
+- Current spec 2 bundle: 71.3 KiB (8.7 KiB margin under 78)
+- Spec 3 buffer: ~5 KiB (CSS-mostly feature)
+- Polish / minor regression buffer: ~2 KiB
+
+Network footprint unchanged: 19.9 KiB gzipped is just under the
+ADR-003 secondary target of `< 20 KiB gzipped`. Loading speed on
+Lovelace dashboards is dominated by the gzipped figure, so the user-
+facing performance remains within the original discipline envelope.
+
+**Rejected alternatives**:
+
+- **Stay at 60 KiB and claw back to fit**: requires vendoring
+  custom-card-helpers (~3 KiB gain) AND tightening Lit usage. Even
+  combined, would not fit spec 2 alone (need ~11 KiB more than
+  60 KiB allows). Rejected as infeasible without scope cuts.
+- **Raise to 80+ KiB for unconditional headroom**: looser than
+  needed, dilutes the discipline. The 78 KiB number leaves
+  defendable margin without inviting drift.
+- **Drop the gzipped target too**: not needed — we are still under
+  the 20 KiB gzipped target. Discipline preserved at the network
+  level, where it matters most for HACS-distributed cards.
+
+**Consequences**:
+
+- `.github/workflows/build.yml` updated to enforce 78 KiB.
+- ADR-003's "< 50 KB" target is **superseded for v0.2.0+** by this
+  ADR. The original rationale (anti-bloat discipline on Lovelace
+  cards) still holds; the number simply tracks reality post-pan-zoom.
+- `BACKLOG.md` `custom-card-helpers` vendoring entry remains a
+  candidate optimization for v0.3.0 (would reclaim ~3 KiB and
+  potentially open room for v0.3.0 features within the same 78 KiB
+  envelope).
+- `specs/architecture/tech-stack.md` "Bundle exceeding 50 KB" edge
+  case to be updated to reference this ADR when the next spec edit
+  touches that section (deferred to spec 3 commit for atomicity).
+
+**Status**: accepted. Supersedes the implicit 50 KiB target of
+ADR-003 for v0.2.0+.
+
+---
+
 ## Template for future decisions
 
 Copy-paste at the top of the list, just under the main separator.
 Number `ADR-NNN` continuing the sequence (the latest one is
-`ADR-006`).
+`ADR-007`).

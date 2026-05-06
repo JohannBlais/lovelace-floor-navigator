@@ -4,11 +4,21 @@ import { customElement, property, state } from 'lit/decorators.js';
 import './components/fn-navigation-controller.js';
 import { cardVariables } from './styles/card-styles.js';
 import { resolveTheme, type ThemeMode } from './utils/theme-resolver.js';
-import type { CardConfig, Overlay, OverlayElement, OverlaySizeUnit } from './types/config.js';
+import type {
+  CardConfig,
+  Overlay,
+  OverlayElement,
+  OverlaySizeUnit,
+  ZoomSliderPosition,
+} from './types/config.js';
 import type { HomeAssistant } from './types/ha.js';
 
 const DEFAULT_MIN_ICON_PX = 24;
 const DEFAULT_MIN_TEXT_PX = 14;
+const DEFAULT_ZOOM_MIN = 1;
+const DEFAULT_ZOOM_MAX = 4;
+const DEFAULT_ZOOM_STEP = 0.1;
+const DEFAULT_DOUBLE_TAP_SCALE = 2;
 
 // Bump in lockstep with package.json on every release. Surfaced via
 // console.info on bundle load so we can verify in HA's DevTools that
@@ -169,10 +179,20 @@ export class FloorNavigatorCard extends LitElement {
   }
 
   private get _viewBoxWidth(): number {
-    if (!this._config?.viewbox) return 0;
+    return this._parsedViewBox?.width ?? 0;
+  }
+
+  private get _viewBoxHeight(): number {
+    return this._parsedViewBox?.height ?? 0;
+  }
+
+  /** Parses the viewBox string once per render of this getter. Cheap
+   * (small string), and avoids stashing a state field. */
+  private get _parsedViewBox(): { width: number; height: number } | null {
+    if (!this._config?.viewbox) return null;
     const parts = this._config.viewbox.trim().split(/\s+/).map(Number);
-    if (parts.length !== 4 || parts.some((n) => Number.isNaN(n))) return 0;
-    return parts[2];
+    if (parts.length !== 4 || parts.some((n) => Number.isNaN(n))) return null;
+    return { width: parts[2], height: parts[3] };
   }
 
   protected override willUpdate(changed: PropertyValues): void {
@@ -262,6 +282,53 @@ export class FloorNavigatorCard extends LitElement {
         `[floor-navigator-card] settings.min_text_px must be a non-negative number; falling back to ${DEFAULT_MIN_TEXT_PX}.`,
       );
     }
+    // v0.2.0 — pan-zoom settings.
+    const zMin = config.settings?.zoom_min;
+    const zMax = config.settings?.zoom_max;
+    if (zMin !== undefined && (typeof zMin !== 'number' || zMin <= 0)) {
+      console.warn(
+        `[floor-navigator-card] settings.zoom_min must be a positive number; falling back to ${DEFAULT_ZOOM_MIN}.`,
+      );
+    }
+    if (zMax !== undefined && (typeof zMax !== 'number' || zMax <= 0)) {
+      console.warn(
+        `[floor-navigator-card] settings.zoom_max must be a positive number; falling back to ${DEFAULT_ZOOM_MAX}.`,
+      );
+    }
+    if (
+      typeof zMin === 'number' &&
+      typeof zMax === 'number' &&
+      zMin > 0 &&
+      zMax > 0 &&
+      zMin >= zMax
+    ) {
+      console.warn(
+        `[floor-navigator-card] settings.zoom_min (${zMin}) must be < zoom_max (${zMax}); falling back to defaults.`,
+      );
+    }
+    const zStep = config.settings?.zoom_step;
+    if (zStep !== undefined && (typeof zStep !== 'number' || zStep <= 0)) {
+      console.warn(
+        `[floor-navigator-card] settings.zoom_step must be a positive number; falling back to ${DEFAULT_ZOOM_STEP}.`,
+      );
+    }
+    const zDt = config.settings?.zoom_double_tap_scale;
+    if (zDt !== undefined && (typeof zDt !== 'number' || zDt <= 0)) {
+      console.warn(
+        `[floor-navigator-card] settings.zoom_double_tap_scale must be a positive number; falling back to ${DEFAULT_DOUBLE_TAP_SCALE}.`,
+      );
+    }
+    const slider = config.settings?.zoom_slider;
+    if (
+      slider !== undefined &&
+      slider !== 'right' &&
+      slider !== 'left' &&
+      slider !== 'none'
+    ) {
+      console.warn(
+        `[floor-navigator-card] settings.zoom_slider "${String(slider)}" is not "right" | "left" | "none"; falling back to "right".`,
+      );
+    }
 
     this._config = config;
     this._visibleOverlayIds = new Set(
@@ -300,17 +367,48 @@ export class FloorNavigatorCard extends LitElement {
       typeof settings.min_text_px === 'number' && settings.min_text_px >= 0
         ? settings.min_text_px
         : DEFAULT_MIN_TEXT_PX;
+    // v0.2.0 — pan-zoom settings, with cross-validated min/max fallback.
+    let zoomMin =
+      typeof settings.zoom_min === 'number' && settings.zoom_min > 0
+        ? settings.zoom_min
+        : DEFAULT_ZOOM_MIN;
+    let zoomMax =
+      typeof settings.zoom_max === 'number' && settings.zoom_max > 0
+        ? settings.zoom_max
+        : DEFAULT_ZOOM_MAX;
+    if (zoomMin >= zoomMax) {
+      zoomMin = DEFAULT_ZOOM_MIN;
+      zoomMax = DEFAULT_ZOOM_MAX;
+    }
+    const zoomStep =
+      typeof settings.zoom_step === 'number' && settings.zoom_step > 0
+        ? settings.zoom_step
+        : DEFAULT_ZOOM_STEP;
+    const zoomDoubleTapScale =
+      typeof settings.zoom_double_tap_scale === 'number' &&
+      settings.zoom_double_tap_scale > 0
+        ? settings.zoom_double_tap_scale
+        : DEFAULT_DOUBLE_TAP_SCALE;
+    const zoomSlider: ZoomSliderPosition =
+      settings.zoom_slider === 'left' || settings.zoom_slider === 'none'
+        ? settings.zoom_slider
+        : 'right';
     return html`
       <ha-card>
         <fn-navigation-controller
           .floors=${this._config.floors}
           .viewbox=${this._config.viewbox}
           .viewBoxWidth=${this._viewBoxWidth}
+          .viewBoxHeight=${this._viewBoxHeight}
           .viewBoxToScreenRatio=${this._viewBoxToScreenRatio}
-          .zoomScale=${1}
           .sizeUnit=${sizeUnit}
           .minIconPx=${minIconPx}
           .minTextPx=${minTextPx}
+          .zoomMin=${zoomMin}
+          .zoomMax=${zoomMax}
+          .zoomStep=${zoomStep}
+          .zoomDoubleTapScale=${zoomDoubleTapScale}
+          .zoomSlider=${zoomSlider}
           .transition=${settings.transition ?? 'crossfade'}
           .transitionDuration=${settings.transition_duration ?? 400}
           .edgeBehavior=${settings.edge_behavior ?? 'bounce'}

@@ -2,7 +2,7 @@
 status: implemented
 owner: Johann Blais
 last_updated: 2026-05-06
-related: [color-scheme.md, overlays-toggle.md, dark-mode.md, overlay-readability.md, ../architecture/component-tree.md]
+related: [color-scheme.md, overlays-toggle.md, dark-mode.md, overlay-readability.md, pan-zoom-interactions.md, ../architecture/component-tree.md]
 ---
 
 # Data Model
@@ -90,6 +90,11 @@ settings:
   overlay_size_unit: viewbox       # viewbox | px      (v0.2.0+, see overlay-readability.md)
   min_icon_px: 24                  # screen-pixel clamp for icons (v0.2.0+)
   min_text_px: 14                  # screen-pixel clamp for text  (v0.2.0+)
+  zoom_min: 1                      # min scale factor             (v0.2.0+, see pan-zoom-interactions.md)
+  zoom_max: 4                      # max scale factor             (v0.2.0+)
+  zoom_step: 0.1                   # Ctrl+wheel notch increment   (v0.2.0+)
+  zoom_double_tap_scale: 2         # target scale on double-tap   (v0.2.0+)
+  zoom_slider: right               # right | left | none          (v0.2.0+)
 
 # Floor list (ORDER = TOP to BOTTOM in the house)
 # Scrolling down moves through this list: L0 → L1 → L2
@@ -164,6 +169,11 @@ overlays:
 | `overlay_size_unit` | enum | `viewbox` | `viewbox`, `px` (v0.2.0+, see [`overlay-readability.md`](overlay-readability.md)) |
 | `min_icon_px` | number | `24` | Minimum rendered icon size in screen pixels — clamp (v0.2.0+) |
 | `min_text_px` | number | `14` | Minimum rendered text font size in screen pixels — clamp (v0.2.0+) |
+| `zoom_min` | number | `1` | Minimum scale factor (v0.2.0+, see [`pan-zoom-interactions.md`](pan-zoom-interactions.md)) |
+| `zoom_max` | number | `4` | Maximum scale factor (v0.2.0+) |
+| `zoom_step` | number | `0.1` | Scale increment per Ctrl+wheel notch (v0.2.0+) |
+| `zoom_double_tap_scale` | number | `2` | Target scale on double-tap toggle (v0.2.0+) |
+| `zoom_slider` | enum | `right` | `right`, `left`, `none` — vertical slider position (v0.2.0+) |
 
 ### Floor
 

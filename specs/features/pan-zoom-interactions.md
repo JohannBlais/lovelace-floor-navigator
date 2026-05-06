@@ -1,5 +1,5 @@
 ---
-status: draft
+status: implemented
 owner: Johann Blais
 last_updated: 2026-05-06
 related: [mobile-fullscreen-mode.md, overlay-readability.md, data-model.md, ../architecture/navigation.md, ../architecture/rendering-strategy.md, ../architecture/component-tree.md]
@@ -421,12 +421,15 @@ back in the embedded card at `scale: 2`. Acceptable.
 - **Ctrl+wheel modifier**: keep `Ctrl` required, or allow plain
   wheel zoom when `scale > 1`? The current proposal is "Ctrl
   required" to avoid accidental zoom while scrolling the dashboard.
-  Revisit if user feedback suggests otherwise.
+  **Status: kept Ctrl-required at implementation (2026-05-06)**.
+  `e.metaKey` (Cmd on macOS) is also accepted. Revisit if user
+  feedback suggests otherwise.
 - **Slider visual style**: traditional thumb-and-track, or
-  pinch-style numeric indicator (e.g. "150%" floating bubble)? To
-  validate at implementation review. Per ADR-006, the slider may
-  be removed entirely if the UX turns out to be redundant with
-  pinch / Ctrl+wheel.
+  pinch-style numeric indicator (e.g. "150%" floating bubble)?
+  **Status: shipped as thumb-and-track at implementation (2026-05-06)**.
+  24×24 thumb (32×32 active), 6px-wide track, reset button at the
+  bottom with `mdi:fit-to-page-outline`. Numeric overlay deferred
+  to UX review.
 - **Zoom limits per-floor**: a complex floor (cellar with technical
   rooms) might warrant a higher `zoom_max` than a simple floor.
   Currently global. Per-floor override deferred to v0.2.x if user
@@ -438,8 +441,23 @@ back in the embedded card at `scale: 2`. Acceptable.
   position `(600, 450)` is 4× further from the screen origin. The
   click area must follow. With CSS transform on the wrapper, this
   is automatic (the SVG element's bounding rect transforms with
-  the wrapper). Confirm at implementation that
-  `pointer-events` and `getBoundingClientRect` behave as expected.
+  the wrapper). **Status: confirmed at implementation (2026-05-06)**
+  — `pointer-events` and `getBoundingClientRect` behave as expected
+  through the CSS transform on the floor stack.
+- **Double-tap on overlay elements**: spec line 189 reads "and not
+  on an overlay element". Implementation tracks `startedOnElement`
+  on each pointer (composedPath check for `FN-ELEMENT-ICON` /
+  `FN-ELEMENT-TEXT`) and suppresses double-tap zoom when the tap
+  originated there. The element's click handler runs normally
+  (entity toggle / more-info). **Status: confirmed at
+  implementation (2026-05-06)**.
+- **`zoom_min < 1` clamp inversion**: see resolved entry in
+  `specs/open-questions.md` (2026-05-06) — implemented as
+  two-branch `clampPan` in `src/utils/transform.ts`.
+- **Vitest on the gesture state machine**: see open entry in
+  `specs/open-questions.md` (2026-05-06). Math helpers in
+  `src/utils/transform.ts` are pure functions, ready for tests in
+  v0.3.0 without refactor.
 
 ## Decisions
 

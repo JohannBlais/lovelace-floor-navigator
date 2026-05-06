@@ -44,6 +44,19 @@ export interface CardSettings {
    * v0.2.0 — Same idea as `min_icon_px` for text font size. Default 14.
    */
   min_text_px?: number;
+  /**
+   * v0.2.0 — Pan-zoom limits. See specs/features/pan-zoom-interactions.md.
+   * - `zoom_min`: minimum scale factor (default 1; ≥ 0.5 recommended)
+   * - `zoom_max`: maximum scale factor (default 4; ≤ 8 recommended)
+   * - `zoom_step`: scale increment per Ctrl+wheel notch (default 0.1)
+   * - `zoom_double_tap_scale`: target scale for double-tap toggle (default 2)
+   * - `zoom_slider`: vertical slider position (`right` default | `left` | `none`)
+   */
+  zoom_min?: number;
+  zoom_max?: number;
+  zoom_step?: number;
+  zoom_double_tap_scale?: number;
+  zoom_slider?: ZoomSliderPosition;
 }
 
 export type TransitionMode = 'crossfade' | 'slide' | 'slide-scale';
@@ -52,6 +65,7 @@ export type EdgeBehavior = 'bounce' | 'none' | 'loop';
 export type OverlayButtonsPosition = 'top' | 'bottom' | 'none';
 export type DarkModeSetting = 'auto' | 'on' | 'off';
 export type OverlaySizeUnit = 'viewbox' | 'px';
+export type ZoomSliderPosition = 'right' | 'left' | 'none';
 
 /**
  * v0.1.1 — Extended form for a floor's background images.

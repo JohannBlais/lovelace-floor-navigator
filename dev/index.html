@@ -113,7 +113,7 @@
     <div class="container">
       <header>
         <h1>Floor Navigator — Dev Sandbox</h1>
-        <p>v0.2.0 — overlay-readability + dark-mode backgrounds.</p>
+        <p>v0.2.0 — overlay-readability + pan-zoom + dark-mode backgrounds.</p>
       </header>
 
       <div class="controls">
@@ -190,6 +190,26 @@
           </select>
         </label>
         <label>
+          zoom_min (v0.2.0)
+          <input type="number" id="zoom-min" value="1" min="0.1" step="0.1" style="width: 64px;" />
+        </label>
+        <label>
+          zoom_max (v0.2.0)
+          <input type="number" id="zoom-max" value="4" min="1" step="0.5" style="width: 64px;" />
+        </label>
+        <label>
+          zoom_double_tap_scale
+          <input type="number" id="zoom-double-tap" value="2" min="1" step="0.5" style="width: 64px;" />
+        </label>
+        <label>
+          zoom_slider
+          <select id="zoom-slider-select">
+            <option value="right" selected>right (default)</option>
+            <option value="left">left</option>
+            <option value="none">none</option>
+          </select>
+        </label>
+        <label>
           Toggle entity
           <button id="toggle-salon" type="button">light.salon</button>
         </label>
@@ -199,6 +219,9 @@
 
       <div class="legend">
         <kbd>Scroll</kbd> vertically → switch between L0/L1/L2.<br />
+        <kbd>Ctrl</kbd>+scroll (or <kbd>Cmd</kbd>+scroll on macOS) → zoom around cursor.
+        Double-click → toggle zoom. Drag the right slider thumb. At
+        zoom &gt; 1, single-finger drag pans (instead of swipes).<br />
         <strong>Dark mode v0.1.1</strong>:
         L0 and L1 have a dark variant (extended <code>backgrounds</code>
         form), L2 stays in the short form → one console warning when in
@@ -229,6 +252,10 @@
       const minIconPxInput = document.getElementById('min-icon-px');
       const minTextPxInput = document.getElementById('min-text-px');
       const viewboxSelect = document.getElementById('viewbox-select');
+      const zoomMinInput = document.getElementById('zoom-min');
+      const zoomMaxInput = document.getElementById('zoom-max');
+      const zoomDoubleTapInput = document.getElementById('zoom-double-tap');
+      const zoomSliderSelect = document.getElementById('zoom-slider-select');
       const toggleSalonBtn = document.getElementById('toggle-salon');
 
       function applyConfig() {
@@ -247,6 +274,10 @@
             overlay_size_unit: sizeUnitSelect.value,
             min_icon_px: Number(minIconPxInput.value),
             min_text_px: Number(minTextPxInput.value),
+            zoom_min: Number(zoomMinInput.value),
+            zoom_max: Number(zoomMaxInput.value),
+            zoom_double_tap_scale: Number(zoomDoubleTapInput.value),
+            zoom_slider: zoomSliderSelect.value,
           },
           floors: [
             // L0 — extended form with a dark variant
@@ -372,6 +403,10 @@
         minIconPxInput,
         minTextPxInput,
         viewboxSelect,
+        zoomMinInput,
+        zoomMaxInput,
+        zoomDoubleTapInput,
+        zoomSliderSelect,
       ].forEach((el) => {
         // 'change' for selects/checkbox, 'input' for number inputs (live).
         const evt = el.tagName === 'INPUT' && el.type === 'number' ? 'input' : 'change';

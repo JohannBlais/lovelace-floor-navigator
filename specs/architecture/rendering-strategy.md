@@ -1,14 +1,14 @@
 ---
 status: implemented
 owner: Johann Blais
-last_updated: 2026-05-04
-related: [component-tree.md, navigation.md]
+last_updated: 2026-05-06
+related: [component-tree.md, navigation.md, ../features/pan-zoom-interactions.md, ../features/overlay-readability.md]
 ---
 
 # Rendering Strategy
 
-DOM/CSS rendering strategy and Lit reactive-update mechanism. Frozen
-spec for v0.1.0.
+DOM/CSS rendering strategy and Lit reactive-update mechanism. Updated
+in v0.2.0 with the pan-zoom transform layer.
 
 ## Context
 
@@ -76,6 +76,31 @@ The mode is driven by `settings.transition` (default `crossfade`). The
 `fn-navigation-controller` applies the appropriate classes per mode and
 direction (up/down). Keyframes are defined in the CSS of
 `card-styles.ts`.
+
+### Pan-zoom transform layer (v0.2.0+)
+
+A second CSS transform sits ABOVE the floor-stacking strategy:
+
+- `<fn-navigation-controller>` owns a `Transform { scale, x, y }` state
+  (in viewBox units).
+- `<fn-floor-stack>` applies it to its `.stack` wrapper as
+  `transform: translate(${x_px}px, ${y_px}px) scale(${scale})` with
+  `transform-origin: 0 0`.
+- The viewBox itself stays the canonical coordinate system — element
+  positions and sizes remain authored in viewBox units. The transform
+  is purely visual.
+- A `.gesture-live` class disables the CSS transition on `transform`
+  during a pan / pinch gesture (per-frame updates). Reset on floor
+  change and double-tap zoom uses a 200ms ease-out animation, with the
+  class absent.
+- `viewBox_to_screen_ratio` (the same value used by overlay-readability
+  for screen-space sizing) is the conversion factor between viewBox
+  units and screen pixels. Single source of truth, single
+  ResizeObserver on the card root.
+
+See [`../features/pan-zoom-interactions.md`](../features/pan-zoom-interactions.md)
+for the input sources (pinch, Ctrl+wheel, double-tap, slider) and the
+zoom-around-anchor math.
 
 ## Expected behaviour — Reactive updates
 

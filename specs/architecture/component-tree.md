@@ -1,8 +1,8 @@
 ---
 status: implemented
 owner: Johann Blais
-last_updated: 2026-05-04
-related: [rendering-strategy.md, navigation.md, ../features/data-model.md]
+last_updated: 2026-05-06
+related: [rendering-strategy.md, navigation.md, ../features/data-model.md, ../features/pan-zoom-interactions.md]
 ---
 
 # Component Tree
@@ -44,9 +44,9 @@ concerns. The SVG naming conventions exist to make DOM debugging
 ## Expected behaviour — Component tree
 
 ```
-<floor-navigator-card>           # root component, owns config + global state
-  └── <fn-navigation-controller>  # owns wheel/swipe/transition state
-      ├── <fn-floor-stack>        # container of stacked floors
+<floor-navigator-card>           # root component, owns config + ResizeObserver + theme
+  └── <fn-navigation-controller>  # owns wheel/swipe/transition state + Transform (v0.2.0)
+      ├── <fn-floor-stack>        # container of stacked floors, applies CSS transform
       │   ├── <fn-floor>          # one per declared floor
       │   │   ├── <svg>           # background + overlays
       │   │   │   ├── <image>     # floor background (PNG/JPG/SVG)
@@ -55,6 +55,7 @@ concerns. The SVG naming conventions exist to make DOM debugging
       │   ├── <fn-floor>
       │   └── <fn-floor>
       ├── <fn-floor-indicator>    # label "L0 — Ground floor"
+      ├── <fn-zoom-slider>        # v0.2.0+ vertical zoom slider (right/left/none)
       └── <fn-overlay-buttons>    # toggle button bar
 ```
 
