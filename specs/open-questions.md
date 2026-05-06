@@ -64,6 +64,38 @@ archived) for institutional memory.
 
 ## Resolved entries (cont'd)
 
+## [2026-05-06] mobile-fullscreen-mode — fullscreen aspect-fit broken on Chromium WebView (HA companion app)
+- Context: HA test on Pixel 9 Pro XL portrait fullscreen reported the
+  plan stuck in the lower 60% of the screen — the user couldn't pan
+  it higher than ~60% from the bottom even at scale > 1, despite the
+  `clampPan` formula authorising a much wider vertical pan range.
+- Diagnosis: the `:host(.fullscreen)` CSS in fn-floor-stack used
+  `width: auto; height: 100%; max-width: 100%; max-height: 100%` with
+  `display: flex` and an inline `aspect-ratio` on `.stack`. In a
+  flex-row gesture-area, `width: auto` on the host created a circular
+  dependency between host width and .stack width through aspect-ratio.
+  Chromium WebView (HA companion app on Android) resolved this by
+  giving .stack a non-aspect-respecting height (e.g., the full host
+  height, distorted), which:
+  - shifted the .stack box vertical position vs. the centred-in-host
+    expectation;
+  - desynchronised the `transform.x_vb / ratio` → CSS-pixel conversion
+    from the actual rendered .stack height.
+  Result: visible pan range was a fraction of the intended one.
+- Resolution: switch the host CSS to the canonical "object-fit: contain"
+  pattern — `display: grid; place-items: center; width: 100%;
+  height: 100%` on the host, and `width: auto; height: auto;
+  max-width: 100%; max-height: 100%` on .stack (with aspect-ratio
+  inline). Browsers reliably compute the largest dimensions
+  satisfying both max-* and the aspect ratio, and grid centres .stack
+  unambiguously. The full `clampPan` range becomes reachable.
+- Spec(s) affected: `src/components/fn-floor-stack.ts`,
+  `specs/features/mobile-fullscreen-mode.md` (no spec change — the
+  open question §"Aspect-fit layout for the floor stack inside
+  fullscreen" remains valid in intent; only the implementation
+  approach was refined).
+- Status: resolved (rc2 commit on main)
+
 ## [2026-05-06] pan-zoom-interactions — Vertical zoom slider: keep or remove?
 - Context: ADR-006 arbitration #2 added an always-visible vertical
   zoom slider "to be validated at implementation review (can be

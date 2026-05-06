@@ -174,24 +174,32 @@ export class FnFloorStack extends LitElement {
     }
 
     /* ────────── v0.2.0 — fullscreen aspect-fit ──────────
-       In fullscreen the parent (.gesture-area) is a flex container with
-       a definite height (flex:1 in a fixed-height column). Switch the
-       host + .stack to a height-driven aspect-fit: width derives from
-       height + aspect-ratio, with max-width:100% as a safety clamp for
-       very tall viewports. This avoids the "plan taller than viewport"
-       overflow that hid the overlay buttons in landscape mobile. */
+       In fullscreen the parent (.gesture-area) gives this host a
+       definite size (1080x2290 on a portrait phone, etc.). The host
+       is a grid container whose only purpose is to centre .stack in
+       both axes; .stack itself uses the canonical object-fit:contain
+       pattern: width:auto, height:auto, max-width/max-height:100%,
+       and the inline aspect-ratio attribute. Browsers compute the
+       largest dimensions that respect all three constraints (both
+       max-*, plus the aspect ratio).
+
+       This replaces an earlier width:auto + height:100% form which
+       was ambiguous on Chromium WebViews (HA companion app): the
+       cross-axis sizing in flex-row created a circular dependency
+       between host width and .stack width via aspect-ratio, leaving
+       the actual rendered .stack height non-deterministic across
+       browsers. The bug surfaced as a too-narrow vertical pan range
+       in fullscreen portrait. See open-question 2026-05-06 for
+       resolution details. */
     :host(.fullscreen) {
-      width: auto;
+      display: grid;
+      place-items: center;
+      width: 100%;
       height: 100%;
-      max-width: 100%;
-      max-height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
     }
     :host(.fullscreen) .stack {
       width: auto;
-      height: 100%;
+      height: auto;
       max-width: 100%;
       max-height: 100%;
       /* aspect-ratio inherited from the inline style on .stack */
