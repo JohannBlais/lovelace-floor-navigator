@@ -24,7 +24,7 @@ const DEFAULT_DOUBLE_TAP_SCALE = 2;
 // Bump in lockstep with package.json on every release. Surfaced via
 // console.info on bundle load so we can verify in HA's DevTools that
 // Lovelace is serving the version we expect (cache busting check).
-const CARD_VERSION = '0.2.0';
+const CARD_VERSION = '0.2.1';
 
 declare global {
   interface Window {

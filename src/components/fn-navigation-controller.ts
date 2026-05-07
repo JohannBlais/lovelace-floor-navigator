@@ -57,6 +57,14 @@ interface PointerInfo {
   // per specs/features/pan-zoom-interactions.md ("and not on an
   // overlay element").
   startedOnElement: boolean;
+  // The overlay element host (fn-element-icon / fn-element-text) the
+  // pointerdown started on, if any. We hold a direct reference here so
+  // we can dispatch a synthetic click on it from `_handleTapRelease`
+  // — relying on the browser's compatibility click event doesn't
+  // work reliably in Chromium WebView (HA companion app) when the
+  // target sits inside <foreignObject> under a CSS-transformed parent
+  // and pointer capture is set on the gesture-area.
+  elementTarget: HTMLElement | null;
 }
 
 interface PinchInitial {
@@ -275,11 +283,13 @@ export class FnNavigationController extends LitElement {
     // pointer handlers (slider) or sit outside the gesture-area
     // (overlay-buttons), so we never see those events here.
     const path = e.composedPath();
-    const startedOnElement = path.some(
-      (n): n is HTMLElement =>
-        n instanceof HTMLElement &&
-        (n.tagName === 'FN-ELEMENT-ICON' || n.tagName === 'FN-ELEMENT-TEXT'),
-    );
+    const elementTarget =
+      (path.find(
+        (n): n is HTMLElement =>
+          n instanceof HTMLElement &&
+          (n.tagName === 'FN-ELEMENT-ICON' || n.tagName === 'FN-ELEMENT-TEXT'),
+      ) as HTMLElement | undefined) ?? null;
+    const startedOnElement = elementTarget !== null;
 
     const rect = this._gestureRect();
     const screen: Point = { x: e.clientX - rect.left, y: e.clientY - rect.top };
@@ -290,12 +300,21 @@ export class FnNavigationController extends LitElement {
       currentScreen: { ...screen },
       prevScreen: { ...screen },
       startedOnElement,
+      elementTarget,
     };
     this._pointers.set(e.pointerId, info);
 
-    // Attempt pointer capture for drift-out handling.
+    // Attempt pointer capture for drift-out handling. Capture on the
+    // gesture-area (the listener's currentTarget), NOT on `e.target` —
+    // when the tap starts on an overlay element, `e.target` is a deep
+    // node inside the icon's shadow DOM (under <foreignObject>), and
+    // capturing there disrupts the synthesized `click` event so the
+    // icon's tap_action never fires. Capturing on the gesture-area
+    // routes pan/pinch events correctly while leaving click semantics
+    // on the inner icon untouched.
+    const captureTarget = e.currentTarget as Element | null;
     try {
-      (e.target as Element).setPointerCapture?.(e.pointerId);
+      captureTarget?.setPointerCapture?.(e.pointerId);
     } catch {
       /* ignore */
     }
@@ -337,8 +356,9 @@ export class FnNavigationController extends LitElement {
     if (!info) return;
     this._pointers.delete(e.pointerId);
 
+    const captureTarget = e.currentTarget as Element | null;
     try {
-      (e.target as Element).releasePointerCapture?.(e.pointerId);
+      captureTarget?.releasePointerCapture?.(e.pointerId);
     } catch {
       /* ignore */
     }
@@ -394,11 +414,17 @@ export class FnNavigationController extends LitElement {
       return;
     }
     // Per spec: double-tap zoom triggers only when both taps are NOT
-    // on an overlay element. If the tap started on an icon/text, let
-    // the element's click handler run normally (entity toggle / more-
-    // info), and reset the double-tap chain so the next tap on empty
-    // space starts a fresh count.
+    // on an overlay element. If the tap started on an icon/text,
+    // dispatch a click manually on the element host so its tap_action
+    // handler runs (entity toggle / more-info / call-service / …), and
+    // reset the double-tap chain so the next tap on empty space starts
+    // a fresh count. We dispatch ourselves rather than relying on the
+    // browser's synthesized click event because pointer capture on the
+    // gesture-area + foreignObject inside a CSS-transformed parent
+    // suppresses that synthesized click in Chromium WebView (HA
+    // companion app), so the tap_action never fires.
     if (info.startedOnElement) {
+      info.elementTarget?.click();
       this._lastTapTime = 0;
       return;
     }
