@@ -1,7 +1,7 @@
 ---
 status: validated
 owner: Johann Blais
-last_updated: 2026-05-06
+last_updated: 2026-05-08
 related: []
 ---
 
@@ -42,6 +42,10 @@ archived) for institutional memory.
 
 ## Open entries
 
+_None._
+
+## Resolved entries (cont'd)
+
 ## [2026-05-06] pan-zoom-interactions — Vitest on the gesture state machine: now or v0.3.0?
 - Context: starting v0.2.0 spec 2 (pan-zoom-interactions). The brief
   explicitly invites introducing Vitest unit tests on the gesture state
@@ -58,11 +62,20 @@ archived) for institutional memory.
   harder to test in isolation without significant setup; (c) introducing
   a test framework mid-spec inflates scope and delays ship. Manual on
   Pixel 9 Pro XL + Fatboy desktop will catch the big-picture regressions.
+- Resolution (Johann, 2026-05-08): **defer to v0.3.0**, as
+  recommended. Vitest will be introduced in the v0.3.0 "Maturity &
+  HACS publication" cycle where it is already listed on the roadmap
+  in [`README.md`](README.md). The pure functions in
+  [`src/utils/transform.ts`](../src/utils/transform.ts)
+  (`clampPan`, zoom-anchor math, scale-domain helpers) are designed
+  to be testable in isolation — no refactor needed when the test
+  framework lands. v0.2.0 + v0.2.1 manual coverage on Pixel 9 Pro XL
+  (HA companion app) and Fatboy desktop has been sufficient through
+  ship.
 - Spec(s) affected: `specs/architecture/tech-stack.md` (Vitest reference),
   v0.3.0 roadmap entry in `specs/README.md`
-- Status: open — Johann to confirm "defer to v0.3.0" or "go ahead now"
-
-## Resolved entries (cont'd)
+- Status: resolved (no code change — decision recorded here for
+  v0.3.0 pickup)
 
 ## [2026-05-06] mobile-fullscreen-mode — fullscreen aspect-fit broken on Chromium WebView (HA companion app)
 - Context: HA test on Pixel 9 Pro XL portrait fullscreen reported the

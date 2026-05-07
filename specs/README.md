@@ -1,7 +1,7 @@
 ---
 status: validated
 owner: Johann Blais
-last_updated: 2026-05-06
+last_updated: 2026-05-08
 related: []
 ---
 
@@ -48,9 +48,9 @@ Floorplan): native multi-level navigation + modular overlays.
 | [`features/color-scheme.md`](features/color-scheme.md) | Colour CSS variables, override | implemented |
 | [`features/overlays-toggle.md`](features/overlays-toggle.md) | Local visibleOverlays state | implemented |
 | [`features/dark-mode.md`](features/dark-mode.md) | Light/dark backgrounds + crossfade | implemented |
-| [`features/mobile-fullscreen-mode.md`](features/mobile-fullscreen-mode.md) | Explicit-button fullscreen, viewport escape | draft |
-| [`features/pan-zoom-interactions.md`](features/pan-zoom-interactions.md) | Unified zoom and pan engine, multi-source input | draft |
-| [`features/overlay-readability.md`](features/overlay-readability.md) | Screen-space overlay sizing, viewBox-relative defaults | draft |
+| [`features/mobile-fullscreen-mode.md`](features/mobile-fullscreen-mode.md) | Explicit-button fullscreen, viewport escape | implemented |
+| [`features/pan-zoom-interactions.md`](features/pan-zoom-interactions.md) | Unified zoom and pan engine, multi-source input | implemented |
+| [`features/overlay-readability.md`](features/overlay-readability.md) | Screen-space overlay sizing, viewBox-relative defaults | implemented |
 
 ### Transverse (living)
 
@@ -132,6 +132,18 @@ Other v0.2.x candidates from the original roadmap (hover tooltip,
 persistence via localStorage, optional CSS animations, keyboard
 shortcuts) — see [`BACKLOG.md`](../BACKLOG.md) at the repo root for
 the living candidate list.
+
+### v0.2.1 — Shipped (2026-05-08)
+
+Bug-fix release. Restores `tap_action` on overlay icons in the
+Chromium WebView used by the HA companion app — regression
+introduced by the v0.2.0 PointerEvents rewrite of
+`<fn-navigation-controller>` (taps on overlay elements stopped
+firing their configured action). Commit `d3cfe31` on `main`. No
+spec impact (behaviour matches the
+[`features/data-model.md`](features/data-model.md) `tap_action`
+contract that v0.2.0 silently broke on Android WebView). No ADR:
+isolated bug fix, not a structuring decision.
 
 ### v0.3.0 — Maturity & HACS publication
 

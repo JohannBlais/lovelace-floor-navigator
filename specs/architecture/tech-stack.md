@@ -1,8 +1,8 @@
 ---
 status: implemented
 owner: Johann Blais
-last_updated: 2026-05-04
-related: [conventions.md, dev-workflow.md]
+last_updated: 2026-05-08
+related: [conventions.md, dev-workflow.md, ../decisions.md#adr-006, ../decisions.md#adr-007]
 ---
 
 # Tech Stack
@@ -19,8 +19,13 @@ the reference custom cards (Mushroom, Mini-Graph).
 
 ## Goals
 
-1. Final bundle < 50 KB minified (spec target, common HACS
-   constraint)
+1. Final bundle under the CI threshold of **78 KiB raw** minified
+   (per ADR-007, supersedes ADR-003's 50 KB for v0.2.0+), with a
+   secondary network-level target of **< 20 KiB gzipped** (per
+   ADR-003, still in force — this is the figure that dominates load
+   speed on Lovelace dashboards). The raw threshold is enforced by
+   `.github/workflows/build.yml`; the gzipped target is a discipline
+   line, monitored at release.
 2. No heavy framework (no React/Vue), Lit is enough for custom
    elements
 3. Reproducible build locally and in CI without surprises
@@ -242,16 +247,25 @@ lovelace-floor-navigator/
 
 ## Edge cases
 
-### Bundle exceeding 50 KB
+### Bundle exceeding the CI threshold
 
-Spec target, not a hard blocker. If exceeded in v0.2.0+, options in
-order of preference:
+The CI threshold is currently **78 KiB raw** (per ADR-007, raised
+from ADR-003's original 50 KB after the v0.2.0 mobile UX overhaul:
+PointerEvents rewrite, gesture state machine, pinch math, and
+viewBox-to-screen ratio plumbing pushed the bundle to 72.4 KiB
+raw / 20.6 KiB gzipped). The 20 KiB gzipped secondary target from
+ADR-003 remains in force.
 
-1. Vendoring `custom-card-helpers` (~3 KB gain)
+If a future feature pushes the build over 78 KiB raw, or measurably
+above the 20 KiB gzipped line, options in order of preference:
+
+1. Vendoring `custom-card-helpers` (~3 KiB raw / ~1 KiB gzipped
+   gain — already identified as a v0.3.0 candidate in
+   [`../../BACKLOG.md`](../../BACKLOG.md))
 2. More aggressive tree-shaking of unused Lit helpers
 3. Lazy-loading transitions or secondary components
-
-See BACKLOG.md for already-identified options.
+4. If structural: open a new ADR raising the threshold (the
+   ADR-007 precedent), with a documented headroom breakdown.
 
 ### CI build without `.env.local`
 
@@ -273,5 +287,11 @@ None.
 ## Decisions
 
 - ADR-002 — Explicit `.env.local` loading on the Rollup side (2026-05-01)
+- ADR-006 — Mobile UX strategy v0.2.0 (2026-05-06): drove the
+  PointerEvents rewrite and the bundle growth that motivated
+  ADR-007
+- ADR-007 — Bundle threshold raise to 78 KiB for v0.2.0+
+  (2026-05-06): supersedes the 50 KB target of ADR-003 at the raw
+  level; the 20 KiB gzipped network target is preserved
 
 See [`../decisions.md`](../decisions.md).
