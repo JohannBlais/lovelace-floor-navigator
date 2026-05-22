@@ -78,7 +78,7 @@ export interface CardSettings {
 export type TransitionMode = 'crossfade' | 'slide' | 'slide-scale';
 export type NavigationMode = 'wheel' | 'swipe' | 'both' | 'none';
 export type EdgeBehavior = 'bounce' | 'none' | 'loop';
-export type OverlayButtonsPosition = 'top' | 'bottom' | 'none';
+export type OverlayButtonsPosition = 'top' | 'bottom' | 'left' | 'right' | 'auto' | 'none';
 export type DarkModeSetting = 'auto' | 'on' | 'off';
 export type OverlaySizeUnit = 'viewbox' | 'px';
 export type FullscreenButtonVisibility = 'auto' | 'always' | 'never';

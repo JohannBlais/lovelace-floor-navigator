@@ -165,12 +165,18 @@ export class FnNavigationController extends LitElement {
    * avoid lag. Re-enabled on gesture end and on floor-change reset.
    */
   @state() private _gestureLive = false;
+  /** True when the viewport is in landscape orientation — drives `'auto'` position. */
+  @state() private _isLandscape = false;
 
   private _lastNavTime = 0;
   private _bounceTimer?: number;
   private _resetAnimTimer?: number;
   private _startFloorResolved = false;
   private _lastFloorIndex = 0;
+  private _mqLandscape?: MediaQueryList;
+  private _onOrientationChange = (): void => {
+    this._isLandscape = this._mqLandscape?.matches ?? false;
+  };
 
   // PointerEvents bookkeeping
   private _pointers = new Map<number, PointerInfo>();
@@ -179,14 +185,27 @@ export class FnNavigationController extends LitElement {
   private _lastTapTime = 0;
   private _lastTapPos: Point = { x: 0, y: 0 };
 
+  /** Resolves `'auto'` to a concrete position based on viewport orientation. */
+  private get _effectivePosition(): Exclude<OverlayButtonsPosition, 'auto'> {
+    if (this.overlayButtonsPosition !== 'auto') {
+      return this.overlayButtonsPosition as Exclude<OverlayButtonsPosition, 'auto'>;
+    }
+    return this._isLandscape ? 'left' : 'bottom';
+  }
+
   override connectedCallback(): void {
     super.connectedCallback();
     this.addEventListener('wheel', this._onWheel as EventListener, { passive: false });
+    this._mqLandscape = window.matchMedia('(orientation: landscape)');
+    this._isLandscape = this._mqLandscape.matches;
+    this._mqLandscape.addEventListener('change', this._onOrientationChange);
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.removeEventListener('wheel', this._onWheel as EventListener);
+    this._mqLandscape?.removeEventListener('change', this._onOrientationChange);
+    this._mqLandscape = undefined;
     if (this._bounceTimer !== undefined) {
       window.clearTimeout(this._bounceTimer);
       this._bounceTimer = undefined;
@@ -220,6 +239,10 @@ export class FnNavigationController extends LitElement {
     if (changed.has('fullscreen')) {
       this.classList.toggle('fullscreen', this.fullscreen);
     }
+    // Sync `buttons-side` class so CSS can switch to a row layout when
+    // buttons are positioned left or right (including `auto` in landscape).
+    const eff = this._effectivePosition;
+    this.classList.toggle('buttons-side', eff === 'left' || eff === 'right');
     // v0.2.0 — Reset transform to identity (animated) on floor change.
     // The CSS `transition: transform 200ms` on the floor-stack's `.stack`
     // handles the animation; we just write a new transform value.
@@ -657,21 +680,22 @@ export class FnNavigationController extends LitElement {
 
   protected override render() {
     const currentFloor = this.floors[this._currentIndex];
-    const showButtons =
-      (this.overlayButtonsPosition === 'top' || this.overlayButtonsPosition === 'bottom') &&
-      this.allOverlays.length > 0;
+    const eff = this._effectivePosition;
+    const isSide = eff === 'left' || eff === 'right';
+    const showButtons = eff !== 'none' && this.allOverlays.length > 0;
     const buttons = showButtons
       ? html`
           <fn-overlay-buttons
             .overlays=${this.allOverlays}
             .visibleOverlayIds=${this.visibleOverlayIds}
             .fullscreen=${this.fullscreen}
+            .vertical=${isSide}
           ></fn-overlay-buttons>
         `
       : nothing;
 
     return html`
-      ${this.overlayButtonsPosition === 'top' ? buttons : nothing}
+      ${eff === 'top' || eff === 'left' ? buttons : nothing}
       <div
         class="gesture-area"
         @pointerdown=${this._onPointerDown}
@@ -705,7 +729,7 @@ export class FnNavigationController extends LitElement {
           ? html`<fn-floor-indicator .floor=${currentFloor}></fn-floor-indicator>`
           : nothing}
       </div>
-      ${this.overlayButtonsPosition === 'bottom' ? buttons : nothing}
+      ${eff === 'bottom' || eff === 'right' ? buttons : nothing}
     `;
   }
 
@@ -744,6 +768,24 @@ export class FnNavigationController extends LitElement {
       justify-content: center;
       /* The slider and the indicator are absolutely positioned against
          this box; flex layout doesn't break absolute positioning. */
+    }
+    /* Left/right position: row layout so the buttons bar sits beside the
+       gesture area. Works in both normal and fullscreen modes. */
+    :host(.buttons-side) {
+      display: flex;
+      flex-direction: row;
+    }
+    :host(.buttons-side) .gesture-area {
+      flex: 1;
+      min-width: 0;
+    }
+    /* In fullscreen, the column direction set above must yield to row. */
+    :host(.fullscreen.buttons-side) {
+      flex-direction: row;
+    }
+    :host(.fullscreen.buttons-side) .gesture-area {
+      min-height: unset;
+      min-width: 0;
     }
   `;
 }

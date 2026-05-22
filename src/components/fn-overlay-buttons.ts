@@ -30,10 +30,15 @@ export class FnOverlayButtons extends LitElement {
    * fullscreen".
    */
   @property({ type: Boolean, attribute: false }) fullscreen = false;
+  /** Switches the bar to a vertical column (for left/right positions). */
+  @property({ type: Boolean, attribute: false }) vertical = false;
 
   protected override updated(changed: PropertyValues<this>): void {
     if (changed.has('fullscreen')) {
       this.classList.toggle('fullscreen', this.fullscreen);
+    }
+    if (changed.has('vertical')) {
+      this.classList.toggle('vertical', this.vertical);
     }
   }
 
@@ -121,6 +126,17 @@ export class FnOverlayButtons extends LitElement {
       background: rgba(0, 0, 0, 0.6);
       backdrop-filter: blur(6px);
       -webkit-backdrop-filter: blur(6px);
+    }
+    /* Left/right position: rotate the bar to a vertical column. */
+    :host(.vertical) {
+      width: auto;
+      height: 100%;
+    }
+    :host(.vertical) .bar {
+      flex-direction: column;
+      padding: 8px 12px;
+      height: 100%;
+      justify-content: center;
     }
   `;
 }
